@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/StoreContext';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FileText, Folder, GripVertical, Plus, Trash2, Check, X } from 'lucide-react';
+import { FileText, Folder, GripVertical, Plus, Trash2, Check, X, Archive, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const SCENE_STATUS_DOTS: Record<string, string> = {
@@ -15,13 +15,14 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
   const { state, dispatch } = useStore();
   const [viewMode, setViewMode] = useState<'outline' | 'default' | 'scenes'>('default');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   if (state.focusMode) return null;
 
   const activeWorkId = state.activeWorkId;
   if (!activeWorkId) return <div className="w-full md:w-64 border-r border-stone-200 bg-stone-50 p-4 text-stone-500 text-sm">Select a work</div>;
 
-  const chapters = state.chapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
+  const chapters = state.chapters.filter(c => c.workId === activeWorkId && (showArchived || !c.archived)).sort((a, b) => a.order - b.order);
   const scenes = state.scenes.filter(s => chapters.some(c => c.id === s.chapterId));
 
   const handleDragEnd = (result: DropResult) => {
@@ -121,6 +122,10 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
+        <label className="flex items-center text-xs text-stone-500 mb-2 px-2 cursor-pointer hover:text-stone-700">
+          <input type="checkbox" checked={showArchived} onChange={() => setShowArchived(!showArchived)} className="mr-2 accent-emerald-600" />
+          Show Archived
+        </label>
         <DragDropContext onDragEnd={handleDragEnd}>
           {viewMode === 'outline' && (
             <Droppable droppableId="chapters" type="chapter">
@@ -143,9 +148,9 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
                             <GripVertical size={14} />
                           </div>
-                          <Folder size={14} className="mr-2 text-stone-400" />
+                          <Folder size={14} className={cn("mr-2 text-stone-400", chapter.archived && "opacity-50")} />
                           <span 
-                            className="flex-1 cursor-pointer whitespace-normal break-words text-xs md:text-sm"
+                            className={cn("flex-1 cursor-pointer whitespace-normal break-words text-xs md:text-sm", chapter.archived && "text-stone-400 italic")}
                             onClick={() => {
                               dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: chapter.id });
                               setMobileOpen?.(false);
@@ -153,7 +158,19 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           >
                             {chapter.title}
                           </span>
-                          {renderDeleteButton(chapter.id, () => dispatch({ type: 'DELETE_CHAPTER', payload: chapter.id }))}
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch({ type: 'TOGGLE_CHAPTER_ARCHIVE', payload: chapter.id });
+                              }}
+                              className="p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
+                              title={chapter.archived ? "Unarchive Chapter" : "Archive Chapter"}
+                            >
+                              {chapter.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
+                            </button>
+                            {renderDeleteButton(chapter.id, () => dispatch({ type: 'DELETE_CHAPTER', payload: chapter.id }))}
+                          </div>
                         </div>
                       )}
                     </Draggable>
@@ -180,11 +197,22 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                     }}
                   >
                     <div className="flex items-center flex-1 min-w-0">
-                      <Folder size={14} className="mr-2 text-stone-400 shrink-0" />
-                      <span className="whitespace-normal break-words text-xs md:text-sm">{chapter.title}</span>
+                      {chapter.archived && <Archive size={14} className="mr-2 text-stone-400 shrink-0" />}
+                      <Folder size={14} className={cn("mr-2 text-stone-400 shrink-0", chapter.archived && "opacity-50")} />
+                      <span className={cn("whitespace-normal break-words text-xs md:text-sm", chapter.archived && "text-stone-400 italic")}>{chapter.title}</span>
                     </div>
                     <div className="flex items-center space-x-1 shrink-0 ml-2">
-                      {deletingId !== chapter.id && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dispatch({ type: 'TOGGLE_CHAPTER_ARCHIVE', payload: chapter.id });
+                        }}
+                        className="p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
+                        title={chapter.archived ? "Unarchive Chapter" : "Archive Chapter"}
+                      >
+                        {chapter.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
+                      </button>
+                      {deletingId !== chapter.id && !chapter.archived && (
                         <button 
                           onClick={(e) => { 
                             e.stopPropagation(); 

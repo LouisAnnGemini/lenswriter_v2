@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 export type Work = { id: string; title: string; createdAt: number; order: number; characterFields?: CharacterFieldDef[]; lensesDescription?: string; icon?: string };
 export type Character = { id: string; workId: string; name: string; description: string; order: number; customFields?: Record<string, any> };
-export type Chapter = { id: string; workId: string; title: string; order: number; goalWordCount?: number; deadline?: string; completed?: boolean };
+export type Chapter = { id: string; workId: string; title: string; order: number; goalWordCount?: number; deadline?: string; completed?: boolean; archived?: boolean };
 export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; characterNotes?: Record<string, string>; statusColor?: string };
-export type Block = { id: string; documentId: string; type: 'text' | 'lens'; content: string; color?: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean };
+export type Block = { id: string; documentId: string; type: 'text' | 'lens'; content: string; color?: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean };
 
 export type CharacterFieldType = 'text' | 'number' | 'select' | 'multiselect';
 export type CharacterFieldDef = { id: string; name: string; type: CharacterFieldType; options: string[] };
@@ -53,6 +53,8 @@ type Action =
   | { type: 'ADD_CHAPTER'; payload: { workId: string; title: string } }
   | { type: 'UPDATE_CHAPTER'; payload: { id: string; title: string } }
   | { type: 'UPDATE_CHAPTER_GOAL'; payload: { id: string; goalWordCount?: number; deadline?: string; completed?: boolean } }
+  | { type: 'TOGGLE_CHAPTER_ARCHIVE'; payload: string }
+  | { type: 'TOGGLE_LENS_PIN'; payload: string }
   | { type: 'REORDER_CHAPTERS'; payload: { workId: string; startIndex: number; endIndex: number } }
   | { type: 'ADD_SCENE'; payload: { chapterId: string; title: string } }
   | { type: 'UPDATE_SCENE'; payload: { id: string; title?: string; statusColor?: string } }
@@ -253,6 +255,16 @@ function innerReducer(state: StoreState, action: Action): StoreState {
           deadline: 'deadline' in action.payload ? action.payload.deadline : c.deadline,
           completed: 'completed' in action.payload ? action.payload.completed : c.completed
         } : c) 
+      };
+    case 'TOGGLE_CHAPTER_ARCHIVE':
+      return {
+        ...state,
+        chapters: state.chapters.map(c => c.id === action.payload ? { ...c, archived: !c.archived } : c)
+      };
+    case 'TOGGLE_LENS_PIN':
+      return {
+        ...state,
+        blocks: state.blocks.map(b => b.id === action.payload ? { ...b, pinned: !b.pinned } : b)
       };
     case 'MERGE_BLOCK_UP': {
       const blockId = action.payload;

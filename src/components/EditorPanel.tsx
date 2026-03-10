@@ -139,6 +139,9 @@ export function EditorPanel() {
 
   const activeDocument = state.scenes.find(s => s.id === activeDocId) || state.chapters.find(c => c.id === activeDocId);
   const isScene = state.scenes.some(s => s.id === activeDocId);
+  const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
+  const chapter = state.chapters.find(c => c.id === chapterId);
+  const isArchived = chapter?.archived;
   
   const blocks = state.blocks.filter(b => b.documentId === activeDocId).sort((a, b) => a.order - b.order);
   const characters = state.characters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
@@ -308,6 +311,7 @@ export function EditorPanel() {
             <input
               type="text"
               value={activeDocument.title}
+              disabled={isArchived}
               onChange={(e) => {
                 if (isScene) {
                   dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, title: e.target.value } });
@@ -604,6 +608,7 @@ export function EditorPanel() {
                         value={block.content}
                         searchTerm={searchTerm}
                         blockId={block.id}
+                        disabled={isArchived}
                         onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -675,7 +680,7 @@ export function EditorPanel() {
                     </div>
 
                     {/* Block Actions (Hover) */}
-                    {!state.disguiseMode && (
+                    {!state.disguiseMode && !isArchived && (
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-2 px-2 absolute top-full left-0 z-10 bg-white shadow-sm rounded-md border border-stone-200 py-0.5 mt-1">
                         <button 
                           onClick={() => handleAddBlock('text', block.id)}
@@ -703,7 +708,7 @@ export function EditorPanel() {
                   </div>
 
                   {/* Right Side Actions for Text Blocks */}
-                  {block.type === 'text' && !state.disguiseMode && (
+                  {block.type === 'text' && !state.disguiseMode && !isArchived && (
                     <div className={cn(
                       "flex flex-col items-center space-y-2 opacity-0 group-hover:opacity-100 transition-opacity pt-2 w-8 shrink-0"
                     )}>

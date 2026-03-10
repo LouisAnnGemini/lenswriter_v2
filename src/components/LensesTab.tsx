@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/StoreContext';
-import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search } from 'lucide-react';
+import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search, Pin } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const LENS_COLORS = {
@@ -50,6 +50,9 @@ export function LensesTab() {
   const documentIds = [...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
   
   let lenses = state.blocks.filter(b => b.type === 'lens' && documentIds.includes(b.documentId));
+  
+  // Sort lenses: pinned first
+  lenses.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
 
   // Apply filters
   if (filterColors.length > 0) {
@@ -267,16 +270,28 @@ export function LensesTab() {
                     <MapPin size={12} className="mr-1.5 shrink-0" />
                     <span className="truncate">{getLensLocation(lens.documentId)}</span>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleNavigateToLens(lens.id, lens.documentId);
-                    }}
-                    className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
-                    title="Go to location in text"
-                  >
-                    <ExternalLink size={14} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dispatch({ type: 'TOGGLE_LENS_PIN', payload: lens.id });
+                      }}
+                      className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                      title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                    >
+                      <Pin size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNavigateToLens(lens.id, lens.documentId);
+                      }}
+                      className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                      title="Go to location in text"
+                    >
+                      <ExternalLink size={14} />
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
