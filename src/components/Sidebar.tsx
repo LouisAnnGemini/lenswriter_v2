@@ -9,7 +9,8 @@ import { BackupManager } from './BackupManager';
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, setMobileOpen?: (open: boolean) => void }) {
   const { state, dispatch } = useStore();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const isExpanded = !collapsed || !!mobileOpen;
   const [newWorkTitle, setNewWorkTitle] = useState('');
   const [editingWorkId, setEditingWorkId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -90,17 +91,17 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
 
       <div className={cn(
         "h-screen bg-stone-900 text-stone-300 flex flex-col transition-all duration-300 border-r border-stone-800 z-50",
-        collapsed ? "w-16" : "w-64",
+        collapsed ? "md:w-16 w-64" : "w-64",
         "fixed md:relative", // Fixed on mobile, relative on desktop
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0" // Slide in on mobile
       )}>
         <div className="p-4 flex items-center justify-between border-b border-stone-800">
-          {!collapsed && <span className="font-semibold text-stone-100 tracking-wide uppercase text-sm">Works</span>}
+          {isExpanded && <span className="font-semibold text-stone-100 tracking-wide uppercase text-sm">Works</span>}
           <button 
             onClick={() => setCollapsed(!collapsed)}
             className="p-1 hover:bg-stone-800 rounded-md text-stone-400 hover:text-stone-100 transition-colors hidden md:block"
           >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            {!isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <button 
             onClick={() => setMobileOpen?.(false)}
@@ -124,8 +125,8 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                 : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
             )}
           >
-            <Clock size={16} className={cn("shrink-0", collapsed ? "mx-auto" : "mr-3")} />
-            {!collapsed && <span>Deadline</span>}
+            <Clock size={16} className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")} />
+            {isExpanded && <span>Deadline</span>}
           </button>
         </div>
         
@@ -152,7 +153,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                           {...provided.dragHandleProps} 
                           className={cn(
                             "mr-2 text-stone-600 opacity-0 group-hover:opacity-100 cursor-grab",
-                            collapsed && "hidden"
+                            !isExpanded && "hidden"
                           )}
                         >
                           <GripVertical size={14} />
@@ -166,10 +167,10 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                           }}
                         >
                           <div 
-                            onClick={(e) => !collapsed && e.stopPropagation()} 
-                            className={cn("shrink-0", collapsed ? "mx-auto" : "mr-3")}
+                            onClick={(e) => isExpanded && e.stopPropagation()} 
+                            className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")}
                           >
-                            {collapsed ? (
+                            {!isExpanded ? (
                               <div className="hover:opacity-80 transition-opacity">
                                 <WorkIcon icon={work.icon} size={16} />
                               </div>
@@ -184,7 +185,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                               </WorkIconPicker>
                             )}
                           </div>
-                          {!collapsed && (
+                          {isExpanded && (
                             editingWorkId === work.id ? (
                               <input
                                 autoFocus
@@ -220,7 +221,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                           )}
                         </div>
 
-                        {!collapsed && !editingWorkId && !deletingWorkId && (
+                        {isExpanded && !editingWorkId && !deletingWorkId && (
                           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                             <button
                               onClick={(e) => {
@@ -256,7 +257,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         </DragDropContext>
       </div>
 
-      {!collapsed && (
+      {isExpanded && (
         <div className="p-4 border-t border-stone-800 space-y-4">
           <div className="relative">
             <Plus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />

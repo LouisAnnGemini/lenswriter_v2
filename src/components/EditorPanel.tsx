@@ -301,7 +301,7 @@ export function EditorPanel() {
         <div 
           ref={scrollContainerRef}
         className={cn(
-        "flex-1 overflow-y-auto pb-32 md:pb-12 transition-all duration-300",
+        "flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-12 transition-all duration-300",
         isFocusMode 
           ? "px-4 py-8 md:px-8 md:py-12 lg:px-24 xl:px-48" 
           : "px-4 py-8 md:px-8 md:py-12 lg:px-12 xl:px-16"
@@ -553,8 +553,10 @@ export function EditorPanel() {
                     {/* Block Content */}
                     <div className={cn(
                       "w-full rounded-lg transition-colors",
-                      block.type === 'lens' && !state.disguiseMode ? cn("p-4 border-2", LENS_COLORS[block.color as keyof typeof LENS_COLORS] || LENS_COLORS.red) : "",
-                      state.disguiseMode && "rounded-none"
+                      block.type === 'lens' && !state.disguiseMode 
+                        ? cn("p-4 border-2", LENS_COLORS[block.color as keyof typeof LENS_COLORS] || LENS_COLORS.red) 
+                        : "px-4 border-2 border-transparent",
+                      state.disguiseMode && "rounded-none p-0 border-0"
                     )}>
                       {block.type === 'lens' && !state.disguiseMode && (
                         <div className="flex justify-between items-center mb-2">
@@ -629,7 +631,7 @@ export function EditorPanel() {
                         placeholder={block.type === 'lens' ? (block.color === 'black' ? "Hidden content..." : "Enter lens content...") : "Start writing..."}
                         className={cn(
                           "w-full outline-none bg-transparent p-0",
-                          state.disguiseMode ? "font-mono text-base leading-snug text-black" : (block.type === 'lens' ? "text-sm font-medium leading-relaxed" : "text-lg leading-loose tracking-wide text-stone-800 font-serif"),
+                          state.disguiseMode ? "font-mono text-base leading-snug text-black" : (block.type === 'lens' ? "text-base md:text-sm font-medium leading-relaxed" : "text-lg leading-loose tracking-wide text-stone-800 font-serif"),
                           block.type === 'lens' && block.color === 'black' && !state.disguiseMode ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : ""
                         )}
                       />

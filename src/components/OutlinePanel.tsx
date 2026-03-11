@@ -164,7 +164,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                 e.stopPropagation();
                                 dispatch({ type: 'TOGGLE_CHAPTER_ARCHIVE', payload: chapter.id });
                               }}
-                              className="p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
+                              className="md:opacity-0 md:group-hover:opacity-100 opacity-100 p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
                               title={chapter.archived ? "Unarchive Chapter" : "Archive Chapter"}
                             >
                               {chapter.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
@@ -197,7 +197,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                     }}
                   >
                     <div className="flex items-center flex-1 min-w-0">
-                      {chapter.archived && <Archive size={14} className="mr-2 text-stone-400 shrink-0" />}
+                      {chapter.archived && <Archive size={14} className="md:opacity-0 md:group-hover:opacity-100 opacity-100 mr-2 text-stone-400 shrink-0 transition-all" />}
                       <Folder size={14} className={cn("mr-2 text-stone-400 shrink-0", chapter.archived && "opacity-50")} />
                       <span className={cn("whitespace-normal break-words text-xs md:text-sm", chapter.archived && "text-stone-400 italic")}>{chapter.title}</span>
                     </div>
@@ -207,7 +207,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           e.stopPropagation();
                           dispatch({ type: 'TOGGLE_CHAPTER_ARCHIVE', payload: chapter.id });
                         }}
-                        className="p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
+                        className="md:opacity-0 md:group-hover:opacity-100 opacity-100 p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
                         title={chapter.archived ? "Unarchive Chapter" : "Archive Chapter"}
                       >
                         {chapter.archived ? <RotateCcw size={14} /> : <Archive size={14} />}

@@ -116,7 +116,7 @@ export function LensesTab() {
   return (
     <div className="flex-1 flex overflow-hidden bg-stone-50/50">
       {/* Lenses Grid */}
-      <div className={cn("flex-1 overflow-y-auto p-4 md:p-6 transition-all pb-24 md:pb-6", selectedLensId ? "hidden md:block md:pr-96" : "")}>
+      <div className={cn("flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 transition-all pb-24 md:pb-6", selectedLensId ? "hidden md:block md:pr-96" : "")}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col mb-8 space-y-6">
             <div className="max-w-2xl">
@@ -133,7 +133,7 @@ export function LensesTab() {
                   e.target.style.height = 'auto';
                   e.target.style.height = e.target.scrollHeight + 'px';
                 }}
-                className="text-sm text-stone-500 mt-1 bg-transparent border-b border-transparent hover:border-stone-300 focus:border-emerald-500 outline-none w-full transition-colors resize-none overflow-hidden block"
+                className="text-base md:text-sm text-stone-500 mt-1 bg-transparent border-b border-transparent hover:border-stone-300 focus:border-emerald-500 outline-none w-full transition-colors resize-none overflow-hidden block"
                 placeholder="Enter a description for your lenses..."
                 rows={1}
                 style={{ minHeight: '24px' }}
@@ -478,7 +478,7 @@ export function LensesTab() {
       {selectedLensId && (
         <div className="w-full md:w-96 border-l border-stone-200 bg-white shadow-2xl fixed right-0 top-0 md:top-14 bottom-0 z-50 md:z-20 flex flex-col animate-in slide-in-from-right-8 duration-300 pb-safe">
           {(() => {
-            const lens = lenses.find(l => l.id === selectedLensId);
+            const lens = allLenses.find(l => l.id === selectedLensId);
             if (!lens) return null;
 
             return (
@@ -530,7 +530,7 @@ export function LensesTab() {
                       onChange={(e) => handleUpdateLens(lens.id, { content: e.target.value })}
                       placeholder={lens.color === 'black' ? "Hidden content..." : "Enter lens content..."}
                       className={cn(
-                        "w-full h-48 p-4 rounded-lg border resize-none outline-none text-sm font-medium leading-relaxed shadow-inner transition-colors",
+                        "w-full h-48 p-4 rounded-lg border resize-none outline-none text-base md:text-sm font-medium leading-relaxed shadow-inner transition-colors",
                         LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.red,
                         lens.color === 'black' ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : "focus:ring-2 focus:ring-emerald-500/20"
                       )}
@@ -547,7 +547,7 @@ export function LensesTab() {
                       value={lens.notes || ''}
                       onChange={(e) => handleUpdateLens(lens.id, { notes: e.target.value })}
                       placeholder="Add private notes, lore, or ideas here..."
-                      className="w-full h-32 p-3 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm text-stone-700"
+                      className="w-full h-32 p-3 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-base md:text-sm text-stone-700"
                     />
                   </div>
 
@@ -556,7 +556,7 @@ export function LensesTab() {
                     <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Linked Lenses</label>
                     <div className="space-y-2">
                       {lens.linkedLensIds?.map(linkedId => {
-                        const linkedLens = lenses.find(l => l.id === linkedId);
+                        const linkedLens = allLenses.find(l => l.id === linkedId);
                         if (!linkedLens) return null;
                         return (
                           <div key={linkedId} className="flex items-center justify-between p-2 rounded-md border border-stone-200 bg-white text-sm">
@@ -584,7 +584,7 @@ export function LensesTab() {
                           value=""
                         >
                           <option value="" disabled>+ Link another lens...</option>
-                          {lenses.filter(l => l.id !== lens.id && !(lens.linkedLensIds || []).includes(l.id)).map(l => (
+                          {allLenses.filter(l => l.id !== lens.id && !(lens.linkedLensIds || []).includes(l.id)).map(l => (
                             <option key={l.id} value={l.id}>{l.content.substring(0, 40)}...</option>
                           ))}
                         </select>
