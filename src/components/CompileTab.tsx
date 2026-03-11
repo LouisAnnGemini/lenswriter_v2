@@ -117,7 +117,7 @@ export function CompileTab() {
           
           blocks.forEach(block => {
             // Skip hidden (black) lenses
-            if (block.type === 'lens' && block.color === 'black') return;
+            if (block.type === 'lens' && block.color?.toLowerCase() === 'black') return;
             
             if (block.content.trim()) {
               text += block.content + '\n\n';
@@ -171,7 +171,7 @@ export function CompileTab() {
             .sort((a, b) => a.order - b.order);
           
           blocks.forEach(block => {
-            if (block.type === 'lens' && block.color === 'black') return;
+            if (block.type === 'lens' && block.color?.toLowerCase() === 'black') return;
             
             if (block.content.trim()) {
               const lines = block.content.split(/\r?\n/);

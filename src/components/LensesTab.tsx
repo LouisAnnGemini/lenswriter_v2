@@ -49,18 +49,15 @@ export function LensesTab() {
   const workScenes = state.scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
   const documentIds = [...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
   
-  let lenses = state.blocks.filter(b => b.type === 'lens' && documentIds.includes(b.documentId));
+  let allLenses = state.blocks.filter(b => b.type === 'lens' && documentIds.includes(b.documentId));
   
-  // Sort lenses: pinned first
-  lenses.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-
   // Apply filters
   if (filterColors.length > 0) {
-    lenses = lenses.filter(l => filterColors.includes(l.color));
+    allLenses = allLenses.filter(l => filterColors.includes(l.color));
   }
 
   if (filterChapterIds.length > 0) {
-    lenses = lenses.filter(l => {
+    allLenses = allLenses.filter(l => {
       // Direct chapter lens
       if (filterChapterIds.includes(l.documentId)) return true;
       
@@ -74,8 +71,11 @@ export function LensesTab() {
 
   if (privateSearchTerm) {
     const term = privateSearchTerm.toLowerCase();
-    lenses = lenses.filter(l => l.notes && l.notes.toLowerCase().includes(term));
+    allLenses = allLenses.filter(l => l.notes && l.notes.toLowerCase().includes(term));
   }
+
+  const pinnedLenses = allLenses.filter(l => l.pinned);
+  const unpinnedLenses = allLenses.filter(l => !l.pinned);
 
   const getLensLocation = (docId: string) => {
     const scene = state.scenes.find(s => s.id === docId);
@@ -253,115 +253,223 @@ export function LensesTab() {
             </div>
           </div>
 
-          <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-            {lenses.map(lens => (
-              <div 
-                key={lens.id}
-                id={`lens-card-${lens.id}`}
-                className={cn(
-                  "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
-                  LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.red,
-                  selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
-                )}
-                onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id })}
-              >
-                <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
-                  <div className="flex items-center text-xs font-medium opacity-60">
-                    <MapPin size={12} className="mr-1.5 shrink-0" />
-                    <span className="truncate">{getLensLocation(lens.documentId)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dispatch({ type: 'TOGGLE_LENS_PIN', payload: lens.id });
-                      }}
-                      className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
-                      title={lens.pinned ? "Unpin lens" : "Pin lens"}
-                    >
-                      <Pin size={14} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleNavigateToLens(lens.id, lens.documentId);
-                      }}
-                      className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
-                      title="Go to location in text"
-                    >
-                      <ExternalLink size={14} />
-                    </button>
-                  </div>
+          <div className="space-y-10">
+            {pinnedLenses.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 text-emerald-700">
+                  <Pin size={18} />
+                  <h3 className="text-lg font-serif font-semibold">Pinned Lenses</h3>
                 </div>
-                
-                <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
-                  {lens.color === 'black' ? (
-                    <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
-                  ) : (
-                    lens.content || <span className="italic opacity-50">Empty lens...</span>
-                  )}
-                </div>
+                <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+                  {pinnedLenses.map(lens => (
+                    <div 
+                      key={lens.id}
+                      id={`lens-card-${lens.id}`}
+                      className={cn(
+                        "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
+                        LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                        selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
+                      )}
+                      onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id })}
+                    >
+                      <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
+                        <div className="flex items-center text-xs font-medium opacity-60">
+                          <MapPin size={12} className="mr-1.5 shrink-0" />
+                          <span className="truncate">{getLensLocation(lens.documentId)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              dispatch({ type: 'TOGGLE_LENS_PIN', payload: lens.id });
+                            }}
+                            className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                            title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                          >
+                            <Pin size={14} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNavigateToLens(lens.id, lens.documentId);
+                            }}
+                            className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                            title="Go to location in text"
+                          >
+                            <ExternalLink size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
+                        {lens.color === 'black' ? (
+                          <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
+                        ) : (
+                          lens.content || <span className="italic opacity-50">Empty lens...</span>
+                        )}
+                      </div>
 
-                {lens.notes && (
-                  <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-stone-700 whitespace-pre-wrap border border-black/5">
-                    <span className="font-bold block mb-1 opacity-70">Private Notes:</span>
-                    {lens.notes}
-                  </div>
-                )}
+                      {lens.notes && (
+                        <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-stone-700 whitespace-pre-wrap border border-black/5">
+                          <span className="font-bold block mb-1 opacity-70">Private Notes:</span>
+                          {lens.notes}
+                        </div>
+                      )}
 
-                {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
-                  <div className="mb-4 pt-3 border-t border-black/10 flex flex-wrap gap-2">
-                    {lens.linkedLensIds.map(linkedId => {
-                      const linkedLens = lenses.find(l => l.id === linkedId);
-                      if (!linkedLens) return null;
-                      return (
-                        <button
-                          key={linkedId}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            scrollToLens(linkedId);
-                          }}
-                          className={cn(
-                            "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
-                            lens.color === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                      {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
+                        <div className="mb-4 pt-3 border-t border-black/10 flex flex-wrap gap-2">
+                          {lens.linkedLensIds.map(linkedId => {
+                            const linkedLens = allLenses.find(l => l.id === linkedId);
+                            if (!linkedLens) return null;
+                            return (
+                              <button
+                                key={linkedId}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  scrollToLens(linkedId);
+                                }}
+                                className={cn(
+                                  "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
+                                  lens.color === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                                )}
+                              >
+                                <LinkIcon size={10} className="mr-1 shrink-0" />
+                                <span className="truncate max-w-[150px]">
+                                  {linkedLens.color === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-3 border-t border-black/10">
+                        <div className="flex items-center space-x-3 text-xs font-semibold opacity-70">
+                          {lens.notes && (
+                            <span className="flex items-center"><Edit2 size={12} className="mr-1" /> Note</span>
                           )}
+                          {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
+                            <span className="flex items-center"><LinkIcon size={12} className="mr-1" /> {lens.linkedLensIds.length}</span>
+                          )}
+                        </div>
+                        <button 
+                          className="opacity-0 group-hover:opacity-100 px-2.5 py-1 bg-black/5 hover:bg-black/10 rounded-md text-xs font-bold transition-all"
+                          onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id }); }}
                         >
-                          <LinkIcon size={10} className="mr-1 shrink-0" />
-                          <span className="truncate max-w-[150px]">
-                            {linkedLens.color === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
-                          </span>
+                          Details
                         </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-3 border-t border-black/10">
-                  <div className="flex items-center space-x-3 text-xs font-semibold opacity-70">
-                    {lens.notes && (
-                      <span className="flex items-center"><Edit2 size={12} className="mr-1" /> Note</span>
-                    )}
-                    {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
-                      <span className="flex items-center"><LinkIcon size={12} className="mr-1" /> {lens.linkedLensIds.length}</span>
-                    )}
-                  </div>
-                  <button 
-                    className="opacity-0 group-hover:opacity-100 px-2.5 py-1 bg-black/5 hover:bg-black/10 rounded-md text-xs font-bold transition-all"
-                    onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id }); }}
-                  >
-                    Details
-                  </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-            
-            {lenses.length === 0 && (
-              <div className="col-span-full py-20 text-center text-stone-400">
-                <Layers size={48} className="mx-auto mb-4 opacity-20" />
-                <p>No Color Lenses found in this work.</p>
-                <p className="text-sm mt-2">Add them in the Writing tab to highlight important information.</p>
               </div>
             )}
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-serif font-semibold text-stone-900">All Lenses</h3>
+              <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+                {unpinnedLenses.map(lens => (
+                  <div 
+                    key={lens.id}
+                    id={`lens-card-${lens.id}`}
+                    className={cn(
+                      "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
+                      LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                      selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
+                    )}
+                    onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id })}
+                  >
+                    <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
+                      <div className="flex items-center text-xs font-medium opacity-60">
+                        <MapPin size={12} className="mr-1.5 shrink-0" />
+                        <span className="truncate">{getLensLocation(lens.documentId)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch({ type: 'TOGGLE_LENS_PIN', payload: lens.id });
+                          }}
+                          className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                          title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                        >
+                          <Pin size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNavigateToLens(lens.id, lens.documentId);
+                          }}
+                          className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                          title="Go to location in text"
+                        >
+                          <ExternalLink size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
+                      {lens.color === 'black' ? (
+                        <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
+                      ) : (
+                        lens.content || <span className="italic opacity-50">Empty lens...</span>
+                      )}
+                    </div>
+
+                    {lens.notes && (
+                      <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-stone-700 whitespace-pre-wrap border border-black/5">
+                        <span className="font-bold block mb-1 opacity-70">Private Notes:</span>
+                        {lens.notes}
+                      </div>
+                    )}
+
+                    {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
+                      <div className="mb-4 pt-3 border-t border-black/10 flex flex-wrap gap-2">
+                        {lens.linkedLensIds.map(linkedId => {
+                          const linkedLens = allLenses.find(l => l.id === linkedId);
+                          if (!linkedLens) return null;
+                          return (
+                            <button
+                              key={linkedId}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                scrollToLens(linkedId);
+                              }}
+                              className={cn(
+                                "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
+                                lens.color === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                              )}
+                            >
+                              <LinkIcon size={10} className="mr-1 shrink-0" />
+                              <span className="truncate max-w-[150px]">
+                                {linkedLens.color === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-3 border-t border-black/10">
+                      <div className="flex items-center space-x-3 text-xs font-semibold opacity-70">
+                        {lens.notes && (
+                          <span className="flex items-center"><Edit2 size={12} className="mr-1" /> Note</span>
+                        )}
+                        {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
+                          <span className="flex items-center"><LinkIcon size={12} className="mr-1" /> {lens.linkedLensIds.length}</span>
+                        )}
+                      </div>
+                      <button 
+                        className="opacity-0 group-hover:opacity-100 px-2.5 py-1 bg-black/5 hover:bg-black/10 rounded-md text-xs font-bold transition-all"
+                        onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id }); }}
+                      >
+                        Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

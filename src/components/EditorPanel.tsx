@@ -232,7 +232,10 @@ export function EditorPanel() {
   };
 
   const handleCopyScene = () => {
-    const text = blocks.map(b => b.content).join('\n\n');
+    const text = blocks
+      .filter(b => !(b.type === 'lens' && b.color?.toLowerCase() === 'black'))
+      .map(b => b.content)
+      .join('\n\n');
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
