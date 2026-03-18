@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useStore } from '../store/StoreContext';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
+import { ConfirmDeleteButton } from './ConfirmDeleteButton';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -15,11 +17,11 @@ const LENS_COLORS = {
 };
 
 const SCENE_STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
-  none: { bg: 'bg-white', border: 'border-stone-200', text: 'text-stone-900', dot: 'bg-stone-200', label: 'No Status' },
-  yellow: { bg: 'bg-amber-50/50', border: 'border-amber-200', text: 'text-amber-900', dot: 'bg-amber-400', label: 'Writing' },
-  green: { bg: 'bg-emerald-50/50', border: 'border-emerald-200', text: 'text-emerald-900', dot: 'bg-emerald-400', label: 'Finished' },
-  blue: { bg: 'bg-blue-50/50', border: 'border-blue-200', text: 'text-blue-900', dot: 'bg-blue-400', label: 'Modified' },
-  red: { bg: 'bg-red-50/50', border: 'border-red-200', text: 'text-red-900', dot: 'bg-red-400', label: 'Discarded' },
+  none: { bg: 'bg-white', border: 'border-stone-200', text: 'text-stone-900', dot: 'bg-stone-200', label: 'Draft' },
+  yellow: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', dot: 'bg-amber-500', label: 'First Draft' },
+  green: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Finished' },
+  blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Revised' },
+  red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', dot: 'bg-red-500', label: 'Discarded' },
 };
 
 const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, ...props }: any) => {
@@ -85,6 +87,7 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
     return (
       <div 
         className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words text-transparent bg-transparent z-0")} 
+        style={props.style}
         aria-hidden="true"
       >
         {parts.map((part: string, i: number) => {
@@ -103,7 +106,7 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
       {renderHighlights()}
       <textarea
         ref={ref}
-        value={value}
+        value={value || ''}
         onChange={onChange}
         placeholder={placeholder}
         className={cn("overflow-hidden resize-none relative z-10 bg-transparent w-full", className)}
@@ -114,12 +117,14 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
   );
 };
 
-export function EditorPanel() {
+export function EditorPanel({ compact }: { compact?: boolean }) {
   const { state, dispatch } = useStore();
   const [copied, setCopied] = useState(false);
-  const [isTocOpen, setIsTocOpen] = useState(true);
+  const [isTocOpen, setIsTocOpen] = useState(!compact);
   const [showFindReplace, setShowFindReplace] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
   const showDescriptions = state.showDescriptions;
   const activeDocId = state.activeDocumentId;
   const activeWorkId = state.activeWorkId;
@@ -281,6 +286,15 @@ export function EditorPanel() {
     }
   }
 
+  const countWords = (text: string) => {
+    if (!text) return 0;
+    const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+    const englishWords = text.match(/[a-zA-Z0-9]+/g) || [];
+    return chineseChars.length + englishWords.length;
+  };
+
+  const totalWords = blocks.reduce((sum, b) => sum + countWords(b.content || ''), 0);
+
   return (
     <div className={cn(
       "flex-1 flex bg-white overflow-hidden relative transition-all duration-300",
@@ -304,33 +318,92 @@ export function EditorPanel() {
         "flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-12 transition-all duration-300",
         isFocusMode 
           ? "px-4 py-8 md:px-8 md:py-12 lg:px-24 xl:px-48" 
-          : "px-4 py-8 md:px-8 md:py-12 lg:px-12 xl:px-16"
+          : compact
+            ? "px-4 py-6 md:px-6 md:py-8"
+            : "px-4 py-8 md:px-8 md:py-12 lg:px-12 xl:px-16"
       )}>
-        <div className={cn(
-          "mx-auto transition-all duration-300",
-          isFocusMode ? "max-w-3xl" : "max-w-5xl"
-        )}>
-          <div className="flex items-center justify-between mb-4">
-            <input
-              type="text"
-              value={activeDocument.title}
-              disabled={isArchived}
-              onChange={(e) => {
-                if (isScene) {
-                  dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, title: e.target.value } });
-                } else {
-                  dispatch({ type: 'UPDATE_CHAPTER', payload: { id: activeDocId, title: e.target.value } });
-                }
-              }}
-              className={cn(
-                "flex-1 outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words",
-                state.disguiseMode 
-                  ? "font-mono text-base leading-snug text-black font-normal" 
-                  : "text-2xl md:text-3xl font-serif font-semibold text-stone-900"
+        <div 
+          className={cn(
+            "mx-auto transition-all duration-300",
+            isFocusMode ? "max-w-3xl" : "max-w-5xl"
+          )}
+        >
+          <div className="flex items-start justify-between mb-4 gap-4">
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                value={activeDocument.title || ''}
+                disabled={isArchived}
+                onChange={(e) => {
+                  if (isScene) {
+                    dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, title: e.target.value } });
+                  } else {
+                    dispatch({ type: 'UPDATE_CHAPTER', payload: { id: activeDocId, title: e.target.value } });
+                  }
+                }}
+                className={cn(
+                  "w-full outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words",
+                  state.disguiseMode 
+                    ? "font-mono text-base leading-snug text-black font-normal" 
+                    : "text-2xl md:text-3xl font-serif font-semibold text-stone-900"
+                )}
+                placeholder="Untitled..."
+              />
+            </div>
+            <div className="flex items-center flex-wrap justify-end gap-1 md:gap-2 relative shrink-0">
+              {isScene && (
+                <button
+                  onClick={() => setIsInfoExpanded(!isInfoExpanded)}
+                  className={cn(
+                    "p-2 rounded-md transition-colors",
+                    isInfoExpanded ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100"
+                  )}
+                  title="Toggle Scene Info"
+                >
+                  <Info size={20} />
+                </button>
               )}
-              placeholder="Untitled..."
-            />
-            <div className="flex items-center space-x-2 ml-4">
+              <div className="fixed bottom-6 right-6 z-50">
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={cn("p-3 rounded-full shadow-lg transition-colors", showSettings ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-white bg-stone-800 hover:bg-stone-900")}
+                  title="Editor Settings"
+                >
+                  <Settings2 size={24} />
+                </button>
+                {showSettings && (
+                  <div className="absolute bottom-full right-0 mb-4 w-64 bg-white rounded-lg shadow-xl border border-stone-200 p-4">
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-medium text-stone-700">Letter Spacing</label>
+                        <span className="text-xs text-stone-500">{state.letterSpacing}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="10" 
+                        value={state.letterSpacing || 0}
+                        onChange={(e) => dispatch({ type: 'SET_LETTER_SPACING', payload: parseInt(e.target.value) })}
+                        className="w-full accent-emerald-600"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-medium text-stone-700">Editor Margin</label>
+                        <span className="text-xs text-stone-500">{state.editorMargin}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="10" 
+                        value={state.editorMargin || 0}
+                        onChange={(e) => dispatch({ type: 'SET_EDITOR_MARGIN', payload: parseInt(e.target.value) })}
+                        className="w-full accent-emerald-600"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => setShowFindReplace(!showFindReplace)}
                 className={cn("p-2 rounded-md transition-colors", showFindReplace ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
@@ -356,81 +429,290 @@ export function EditorPanel() {
                   {copied ? <Check size={20} className="text-emerald-600" /> : <Copy size={20} />}
                 </button>
               ) : (
-                <button
-                  onClick={() => {
-                    if (confirm('Delete this chapter?')) {
-                      dispatch({ type: 'DELETE_CHAPTER', payload: activeDocId });
-                    }
-                  }}
-                  className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                <ConfirmDeleteButton
+                  onConfirm={() => dispatch({ type: 'DELETE_CHAPTER', payload: activeDocId })}
+                  className="p-2"
                   title="Delete Chapter"
-                >
-                  <Trash2 size={20} />
-                </button>
+                  iconSize={20}
+                />
               )}
             </div>
           </div>
 
-          {isScene && !state.disguiseMode && (
-            <div className="mb-12 flex items-center space-x-3">
-              <label className="text-xs font-bold text-stone-400 uppercase tracking-wider">Parent Chapter:</label>
-              <select
-                value={(activeDocument as any).chapterId}
-                onChange={(e) => {
-                  dispatch({ 
-                    type: 'MOVE_SCENE', 
-                    payload: { 
-                      sceneId: activeDocId, 
-                      newChapterId: e.target.value, 
-                      newIndex: 0 // Move to top of new chapter
-                    } 
-                  });
-                }}
-                className="text-sm bg-stone-100 border-none rounded-md px-3 py-1.5 text-stone-700 outline-none focus:ring-2 focus:ring-emerald-500/20"
-              >
-                {chapters.map(chap => (
-                  <option key={chap.id} value={chap.id}>{chap.title}</option>
-                ))}
-              </select>
+          {/* Scene Info Module */}
+          {isScene && isInfoExpanded && (
+            <div className="mb-8 bg-stone-50 rounded-lg border border-stone-200 p-4">
+              <div className="space-y-6">
+                {/* Row 1: Chapter & Status */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                  {/* Parent Chapter */}
+                  <div className="md:col-span-4">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Parent Chapter</label>
+                    <select
+                      value={(activeDocument as any).chapterId || ''}
+                      onChange={(e) => {
+                        dispatch({ 
+                          type: 'MOVE_SCENE', 
+                          payload: { sceneId: activeDocId, newChapterId: e.target.value, newIndex: 0 } 
+                        });
+                      }}
+                      className="text-xs bg-white border border-stone-200 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                    >
+                      {chapters.map(chap => (
+                        <option key={chap.id} value={chap.id}>{chap.title}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Status */}
+                  <div className="md:col-span-8">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Status</label>
+                    <div className={cn("grid gap-1", compact ? "grid-cols-2" : "grid-cols-3")}>
+                      {/* Row 1: Draft, First Draft */}
+                      <div className={cn("grid grid-cols-2 gap-1", compact ? "col-span-2" : "col-span-2")}>
+                        {/* Draft */}
+                        <button
+                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: undefined } })}
+                          className={cn(
+                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
+                            SCENE_STATUS_COLORS.none.bg, SCENE_STATUS_COLORS.none.border, SCENE_STATUS_COLORS.none.text,
+                            !(activeDocument as any).statusColor ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          )}
+                        >
+                          <Circle size={10} className="text-stone-400" />
+                          {SCENE_STATUS_COLORS.none.label}
+                        </button>
+                        {/* First Draft */}
+                        <button
+                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'yellow' } })}
+                          className={cn(
+                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
+                            SCENE_STATUS_COLORS.yellow.bg, SCENE_STATUS_COLORS.yellow.border, SCENE_STATUS_COLORS.yellow.text,
+                            (activeDocument as any).statusColor === 'yellow' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          )}
+                        >
+                          <FileText size={10} className="text-amber-500" />
+                          {SCENE_STATUS_COLORS.yellow.label}
+                        </button>
+                      </div>
+                      
+                      {/* Finished spans 2 rows in normal mode, full width in compact */}
+                      <button
+                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'green' } })}
+                        className={cn(
+                          "px-2 py-1 rounded text-[10px] font-bold border transition-all flex items-center justify-center gap-1.5",
+                          compact ? "col-span-2" : "row-span-2 flex-col",
+                          SCENE_STATUS_COLORS.green.bg, SCENE_STATUS_COLORS.green.border, SCENE_STATUS_COLORS.green.text,
+                          (activeDocument as any).statusColor === 'green' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <Check size={14} className="text-emerald-500" />
+                        {SCENE_STATUS_COLORS.green.label}
+                      </button>
+
+                      {/* Row 2: Revised, Discarded */}
+                      <div className={cn("grid grid-cols-2 gap-1", compact ? "col-span-2" : "col-span-2")}>
+                        {/* Revised */}
+                        <button
+                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'blue' } })}
+                          className={cn(
+                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
+                            SCENE_STATUS_COLORS.blue.bg, SCENE_STATUS_COLORS.blue.border, SCENE_STATUS_COLORS.blue.text,
+                            (activeDocument as any).statusColor === 'blue' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          )}
+                        >
+                          <RotateCcw size={10} className="text-blue-500" />
+                          {SCENE_STATUS_COLORS.blue.label}
+                        </button>
+                        {/* Discarded */}
+                        <button
+                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'red' } })}
+                          className={cn(
+                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
+                            SCENE_STATUS_COLORS.red.bg, SCENE_STATUS_COLORS.red.border, SCENE_STATUS_COLORS.red.text,
+                            (activeDocument as any).statusColor === 'red' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          )}
+                        >
+                          <X size={10} className="text-red-500" />
+                          {SCENE_STATUS_COLORS.red.label}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Progress & Deadline */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+                  {/* Progress (Words / Goal) */}
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Progress</label>
+                    <div className="relative overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                      <div className="flex items-center gap-2 px-2 py-1.5">
+                        <div className="text-sm font-bold text-stone-900 shrink-0">{totalWords}</div>
+                        <div className="text-stone-300 font-light">/</div>
+                        <input 
+                          type="number"
+                          value={(activeDocument as any).goalWordCount || 0}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (isScene) {
+                              dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, goalWordCount: val } });
+                            }
+                          }}
+                          className="w-full bg-transparent outline-none text-xs text-stone-600 font-medium"
+                          placeholder="Goal"
+                        />
+                      </div>
+                      {/* Progress Bar */}
+                      {((activeDocument as any).goalWordCount || 0) > 0 && (
+                        <div className="absolute bottom-0 left-0 h-0.5 w-full bg-stone-100">
+                          <div 
+                            className="h-full bg-emerald-500 transition-all duration-500"
+                            style={{ 
+                              width: `${Math.min(100, (totalWords / ((activeDocument as any).goalWordCount || 1)) * 100)}%` 
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Deadline */}
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Deadline</label>
+                    <input 
+                      type="date" 
+                      value={(activeDocument as any).deadline || ''} 
+                      onChange={(e) => {
+                        if (isScene) {
+                          dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, deadline: e.target.value } });
+                        }
+                      }}
+                      className="w-full bg-white border border-stone-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 4: Characters */}
+                <div className="pt-4 border-t border-stone-200">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Characters</label>
+                  <div className="flex flex-wrap gap-1">
+                    {characters.map(char => {
+                      const isIncluded = (activeDocument as any).characterIds?.includes(char.id);
+                      return (
+                        <button
+                          key={char.id}
+                          onClick={() => {
+                            const currentIds = (activeDocument as any).characterIds || [];
+                            const newIds = isIncluded 
+                              ? currentIds.filter((id: string) => id !== char.id)
+                              : [...currentIds, char.id];
+                            dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, characterIds: newIds } });
+                          }}
+                          className={cn(
+                            "px-2 py-1 rounded text-xs font-medium border transition-all",
+                            isIncluded ? "bg-stone-900 border-stone-900 text-white" : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
+                          )}
+                        >
+                          {char.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Linked Events */}
+              <div className="mt-4">
+                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">Linked Events</label>
+                <MultiSelectDropdown
+                  options={state.timelineEvents.filter(e => e.workId === activeWorkId).map(e => ({ id: e.id, title: e.title }))}
+                  selectedIds={(activeDocument as any).linkedEventIds || []}
+                  onChange={(ids) => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, linkedEventIds: ids } })}
+                  placeholder="Select events..."
+                />
+              </div>
+
+              {/* Character Actions */}
+              {(activeDocument as any).linkedEventIds?.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-stone-200">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Character Actions</label>
+                  <div className="space-y-4">
+                    {(() => {
+                      const linkedEvents = state.timelineEvents
+                        .filter(e => (activeDocument as any).linkedEventIds.includes(e.id))
+                        .sort((a, b) => (a.order || 0) - (b.order || 0));
+                      
+                      const sceneCharIds = (activeDocument as any).characterIds || [];
+                      const eventCharIds = Array.from(new Set(linkedEvents.flatMap(e => Object.keys(e.characterActions))));
+                      const allRelevantCharIds = Array.from(new Set([...sceneCharIds, ...eventCharIds]));
+                      
+                      return allRelevantCharIds.map(charId => {
+                        const char = state.characters.find(c => c.id === charId);
+                        if (!char) return null;
+                        
+                        const isInScene = sceneCharIds.includes(charId);
+                        const hasAction = linkedEvents.some(e => charId in e.characterActions);
+                        if (!isInScene && !hasAction) return null;
+
+                        return (
+                          <div key={charId} className="flex items-start gap-2 text-xs border-b border-stone-100 last:border-0 pb-3 last:pb-0">
+                            <span className={cn(
+                              "font-semibold shrink-0 mt-1 w-20 truncate",
+                              isInScene ? "text-stone-900" : "text-stone-400 italic"
+                            )} title={char.name}>
+                              {char.name}:
+                            </span>
+                            <div className="flex flex-col gap-2 flex-1">
+                              {linkedEvents.map((event) => (
+                                <div key={event.id} className="flex items-start gap-2 group/action">
+                                  <span className="font-mono text-[10px] bg-stone-200 px-1.5 py-0.5 rounded mt-0.5 shrink-0 max-w-[80px] truncate" title={event.title}>
+                                    {event.title}
+                                  </span>
+                                  <AutoResizeTextarea
+                                    value={event.characterActions[charId] || ''}
+                                    placeholder="Add action..."
+                                    onChange={(e: any) => {
+                                      dispatch({
+                                        type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION',
+                                        payload: {
+                                          eventId: event.id,
+                                          characterId: charId,
+                                          action: e.target.value
+                                        }
+                                      });
+                                    }}
+                                    className="w-full bg-transparent border-none p-0 text-stone-600 focus:ring-0 resize-none overflow-hidden min-h-[1.5rem] placeholder:text-stone-300 text-xs"
+                                    scrollContainerRef={scrollContainerRef}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Character Binding Area */}
-          {!state.disguiseMode && (
-            <div className="mb-12 flex flex-wrap gap-2 items-center">
-              <span className="text-xs font-medium text-stone-400 uppercase tracking-wider mr-2">
-                {isScene ? 'Characters in Scene:' : 'Characters in Chapter:'}
-              </span>
-              
-              {characters.map(char => {
-                const isActive = isScene 
-                  ? (activeDocument as any).characterIds.includes(char.id)
-                  : chapterCharacters.includes(char.id);
-                  
-                return (
-                  <button
-                    key={char.id}
-                    onClick={() => toggleCharacter(char.id)}
-                    disabled={!isScene}
-                    className={cn(
-                      "px-2.5 py-1 rounded-full text-xs font-medium transition-colors border",
-                      isActive 
-                        ? "bg-stone-800 text-stone-100 border-stone-800" 
-                        : "bg-white text-stone-500 border-stone-200 hover:border-stone-300",
-                      !isScene && "cursor-default opacity-80"
-                    )}
-                  >
-                    {char.name}
-                  </button>
-                );
-              })}
             </div>
-          )}
 
           {/* Chapter Scenes List */}
           {!isScene && !state.disguiseMode && (
             <div className="mb-12 space-y-4">
-              <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 pb-2">Scenes in this Chapter</h3>
+              <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider">Scenes in this Chapter</h3>
+                <button
+                  onClick={() => dispatch({ type: 'ADD_SCENE', payload: { chapterId: activeDocId } })}
+                  className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-1 rounded transition-colors"
+                >
+                  <Plus size={14} />
+                  Add Scene
+                </button>
+              </div>
               {state.scenes.filter(s => s.chapterId === activeDocId).sort((a, b) => a.order - b.order).length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {state.scenes.filter(s => s.chapterId === activeDocId).sort((a, b) => a.order - b.order).map(scene => {
@@ -510,13 +792,7 @@ export function EditorPanel() {
                         return (
                           <div key={scene.id} className="flex items-start space-x-3">
                             <span className="text-xs font-mono text-stone-500 bg-stone-200 px-1.5 py-0.5 rounded mt-0.5 shrink-0">{sceneIndex}</span>
-                            <AutoResizeTextarea
-                              scrollContainerRef={scrollContainerRef}
-                              value={scene.characterNotes?.[charId] || ''}
-                              onChange={(e: any) => dispatch({ type: 'UPDATE_SCENE_CHARACTER_NOTE', payload: { sceneId: scene.id, characterId: charId, note: e.target.value } })}
-                              placeholder={`Notes for ${char.name} in this scene...`}
-                              className="flex-1 bg-transparent text-sm text-stone-700 outline-none border-b border-transparent focus:border-emerald-300 transition-colors"
-                            />
+                            <span className="text-sm text-stone-700">{scene.title || 'Untitled Scene'}</span>
                           </div>
                         );
                       })}
@@ -548,7 +824,10 @@ export function EditorPanel() {
                   </div>
                 )}
 
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2" style={{
+                  paddingLeft: `${(state.editorMargin || 0)}rem`,
+                  paddingRight: `${(state.editorMargin || 0)}rem`,
+                }}>
                   <div className="flex-1 min-w-0">
                     {/* Block Content */}
                     <div className={cn(
@@ -610,7 +889,7 @@ export function EditorPanel() {
                       
                       <AutoResizeTextarea
                         scrollContainerRef={scrollContainerRef}
-                        value={block.content}
+                        value={block.content || ''}
                         searchTerm={searchTerm}
                         blockId={block.id}
                         disabled={isArchived}
@@ -634,6 +913,7 @@ export function EditorPanel() {
                           state.disguiseMode ? "font-mono text-base leading-snug text-black" : (block.type === 'lens' ? "text-base md:text-sm font-medium leading-relaxed" : "text-lg leading-loose tracking-wide text-stone-800 font-serif"),
                           block.type === 'lens' && block.color === 'black' && !state.disguiseMode ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : ""
                         )}
+                        style={{ letterSpacing: `${(state.letterSpacing || 0) * 0.05}em` }}
                       />
                       
                       {block.type === 'lens' && block.linkedLensIds && block.linkedLensIds.length > 0 && !state.disguiseMode && (
@@ -665,7 +945,7 @@ export function EditorPanel() {
                         <div className="mt-2 pl-4 border-l-2 border-emerald-200 flex items-start gap-2">
                           <AutoResizeTextarea
                             scrollContainerRef={scrollContainerRef}
-                            value={block.description}
+                            value={block.description || ''}
                             onChange={(e: any) => handleBlockChange(block.id, { description: e.target.value })}
                             placeholder="Enter block description..."
                             className="flex-1 text-sm text-stone-600 bg-stone-50 p-2 rounded-md outline-none focus:ring-1 focus:ring-emerald-500"
@@ -760,7 +1040,6 @@ export function EditorPanel() {
           
           <div className="h-64" /> {/* Bottom padding */}
         </div>
-      </div>
       </div>
       
       {/* TOC Sidebar */}

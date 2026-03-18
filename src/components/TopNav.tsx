@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store/StoreContext';
-import { Edit3, Layers, Users, Maximize2, Minimize2, Menu, ChevronLeft, FileText, MessageSquare, MessageSquareOff, Eye } from 'lucide-react';
+import { Edit3, Layers, Users, Maximize2, Minimize2, Menu, ChevronLeft, FileText, MessageSquare, MessageSquareOff, Eye, Clock, MapPin } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
@@ -11,7 +11,8 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
   const tabs = [
     { id: 'writing', label: 'Writing', icon: Edit3 },
     { id: 'lenses', label: 'Lenses', icon: Layers },
-    { id: 'characters', label: 'Characters', icon: Users },
+    { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'world', label: 'World', icon: Users },
     { id: 'compile', label: 'Compile', icon: FileText },
   ] as const;
 

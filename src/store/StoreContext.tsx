@@ -4,8 +4,32 @@ import { v4 as uuidv4 } from 'uuid';
 export type Work = { id: string; title: string; createdAt: number; order: number; characterFields?: CharacterFieldDef[]; lensesDescription?: string; icon?: string };
 export type Character = { id: string; workId: string; name: string; description: string; order: number; customFields?: Record<string, any> };
 export type Chapter = { id: string; workId: string; title: string; order: number; goalWordCount?: number; deadline?: string; completed?: boolean; archived?: boolean };
-export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; characterNotes?: Record<string, string>; statusColor?: string };
+export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; statusColor?: string; linkedEventIds?: string[]; goalWordCount?: number; deadline?: string };
 export type Block = { id: string; documentId: string; type: 'text' | 'lens'; content: string; color?: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean };
+
+export type Location = { id: string; workId: string; name: string; description: string; order: number };
+
+export type Tag = {
+  id: string;
+  workId: string;
+  name: string;
+  color?: string;
+};
+
+export type TimelineEvent = {
+  id: string;
+  workId: string;
+  title: string;
+  timestamp: string;
+  locationId?: string;
+  description?: string;
+  characterActions: Record<string, string>;
+  linkedEventIds?: string[];
+  tagIds?: string[];
+  color?: string;
+  order: number;
+  sequenceNumber: number;
+};
 
 export type CharacterFieldType = 'text' | 'number' | 'select' | 'multiselect';
 export type CharacterFieldDef = { id: string; name: string; type: CharacterFieldType; options: string[] };
@@ -21,17 +45,22 @@ export type Deadline = {
 export type StoreState = {
   works: Work[];
   characters: Character[];
+  locations: Location[];
+  tags: Tag[];
+  timelineEvents: TimelineEvent[];
   chapters: Chapter[];
   scenes: Scene[];
   blocks: Block[];
   deadlines: Deadline[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'writing' | 'lenses' | 'characters' | 'deadline' | 'compile';
+  activeTab: 'writing' | 'lenses' | 'world' | 'timeline' | 'deadline' | 'compile';
   activeLensId: string | null;
   focusMode: boolean;
   disguiseMode: boolean;
   showDescriptions: boolean;
+  letterSpacing: number;
+  editorMargin: number;
   past?: StoreState[];
   future?: StoreState[];
 };
@@ -45,7 +74,7 @@ type Action =
   | { type: 'REORDER_WORKS'; payload: { startIndex: number; endIndex: number } }
   | { type: 'SET_ACTIVE_WORK'; payload: string }
   | { type: 'SET_ACTIVE_DOCUMENT'; payload: string | null }
-  | { type: 'SET_ACTIVE_TAB'; payload: 'writing' | 'lenses' | 'characters' | 'deadline' | 'compile' }
+  | { type: 'SET_ACTIVE_TAB'; payload: 'writing' | 'lenses' | 'world' | 'timeline' | 'deadline' | 'compile' }
   | { type: 'SET_ACTIVE_LENS'; payload: string | null }
   | { type: 'TOGGLE_FOCUS_MODE' }
   | { type: 'TOGGLE_DISGUISE_MODE' }
@@ -57,11 +86,12 @@ type Action =
   | { type: 'TOGGLE_LENS_PIN'; payload: string }
   | { type: 'REORDER_CHAPTERS'; payload: { workId: string; startIndex: number; endIndex: number } }
   | { type: 'ADD_SCENE'; payload: { chapterId: string; title: string } }
-  | { type: 'UPDATE_SCENE'; payload: { id: string; title?: string; statusColor?: string } }
+  | { type: 'UPDATE_SCENE'; payload: { id: string; title?: string; statusColor?: string; goalWordCount?: number; deadline?: string } }
   | { type: 'REORDER_SCENES'; payload: { chapterId: string; startIndex: number; endIndex: number } }
   | { type: 'MOVE_SCENE'; payload: { sceneId: string; newChapterId: string; newIndex: number } }
   | { type: 'TOGGLE_SCENE_CHARACTER'; payload: { sceneId: string; characterId: string } }
-  | { type: 'UPDATE_SCENE_CHARACTER_NOTE'; payload: { sceneId: string; characterId: string; note: string } }
+  | { type: 'TOGGLE_SCENE_EVENT'; payload: { sceneId: string; eventId: string } }
+  | { type: 'REORDER_SCENE_EVENTS'; payload: { sceneId: string; startIndex: number; endIndex: number } }
   | { type: 'ADD_BLOCK'; payload: { documentId: string; type: 'text' | 'lens'; afterBlockId?: string } }
   | { type: 'UPDATE_BLOCK'; payload: { id: string; content?: string; type?: 'text' | 'lens'; color?: string; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean } }
   | { type: 'REMOVE_LENS'; payload: string }
@@ -70,6 +100,19 @@ type Action =
   | { type: 'UPDATE_CHARACTER'; payload: { id: string; name?: string; description?: string } }
   | { type: 'REORDER_CHARACTERS'; payload: { workId: string; startIndex: number; endIndex: number } }
   | { type: 'REORDER_CHARACTER_FIELDS'; payload: { workId: string; startIndex: number; endIndex: number } }
+  | { type: 'ADD_LOCATION'; payload: { workId: string; name: string } }
+  | { type: 'UPDATE_LOCATION'; payload: { id: string; name?: string; description?: string } }
+  | { type: 'DELETE_LOCATION'; payload: string }
+  | { type: 'REORDER_LOCATIONS'; payload: { workId: string; startIndex: number; endIndex: number } }
+  | { type: 'ADD_TIMELINE_EVENT'; payload: { workId: string; title: string; timestamp: string; locationId?: string; characterActions?: Record<string, string>; tagIds?: string[] } }
+  | { type: 'UPDATE_TIMELINE_EVENT'; payload: { id: string; title?: string; timestamp?: string; locationId?: string; description?: string; color?: string; tagIds?: string[] } }
+  | { type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION'; payload: { eventId: string; characterId: string; action: string } }
+  | { type: 'TOGGLE_TIMELINE_EVENT_LINK'; payload: { eventId: string; targetEventId: string } }
+  | { type: 'DELETE_TIMELINE_EVENT'; payload: string }
+  | { type: 'REORDER_TIMELINE_EVENTS'; payload: { workId: string; startIndex: number; endIndex: number } }
+  | { type: 'ADD_TAG'; payload: { workId: string; name: string; color?: string } }
+  | { type: 'UPDATE_TAG'; payload: { id: string; name?: string; color?: string } }
+  | { type: 'DELETE_TAG'; payload: string }
   | { type: 'MERGE_BLOCK_UP'; payload: string }
   | { type: 'DELETE_CHAPTER'; payload: string }
   | { type: 'DELETE_SCENE'; payload: string }
@@ -81,7 +124,9 @@ type Action =
   | { type: 'ADD_DEADLINE'; payload: { workId: string; title: string; date: string } }
   | { type: 'UPDATE_DEADLINE'; payload: { id: string; title?: string; date?: string; completed?: boolean } }
   | { type: 'DELETE_DEADLINE'; payload: string }
-  | { type: 'BULK_UPDATE_BLOCKS'; payload: { id: string; content: string }[] };
+  | { type: 'BULK_UPDATE_BLOCKS'; payload: { id: string; content: string }[] }
+  | { type: 'SET_LETTER_SPACING'; payload: number }
+  | { type: 'SET_EDITOR_MARGIN'; payload: number };
 
 const initialWorkId = uuidv4();
 const initialChapterId = uuidv4();
@@ -96,6 +141,9 @@ const initialState: StoreState = {
     { id: initialCharId, workId: initialWorkId, name: 'Elias Thorne', description: 'A detective with a troubled past.', order: 0 },
     { id: uuidv4(), workId: initialWorkId, name: 'Sarah Vance', description: 'An investigative journalist.', order: 1 }
   ],
+  locations: [],
+  tags: [],
+  timelineEvents: [],
   chapters: [
     { id: initialChapterId, workId: initialWorkId, title: 'Chapter 1: The Awakening', order: 0 },
     { id: uuidv4(), workId: initialWorkId, title: 'Chapter 2: Shadows', order: 1 }
@@ -119,6 +167,8 @@ const initialState: StoreState = {
   focusMode: false,
   disguiseMode: false,
   showDescriptions: true,
+  letterSpacing: 0,
+  editorMargin: 0,
 };
 
 function innerReducer(state: StoreState, action: Action): StoreState {
@@ -266,6 +316,141 @@ function innerReducer(state: StoreState, action: Action): StoreState {
         ...state,
         blocks: state.blocks.map(b => b.id === action.payload ? { ...b, pinned: !b.pinned } : b)
       };
+    case 'ADD_LOCATION': {
+      const newLocation: Location = {
+        id: uuidv4(),
+        workId: action.payload.workId,
+        name: action.payload.name,
+        description: '',
+        order: state.locations.filter(l => l.workId === action.payload.workId).length
+      };
+      return { ...state, locations: [...state.locations, newLocation] };
+    }
+    case 'UPDATE_LOCATION': {
+      return {
+        ...state,
+        locations: state.locations.map(l => l.id === action.payload.id ? { ...l, ...action.payload } : l)
+      };
+    }
+    case 'DELETE_LOCATION': {
+      return {
+        ...state,
+        locations: state.locations.filter(l => l.id !== action.payload),
+        timelineEvents: state.timelineEvents.map(e => e.locationId === action.payload ? { ...e, locationId: undefined } : e)
+      };
+    }
+    case 'REORDER_LOCATIONS': {
+      const { workId, startIndex, endIndex } = action.payload;
+      const workLocations = state.locations.filter(l => l.workId === workId).sort((a, b) => a.order - b.order);
+      const [removed] = workLocations.splice(startIndex, 1);
+      workLocations.splice(endIndex, 0, removed);
+      const updatedLocations = workLocations.map((l, i) => ({ ...l, order: i }));
+      return {
+        ...state,
+        locations: state.locations.map(l => l.workId === workId ? updatedLocations.find(ul => ul.id === l.id)! : l)
+      };
+    }
+    case 'ADD_TIMELINE_EVENT': {
+      const events = state.timelineEvents.filter(e => e.workId === action.payload.workId);
+      const newEvent: TimelineEvent = {
+        id: uuidv4(),
+        workId: action.payload.workId,
+        title: action.payload.title,
+        timestamp: action.payload.timestamp,
+        locationId: action.payload.locationId,
+        characterActions: action.payload.characterActions || {},
+        tagIds: action.payload.tagIds || [],
+        order: events.length,
+        sequenceNumber: events.length
+      };
+      return { ...state, timelineEvents: [...state.timelineEvents, newEvent] };
+    }
+    case 'UPDATE_TIMELINE_EVENT': {
+      return {
+        ...state,
+        timelineEvents: state.timelineEvents.map(e => e.id === action.payload.id ? { ...e, ...action.payload } : e)
+      };
+    }
+    case 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION': {
+      return {
+        ...state,
+        timelineEvents: state.timelineEvents.map(e => {
+          if (e.id === action.payload.eventId) {
+            const newActions = { ...e.characterActions };
+            if (action.payload.action === 'DELETE_ACTION') {
+              delete newActions[action.payload.characterId];
+            } else {
+              newActions[action.payload.characterId] = action.payload.action;
+            }
+            return {
+              ...e,
+              characterActions: newActions
+            };
+          }
+          return e;
+        })
+      };
+    }
+    case 'TOGGLE_TIMELINE_EVENT_LINK': {
+      const { eventId, targetEventId } = action.payload;
+      const eventA = state.timelineEvents.find(e => e.id === eventId);
+      if (!eventA) return state;
+      
+      const hasLink = (eventA.linkedEventIds || []).includes(targetEventId);
+      
+      return {
+        ...state,
+        timelineEvents: state.timelineEvents.map(e => {
+          if (e.id === eventId) {
+            const linkedIds = e.linkedEventIds || [];
+            return {
+              ...e,
+              linkedEventIds: hasLink 
+                ? linkedIds.filter(id => id !== targetEventId)
+                : [...linkedIds, targetEventId]
+            };
+          }
+          if (e.id === targetEventId) {
+            const linkedIds = e.linkedEventIds || [];
+            return {
+              ...e,
+              linkedEventIds: hasLink 
+                ? linkedIds.filter(id => id !== eventId)
+                : [...linkedIds, eventId]
+            };
+          }
+          return e;
+        })
+      };
+    }
+    case 'DELETE_TIMELINE_EVENT': {
+      return {
+        ...state,
+        timelineEvents: state.timelineEvents
+          .filter(e => e.id !== action.payload)
+          .map(e => ({
+            ...e,
+            linkedEventIds: e.linkedEventIds ? e.linkedEventIds.filter(id => id !== action.payload) : e.linkedEventIds
+          })),
+        scenes: state.scenes.map(s => {
+          if (s.linkedEventIds && s.linkedEventIds.includes(action.payload)) {
+            return { ...s, linkedEventIds: s.linkedEventIds.filter(id => id !== action.payload) };
+          }
+          return s;
+        })
+      };
+    }
+    case 'REORDER_TIMELINE_EVENTS': {
+      const { workId, startIndex, endIndex } = action.payload;
+      const workEvents = state.timelineEvents.filter(e => e.workId === workId).sort((a, b) => (a.order || 0) - (b.order || 0));
+      const [removed] = workEvents.splice(startIndex, 1);
+      workEvents.splice(endIndex, 0, removed);
+      const updatedEvents = workEvents.map((e, i) => ({ ...e, order: i, sequenceNumber: i }));
+      return {
+        ...state,
+        timelineEvents: state.timelineEvents.map(e => e.workId === workId ? updatedEvents.find(ue => ue.id === e.id)! : e)
+      };
+    }
     case 'MERGE_BLOCK_UP': {
       const blockId = action.payload;
       const block = state.blocks.find(b => b.id === blockId);
@@ -421,17 +606,35 @@ function innerReducer(state: StoreState, action: Action): StoreState {
         })
       };
     }
-    case 'UPDATE_SCENE_CHARACTER_NOTE': {
+    case 'TOGGLE_SCENE_EVENT': {
       return {
         ...state,
         scenes: state.scenes.map(s => {
           if (s.id === action.payload.sceneId) {
+            const linkedEventIds = s.linkedEventIds || [];
+            const hasEvent = linkedEventIds.includes(action.payload.eventId);
             return {
               ...s,
-              characterNotes: {
-                ...(s.characterNotes || {}),
-                [action.payload.characterId]: action.payload.note
-              }
+              linkedEventIds: hasEvent 
+                ? linkedEventIds.filter(id => id !== action.payload.eventId)
+                : [...linkedEventIds, action.payload.eventId]
+            };
+          }
+          return s;
+        })
+      };
+    }
+    case 'REORDER_SCENE_EVENTS': {
+      return {
+        ...state,
+        scenes: state.scenes.map(s => {
+          if (s.id === action.payload.sceneId) {
+            const newEventIds = Array.from(s.linkedEventIds || []);
+            const [removed] = newEventIds.splice(action.payload.startIndex, 1);
+            newEventIds.splice(action.payload.endIndex, 0, removed);
+            return {
+              ...s,
+              linkedEventIds: newEventIds
             };
           }
           return s;
@@ -658,6 +861,30 @@ function innerReducer(state: StoreState, action: Action): StoreState {
         deadlines: (state.deadlines || []).filter(d => d.id !== action.payload)
       };
     }
+    case 'ADD_TAG': {
+      const newTag: Tag = { id: uuidv4(), workId: action.payload.workId, name: action.payload.name, color: action.payload.color };
+      return { ...state, tags: [...(state.tags || []), newTag] };
+    }
+    case 'UPDATE_TAG': {
+      return {
+        ...state,
+        tags: (state.tags || []).map(t => t.id === action.payload.id ? { ...t, ...action.payload } : t)
+      };
+    }
+    case 'DELETE_TAG': {
+      return {
+        ...state,
+        tags: (state.tags || []).filter(t => t.id !== action.payload),
+        timelineEvents: state.timelineEvents.map(e => ({
+          ...e,
+          tagIds: e.tagIds?.filter(id => id !== action.payload)
+        }))
+      };
+    }
+    case 'SET_LETTER_SPACING':
+      return { ...state, letterSpacing: action.payload };
+    case 'SET_EDITOR_MARGIN':
+      return { ...state, editorMargin: action.payload };
     default:
       return state;
   }

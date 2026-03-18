@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore, Scene } from '../store/StoreContext';
 import { countWords, cn } from '../lib/utils';
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Calendar as CalendarIcon, Target, BookOpen, ChevronDown, ChevronRight as ChevronRightIcon, X } from 'lucide-react';
 
@@ -40,11 +40,15 @@ export function DeadlineTab() {
     return blocks.reduce((sum, b) => sum + countWords(b.content), 0);
   };
 
+  const getSceneWordCount = (sceneId: string) => {
+    return getDocumentWordCount(sceneId);
+  };
+
   const getChapterWordCount = (chapterId: string) => {
     let count = getDocumentWordCount(chapterId);
     const scenes = state.scenes.filter(s => s.chapterId === chapterId);
     for (const scene of scenes) {
-      count += getDocumentWordCount(scene.id);
+      count += getSceneWordCount(scene.id);
     }
     return count;
   };
@@ -58,33 +62,59 @@ export function DeadlineTab() {
     return count;
   };
 
-  // Get all chapters across all works that have a goal set and are not completed
-  const todoTasks = useMemo(() => {
-    return state.chapters
-      .filter(c => c.goalWordCount && !c.completed && !c.deadline)
-      .sort((a, b) => {
-        const workA = state.works.find(w => w.id === a.workId);
-        const workB = state.works.find(w => w.id === b.workId);
-        if (workA && workB && workA.order !== workB.order) {
-          return workA.order - workB.order;
-        }
-        return a.order - b.order;
-      });
-  }, [state.chapters, state.works]);
-
-  const handleUpdateGoal = (chapterId: string, goalWordCount: number | undefined) => {
-    dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: chapterId, goalWordCount } });
+  const isSceneCompleted = (scene: Scene) => {
+    return scene.statusColor === 'green';
   };
 
-  const handleToggleComplete = (chapterId: string, completed: boolean) => {
-    dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: chapterId, completed } });
+  // Get all chapters and scenes across all works that have a goal set and are not completed
+  const todoTasks = useMemo(() => {
+    const chapterTasks = state.chapters
+      .filter(c => c.goalWordCount && !c.completed && !c.deadline)
+      .map(c => ({ ...c, type: 'chapter' as const }));
+
+    const sceneTasks = state.scenes
+      .filter(s => s.goalWordCount && !isSceneCompleted(s) && !s.deadline)
+      .map(s => ({ ...s, type: 'scene' as const }));
+
+    return [...chapterTasks, ...sceneTasks].sort((a, b) => {
+      const workAId = a.type === 'chapter' ? a.workId : state.chapters.find(c => c.id === a.chapterId)?.workId;
+      const workBId = b.type === 'chapter' ? b.workId : state.chapters.find(c => c.id === b.chapterId)?.workId;
+      
+      const workA = state.works.find(w => w.id === workAId);
+      const workB = state.works.find(w => w.id === workBId);
+      
+      if (workA && workB && workA.order !== workB.order) {
+        return workA.order - workB.order;
+      }
+      return a.order - b.order;
+    });
+  }, [state.chapters, state.scenes, state.works]);
+
+  const handleUpdateGoal = (id: string, type: 'chapter' | 'scene', goalWordCount: number | undefined) => {
+    if (type === 'chapter') {
+      dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id, goalWordCount } });
+    } else {
+      dispatch({ type: 'UPDATE_SCENE', payload: { id, goalWordCount } });
+    }
+  };
+
+  const handleToggleComplete = (id: string, type: 'chapter' | 'scene', completed: boolean) => {
+    if (type === 'chapter') {
+      dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id, completed } });
+    } else {
+      dispatch({ type: 'UPDATE_SCENE', payload: { id, statusColor: completed ? 'green' : undefined } });
+    }
   };
 
   const handleDrop = (e: React.DragEvent, dateString: string) => {
     e.preventDefault();
-    const chapterId = e.dataTransfer.getData('text/plain');
-    if (chapterId) {
-      dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: chapterId, deadline: dateString } });
+    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+    if (data && data.id) {
+      if (data.type === 'chapter') {
+        dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: data.id, deadline: dateString } });
+      } else {
+        dispatch({ type: 'UPDATE_SCENE', payload: { id: data.id, deadline: dateString } });
+      }
     }
   };
 
@@ -116,26 +146,27 @@ export function DeadlineTab() {
               </h3>
               <div className="space-y-2">
                 {todoTasks.map(task => {
-                  const work = state.works.find(w => w.id === task.workId);
-                  const currentWords = getChapterWordCount(task.id);
+                  const workId = task.type === 'chapter' ? task.workId : state.chapters.find(c => c.id === task.chapterId)?.workId;
+                  const work = state.works.find(w => w.id === workId);
+                  const currentWords = task.type === 'chapter' ? getChapterWordCount(task.id) : getSceneWordCount(task.id);
                   const percentage = task.goalWordCount ? Math.min(100, Math.round((currentWords / task.goalWordCount) * 100)) : 0;
                   return (
                     <div
                       key={task.id}
                       draggable
                       onDragStart={(e) => {
-                        e.dataTransfer.setData('text/plain', task.id);
+                        e.dataTransfer.setData('text/plain', JSON.stringify({ id: task.id, type: task.type }));
                       }}
                       className="bg-white p-2 rounded border border-emerald-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-emerald-400 transition-colors relative group"
                     >
                       <button
-                        onClick={() => handleUpdateGoal(task.id, undefined)}
+                        onClick={() => handleUpdateGoal(task.id, task.type, undefined)}
                         className="absolute top-1 right-1 p-1 text-stone-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Remove goal"
                       >
                         <X size={14} />
                       </button>
-                      <div className="text-xs font-medium text-stone-500 mb-1 pr-5">{work?.title}</div>
+                      <div className="text-xs font-medium text-stone-500 mb-1 pr-5">{work?.title} {task.type === 'scene' ? '(Scene)' : '(Chapter)'}</div>
                       <div className="text-sm font-medium text-stone-800 pr-5">{task.title}</div>
                       <div className="mt-2">
                         <div className="flex justify-between items-center text-xs text-stone-500 mb-1">
@@ -160,7 +191,6 @@ export function DeadlineTab() {
           <div className="space-y-6">
             {[...state.works].sort((a, b) => a.order - b.order).map(work => {
               const workTotalWords = getWorkWordCount(work.id);
-              // Sort chapters: incomplete first, then by original order
               const chapters = state.chapters
                 .filter(c => c.workId === work.id)
                 .sort((a, b) => {
@@ -195,48 +225,101 @@ export function DeadlineTab() {
                   </div>
 
                   {isExpanded && (
-                    <div className="space-y-2 pl-2">
+                    <div className="space-y-4 pl-2">
                       {chapters.map(chapter => {
                         const chapterWords = getChapterWordCount(chapter.id);
+                        const chapterScenes = state.scenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order);
+                        
                         return (
-                          <div key={chapter.id} className="bg-stone-50 p-2.5 rounded-md border border-stone-200">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center flex-1 min-w-0 pr-2">
-                                <button
-                                  onClick={() => handleToggleComplete(chapter.id, !chapter.completed)}
-                                  className={cn(
-                                    "mr-2 shrink-0 transition-colors",
-                                    chapter.completed ? "text-emerald-500" : "text-stone-300 hover:text-stone-400"
-                                  )}
-                                >
-                                  {chapter.completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
-                                </button>
-                                <span className={cn(
-                                  "text-sm font-medium truncate transition-colors",
-                                  chapter.completed ? "text-stone-400 line-through" : "text-stone-700"
-                                )}>
-                                  {chapter.title}
+                          <div key={chapter.id} className="space-y-2">
+                            <div className="bg-stone-50 p-2.5 rounded-md border border-stone-200">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center flex-1 min-w-0 pr-2">
+                                  <button
+                                    onClick={() => handleToggleComplete(chapter.id, 'chapter', !chapter.completed)}
+                                    className={cn(
+                                      "mr-2 shrink-0 transition-colors",
+                                      chapter.completed ? "text-emerald-500" : "text-stone-300 hover:text-stone-400"
+                                    )}
+                                  >
+                                    {chapter.completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                                  </button>
+                                  <span className={cn(
+                                    "text-sm font-medium truncate transition-colors",
+                                    chapter.completed ? "text-stone-400 line-through" : "text-stone-700"
+                                  )}>
+                                    {chapter.title}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-stone-500 shrink-0">
+                                  {chapterWords} words
                                 </span>
                               </div>
-                              <span className="text-xs text-stone-500 shrink-0">
-                                {chapterWords} words
-                              </span>
+                              
+                              <div className="flex items-center pl-6">
+                                <label className="text-xs text-stone-500 mr-2">Goal:</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={chapter.goalWordCount || ''}
+                                  onChange={(e) => {
+                                    const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
+                                    handleUpdateGoal(chapter.id, 'chapter', val);
+                                  }}
+                                  placeholder="Set word count goal..."
+                                  className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                  disabled={chapter.completed}
+                                />
+                              </div>
                             </div>
-                            
-                            <div className="flex items-center pl-6">
-                              <label className="text-xs text-stone-500 mr-2">Goal:</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={chapter.goalWordCount || ''}
-                                onChange={(e) => {
-                                  const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
-                                  handleUpdateGoal(chapter.id, val);
-                                }}
-                                placeholder="Set word count goal..."
-                                className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                disabled={chapter.completed}
-                              />
+
+                            {/* Scenes under Chapter */}
+                            <div className="pl-6 space-y-2">
+                              {chapterScenes.map(scene => {
+                                const sceneWords = getSceneWordCount(scene.id);
+                                const completed = isSceneCompleted(scene);
+                                return (
+                                  <div key={scene.id} className="bg-white p-2 rounded border border-stone-100 shadow-sm">
+                                    <div className="flex items-start justify-between mb-1.5">
+                                      <div className="flex items-center flex-1 min-w-0 pr-2">
+                                        <button
+                                          onClick={() => handleToggleComplete(scene.id, 'scene', !completed)}
+                                          className={cn(
+                                            "mr-2 shrink-0 transition-colors",
+                                            completed ? "text-emerald-500" : "text-stone-300 hover:text-stone-400"
+                                          )}
+                                        >
+                                          {completed ? <CheckCircle2 size={14} /> : <Circle size={14} />}
+                                        </button>
+                                        <span className={cn(
+                                          "text-xs font-medium truncate transition-colors",
+                                          completed ? "text-stone-400 line-through" : "text-stone-600"
+                                        )}>
+                                          {scene.title}
+                                        </span>
+                                      </div>
+                                      <span className="text-[10px] text-stone-400 shrink-0">
+                                        {sceneWords} words
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center pl-5">
+                                      <label className="text-[10px] text-stone-400 mr-2">Goal:</label>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={scene.goalWordCount || ''}
+                                        onChange={(e) => {
+                                          const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
+                                          handleUpdateGoal(scene.id, 'scene', val);
+                                        }}
+                                        placeholder="Set word count goal..."
+                                        className="flex-1 min-w-0 text-[10px] px-1.5 py-0.5 bg-stone-50 border border-stone-100 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        disabled={completed}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         );
@@ -296,16 +379,24 @@ export function DeadlineTab() {
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                 
                 // Find tasks for this day
-                const dayTasks = state.chapters
+                const chapterTasks = state.chapters
                   .filter(c => c.deadline === dateString)
-                  .sort((a, b) => {
-                    const workA = state.works.find(w => w.id === a.workId);
-                    const workB = state.works.find(w => w.id === b.workId);
-                    if (workA && workB && workA.order !== workB.order) {
-                      return workA.order - workB.order;
-                    }
-                    return a.order - b.order;
-                  });
+                  .map(c => ({ ...c, type: 'chapter' as const }));
+                
+                const sceneTasks = state.scenes
+                  .filter(s => s.deadline === dateString)
+                  .map(s => ({ ...s, type: 'scene' as const }));
+
+                const dayTasks = [...chapterTasks, ...sceneTasks].sort((a, b) => {
+                  const workAId = a.type === 'chapter' ? a.workId : state.chapters.find(c => c.id === a.chapterId)?.workId;
+                  const workBId = b.type === 'chapter' ? b.workId : state.chapters.find(c => c.id === b.chapterId)?.workId;
+                  const workA = state.works.find(w => w.id === workAId);
+                  const workB = state.works.find(w => w.id === workBId);
+                  if (workA && workB && workA.order !== workB.order) {
+                    return workA.order - workB.order;
+                  }
+                  return a.order - b.order;
+                });
 
                 return (
                   <div 
@@ -329,31 +420,38 @@ export function DeadlineTab() {
                     
                     <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                       {dayTasks.map(task => {
-                        const work = state.works.find(w => w.id === task.workId);
-                        const currentWords = getChapterWordCount(task.id);
+                        const workId = task.type === 'chapter' ? task.workId : state.chapters.find(c => c.id === task.chapterId)?.workId;
+                        const work = state.works.find(w => w.id === workId);
+                        const currentWords = task.type === 'chapter' ? getChapterWordCount(task.id) : getSceneWordCount(task.id);
+                        const completed = task.type === 'chapter' ? !!task.completed : isSceneCompleted(task as Scene);
                         const percentage = task.goalWordCount ? Math.min(100, Math.round((currentWords / task.goalWordCount) * 100)) : 0;
                         return (
                           <div 
                             key={task.id}
                             draggable
                             onDragStart={(e) => {
-                              e.dataTransfer.setData('text/plain', task.id);
+                              e.dataTransfer.setData('text/plain', JSON.stringify({ id: task.id, type: task.type }));
                             }}
                             className={cn(
                               "text-xs p-1.5 rounded border shadow-sm group relative cursor-grab active:cursor-grabbing",
-                              task.completed 
+                              completed 
                                 ? "bg-stone-100 border-stone-200 text-stone-500" 
                                 : "bg-emerald-50 border-emerald-200 text-emerald-900"
                             )}
                           >
                             <div className="flex items-start justify-between">
                               <div className="font-medium truncate pr-4" title={`${work?.title} - ${task.title}`}>
+                                {task.type === 'scene' && <span className="text-[10px] opacity-60 mr-1">[Scene]</span>}
                                 {task.title}
                               </div>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: task.id, deadline: undefined } });
+                                  if (task.type === 'chapter') {
+                                    dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: task.id, deadline: undefined } });
+                                  } else {
+                                    dispatch({ type: 'UPDATE_SCENE', payload: { id: task.id, deadline: undefined } });
+                                  }
                                 }}
                                 className="opacity-0 group-hover:opacity-100 absolute top-1 right-1 text-stone-400 hover:text-red-500 transition-opacity"
                                 title="Remove from calendar"
@@ -368,12 +466,12 @@ export function DeadlineTab() {
                               </div>
                               <div className={cn(
                                 "h-1 w-full rounded-full overflow-hidden",
-                                task.completed ? "bg-stone-200" : "bg-emerald-200/50"
+                                completed ? "bg-stone-200" : "bg-emerald-200/50"
                               )}>
                                 <div 
                                   className={cn(
                                     "h-full rounded-full transition-all duration-300",
-                                    task.completed ? "bg-stone-400" : "bg-emerald-500"
+                                    completed ? "bg-stone-400" : "bg-emerald-500"
                                   )}
                                   style={{ width: `${percentage}%` }}
                                 />

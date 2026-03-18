@@ -526,7 +526,7 @@ export function LensesTab() {
                   <div>
                     <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Content</label>
                     <textarea
-                      value={lens.content}
+                      value={lens.content || ''}
                       onChange={(e) => handleUpdateLens(lens.id, { content: e.target.value })}
                       placeholder={lens.color === 'black' ? "Hidden content..." : "Enter lens content..."}
                       className={cn(

@@ -5,6 +5,9 @@ import { Users, Plus, GripVertical, User, MapPin, ChevronLeft, Settings, X, Tras
 import { cn } from '../lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 
+import { ConfirmDeleteButton } from './ConfirmDeleteButton';
+import { EventDetailsModal } from './EventDetailsModal';
+
 function FieldOptionInput({ field, workId, dispatch }: { field: any, workId: string, dispatch: any }) {
   const [localValue, setLocalValue] = useState(field.options.join(', '));
   
@@ -33,6 +36,7 @@ export function CharactersTab() {
   const activeWork = state.works.find(w => w.id === activeWorkId);
   const [activeCharId, setActiveCharId] = useState<string | null>(null);
   const [showFieldManager, setShowFieldManager] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   if (!activeWorkId) return <div className="flex-1 flex items-center justify-center text-stone-400">Select a work</div>;
 
@@ -65,7 +69,7 @@ export function CharactersTab() {
 
   // Calculate appearances
   const getAppearances = (charId: string) => {
-    const appearances: { chapterTitle: string; sceneTitle: string; sceneId: string; note: string; sceneIndexStr: string }[] = [];
+    const appearances: { chapterTitle: string; sceneTitle: string; sceneId: string; sceneIndexStr: string }[] = [];
     state.scenes.forEach(scene => {
       if (scene.characterIds.includes(charId)) {
         const chapter = state.chapters.find(c => c.id === scene.chapterId);
@@ -74,13 +78,28 @@ export function CharactersTab() {
             chapterTitle: chapter.title,
             sceneTitle: scene.title,
             sceneId: scene.id,
-            note: scene.characterNotes?.[charId] || '',
             sceneIndexStr: `${chapter.order + 1}-${scene.order + 1}`
           });
         }
       }
     });
     return appearances;
+  };
+
+  const getTimelineAppearances = (charId: string) => {
+    const appearances: { eventTitle: string; eventId: string; timestamp: string; order: number; action: string }[] = [];
+    state.timelineEvents.forEach(event => {
+      if (event.characterActions && charId in event.characterActions) {
+        appearances.push({
+          eventTitle: event.title,
+          eventId: event.id,
+          timestamp: event.timestamp,
+          order: event.order,
+          action: event.characterActions[charId]
+        });
+      }
+    });
+    return appearances.sort((a, b) => a.order - b.order);
   };
 
   return (
@@ -109,7 +128,8 @@ export function CharactersTab() {
               {(provided) => (
                 <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1">
                   {characters.map((char, index) => {
-                    const appearanceCount = getAppearances(char.id).length;
+                    const sceneAppearanceCount = getAppearances(char.id).length;
+                    const timelineAppearanceCount = getTimelineAppearances(char.id).length;
                     return (
                       // @ts-expect-error React 19 key prop issue
                       <Draggable key={char.id} draggableId={char.id} index={index}>
@@ -129,14 +149,24 @@ export function CharactersTab() {
                           </div>
                           <User size={14} className={cn("mr-2", activeChar?.id === char.id ? "text-emerald-500" : "text-stone-400")} />
                           <span className="flex-1 truncate">{char.name}</span>
-                          {appearanceCount > 0 && (
-                            <span className={cn(
-                              "text-[10px] px-1.5 py-0.5 rounded-full ml-2",
-                              activeChar?.id === char.id ? "bg-emerald-200/50 text-emerald-700" : "bg-stone-200 text-stone-500 group-hover:bg-stone-300"
-                            )}>
-                              {appearanceCount}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {sceneAppearanceCount > 0 && (
+                              <span className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded-full",
+                                activeChar?.id === char.id ? "bg-emerald-200/50 text-emerald-700" : "bg-emerald-100 text-emerald-600"
+                              )}>
+                                {sceneAppearanceCount}
+                              </span>
+                            )}
+                            {timelineAppearanceCount > 0 && (
+                              <span className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded-full",
+                                activeChar?.id === char.id ? "bg-amber-200/50 text-amber-700" : "bg-amber-100 text-amber-600"
+                              )}>
+                                {timelineAppearanceCount}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </Draggable>
@@ -165,7 +195,7 @@ export function CharactersTab() {
               </button>
               <input
                 type="text"
-                value={activeChar.name}
+                value={activeChar.name || ''}
                 onChange={(e) => handleUpdateCharacter(activeChar.id, { name: e.target.value })}
                 className="w-full text-4xl font-serif font-semibold text-stone-900 mb-2 outline-none placeholder:text-stone-300 bg-transparent"
                 placeholder="Character Name..."
@@ -268,7 +298,7 @@ export function CharactersTab() {
                 Background & Description
               </label>
               <textarea
-                value={activeChar.description}
+                value={activeChar.description || ''}
                 onChange={(e) => handleUpdateCharacter(activeChar.id, { description: e.target.value })}
                 placeholder="Enter character background, personality, physical traits..."
                 className="w-full h-64 p-4 rounded-xl border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-stone-700 leading-relaxed transition-all"
@@ -282,62 +312,94 @@ export function CharactersTab() {
                   <MapPin size={14} className="mr-2" />
                   Appearances Tracker
                 </label>
-                {(() => {
-                  const appearances = getAppearances(activeChar.id);
-                  if (appearances.length > 0) {
-                    return (
-                      <span className="text-xs font-medium bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
-                        {appearances.length} Scene{appearances.length !== 1 ? 's' : ''}
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
               </div>
               
-              <div className="bg-stone-50 border border-stone-200 rounded-xl overflow-hidden shadow-sm">
-                {(() => {
-                  const appearances = getAppearances(activeChar.id);
-                  if (appearances.length === 0) {
-                    return (
-                      <div className="p-12 text-center text-stone-500 text-sm flex flex-col items-center justify-center">
-                        <MapPin size={32} className="mb-3 text-stone-300" />
-                        <p className="font-medium text-stone-600">No appearances yet</p>
-                        <p className="mt-1 text-xs opacity-70 max-w-xs">Bind this character to a scene in the Writing tab to track their journey.</p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="divide-y divide-stone-200">
-                      {appearances.map((app, i) => (
-                        <div key={i} className="p-4 flex items-start justify-between hover:bg-white transition-colors group">
-                          <div className="flex-1 pr-6">
-                            <div className="flex items-center space-x-3 mb-3">
-                              <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shadow-sm">{app.sceneIndexStr}</span>
-                              <span className="text-sm font-semibold text-stone-900">{app.sceneTitle}</span>
+              <div className="space-y-6">
+                {/* Scene Appearances */}
+                <div>
+                  <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Scene Appearances</h4>
+                  <div className="bg-stone-50 border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+                    {(() => {
+                      const appearances = getAppearances(activeChar.id);
+                      if (appearances.length === 0) {
+                        return <div className="p-4 text-center text-stone-400 text-sm italic">No scene appearances.</div>;
+                      }
+                      return (
+                        <div className="divide-y divide-stone-200">
+                          {appearances.map((app, i) => (
+                            <div key={i} className="p-4 flex items-center justify-between hover:bg-white transition-colors">
+                              <div className="flex items-center space-x-3">
+                                <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">{app.sceneIndexStr}</span>
+                                <span className="text-sm font-semibold text-stone-900">{app.sceneTitle}</span>
+                              </div>
+                              <button 
+                                onClick={() => {
+                                  dispatch({ type: 'SET_ACTIVE_TAB', payload: 'writing' });
+                                  dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: app.sceneId });
+                                }}
+                                className="px-3 py-1.5 bg-white border border-stone-200 hover:border-emerald-500 hover:text-emerald-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"
+                              >
+                                Go to Scene
+                              </button>
                             </div>
-                            <textarea
-                              value={app.note}
-                              onChange={(e) => dispatch({ type: 'UPDATE_SCENE_CHARACTER_NOTE', payload: { sceneId: app.sceneId, characterId: activeChar.id, note: e.target.value } })}
-                              placeholder="Add notes for this appearance (e.g., emotional state, key actions)..."
-                              className="w-full text-sm text-stone-700 bg-stone-50 group-hover:bg-white p-3 rounded-lg border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all resize-y min-h-[60px] whitespace-normal break-words"
-                            />
-                          </div>
-                          <button 
-                            onClick={() => {
-                              dispatch({ type: 'SET_ACTIVE_TAB', payload: 'writing' });
-                              dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: app.sceneId });
-                            }}
-                            className="px-3 py-2 bg-white border border-stone-200 hover:border-emerald-500 hover:text-emerald-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm shrink-0 mt-1 flex items-center"
-                          >
-                            Go to Scene
-                          </button>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Timeline Appearances */}
+                <div>
+                  <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Timeline Appearances</h4>
+                  <div className="bg-stone-50 border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+                    {(() => {
+                      const appearances = getTimelineAppearances(activeChar.id);
+                      if (appearances.length === 0) {
+                        return <div className="p-4 text-center text-stone-400 text-sm italic">No timeline appearances.</div>;
+                      }
+                      return (
+                        <div className="divide-y divide-stone-200">
+                          {appearances.map((event) => (
+                            <div key={event.eventId} className="p-4 flex flex-col gap-3 hover:bg-white transition-colors">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-xs font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">{event.timestamp}</span>
+                                  <span className="text-sm font-semibold text-stone-900">{event.eventTitle}</span>
+                                </div>
+                                <button 
+                                  onClick={() => {
+                                    dispatch({ type: 'SET_ACTIVE_TAB', payload: 'timeline' });
+                                    setSelectedEventId(event.eventId);
+                                  }}
+                                  className="px-3 py-1.5 bg-white border border-stone-200 hover:border-amber-500 hover:text-amber-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"
+                                >
+                                  Go to Event
+                                </button>
+                              </div>
+                              <textarea
+                                value={event.action || ''}
+                                onChange={(e) => {
+                                  dispatch({
+                                    type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION',
+                                    payload: {
+                                      eventId: event.eventId,
+                                      characterId: activeChar.id,
+                                      action: e.target.value
+                                    }
+                                  });
+                                }}
+                                className="text-sm text-stone-600 bg-white/50 p-3 rounded-lg border border-stone-100 italic leading-relaxed w-full resize-none focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-200 transition-all"
+                                placeholder="Add character action..."
+                                rows={2}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -399,7 +461,7 @@ export function CharactersTab() {
                                   <div className="flex-1">
                                     <label className="block text-xs font-medium text-stone-500 mb-1">Field Name</label>
                                     <input 
-                                      value={field.name} 
+                                      value={field.name || ''} 
                                       onChange={e => dispatch({type: 'UPDATE_CHARACTER_FIELD', payload: {workId: activeWorkId, fieldId: field.id, updates: {name: e.target.value}}})} 
                                       className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-emerald-500" 
                                       placeholder="e.g. Age, Gender, Faction" 
@@ -408,7 +470,7 @@ export function CharactersTab() {
                                   <div className="w-40">
                                     <label className="block text-xs font-medium text-stone-500 mb-1">Field Type</label>
                                     <select 
-                                      value={field.type} 
+                                      value={field.type || ''} 
                                       onChange={e => dispatch({type: 'UPDATE_CHARACTER_FIELD', payload: {workId: activeWorkId, fieldId: field.id, updates: {type: e.target.value as CharacterFieldType}}})} 
                                       className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-emerald-500 bg-white"
                                     >
@@ -426,13 +488,12 @@ export function CharactersTab() {
                                   </div>
                                 )}
                               </div>
-                              <button 
-                                onClick={() => { if(window.confirm('Delete this field? All characters will lose data for this field.')) dispatch({type: 'DELETE_CHARACTER_FIELD', payload: {workId: activeWorkId, fieldId: field.id}}) }} 
-                                className="text-stone-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-md transition-colors mt-5"
+                              <ConfirmDeleteButton
+                                onConfirm={() => dispatch({type: 'DELETE_CHARACTER_FIELD', payload: {workId: activeWorkId, fieldId: field.id}})}
+                                className="p-2 mt-5"
                                 title="Delete Field"
-                              >
-                                <Trash2 size={18}/>
-                              </button>
+                                iconSize={18}
+                              />
                             </div>
                           )}
                         </Draggable>
@@ -457,6 +518,12 @@ export function CharactersTab() {
             </div>
           </div>
         </div>
+      )}
+      {selectedEventId && (
+        <EventDetailsModal
+          eventId={selectedEventId}
+          onClose={() => setSelectedEventId(null)}
+        />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/StoreContext';
-import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock } from 'lucide-react';
+import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '../lib/utils';
 import { WorkIcon } from './WorkIcon';
@@ -112,7 +112,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         </div>
 
       <div className="flex-1 overflow-y-auto py-4">
-        <div className="mb-4 px-2">
+        <div className="mb-4 px-2 space-y-1">
           <button
             onClick={() => {
               dispatch({ type: 'SET_ACTIVE_TAB', payload: 'deadline' });
@@ -125,7 +125,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                 : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
             )}
           >
-            <Clock size={16} className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")} />
+            <Calendar size={16} className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")} />
             {isExpanded && <span>Deadline</span>}
           </button>
         </div>
