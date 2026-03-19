@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/StoreContext';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Plus, GripVertical, Clock, Maximize2, Link as LinkIcon, ExternalLink, List, LayoutGrid, Search, Filter, Tag as TagIcon, X } from 'lucide-react';
@@ -19,9 +19,9 @@ import { MontageBoard } from './MontageBoard';
 import { TagManagerModal } from './TagManagerModal';
 import { AddEventModal } from './AddEventModal';
 
-export function TimelineTab() {
+export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean, overrideViewMode?: 'chronology' | 'montage' }) {
   const { state, dispatch } = useStore();
-  const [viewMode, setViewMode] = useState<'chronology' | 'montage'>('chronology');
+  const [viewMode, setViewMode] = useState<'chronology' | 'montage'>(overrideViewMode || 'chronology');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
@@ -79,6 +79,12 @@ export function TimelineTab() {
     scrollToEvent(eventId);
   };
 
+  useEffect(() => {
+    if (overrideViewMode) {
+      setViewMode(overrideViewMode);
+    }
+  }, [overrideViewMode]);
+
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     dispatch({
@@ -89,9 +95,9 @@ export function TimelineTab() {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-stone-50 overflow-hidden">
-      <div className="p-4 border-b border-stone-200 bg-white shrink-0 flex justify-between items-center gap-4">
+      <div className={cn("p-4 border-b border-stone-200 bg-white shrink-0 flex justify-between items-center gap-4", isSubTab ? "border-t-0" : "")}>
         <div className="flex items-center gap-4 min-w-0">
-          <h2 className="text-xl font-bold text-stone-800 truncate">Timeline</h2>
+          {!isSubTab && <h2 className="text-xl font-bold text-stone-800 truncate">Timeline</h2>}
           <div className="flex bg-stone-100 p-1 rounded-lg border border-stone-200 shrink-0">
             <button
               onClick={() => setViewMode('chronology')}

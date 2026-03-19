@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useStore } from '../store/StoreContext';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
+
+import { LensesPanel } from './LensesPanel';
+import { EventPoolPanel } from './EventPoolPanel';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -120,7 +123,7 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
 export function EditorPanel({ compact }: { compact?: boolean }) {
   const { state, dispatch } = useStore();
   const [copied, setCopied] = useState(false);
-  const [isTocOpen, setIsTocOpen] = useState(!compact);
+  const [rightSidebarMode, setRightSidebarMode] = useState<'closed' | 'micro' | 'meso' | 'macro'>(compact ? 'closed' : 'micro');
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -363,47 +366,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   <Info size={20} />
                 </button>
               )}
-              <div className="fixed bottom-6 right-6 z-50">
-                <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className={cn("p-3 rounded-full shadow-lg transition-colors", showSettings ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-white bg-stone-800 hover:bg-stone-900")}
-                  title="Editor Settings"
-                >
-                  <Settings2 size={24} />
-                </button>
-                {showSettings && (
-                  <div className="absolute bottom-full right-0 mb-4 w-64 bg-white rounded-lg shadow-xl border border-stone-200 p-4">
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="text-sm font-medium text-stone-700">Letter Spacing</label>
-                        <span className="text-xs text-stone-500">{state.letterSpacing}</span>
-                      </div>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="10" 
-                        value={state.letterSpacing || 0}
-                        onChange={(e) => dispatch({ type: 'SET_LETTER_SPACING', payload: parseInt(e.target.value) })}
-                        className="w-full accent-emerald-600"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="text-sm font-medium text-stone-700">Editor Margin</label>
-                        <span className="text-xs text-stone-500">{state.editorMargin}</span>
-                      </div>
-                      <input 
-                        type="range" 
-                        min="0" 
-                        max="10" 
-                        value={state.editorMargin || 0}
-                        onChange={(e) => dispatch({ type: 'SET_EDITOR_MARGIN', payload: parseInt(e.target.value) })}
-                        className="w-full accent-emerald-600"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
               <button
                 onClick={() => setShowFindReplace(!showFindReplace)}
                 className={cn("p-2 rounded-md transition-colors", showFindReplace ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
@@ -411,24 +373,21 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               >
                 <Search size={20} />
               </button>
-              {!isTocOpen && tocSections.length > 0 && !state.disguiseMode && (
+              
+              {!state.disguiseMode && (
                 <button
-                  onClick={() => setIsTocOpen(true)}
-                  className="p-2 rounded-md transition-colors hidden lg:flex text-stone-400 hover:text-stone-600 hover:bg-stone-100"
-                  title="Open Directory"
+                  onClick={() => setRightSidebarMode(rightSidebarMode === 'closed' ? 'micro' : 'closed')}
+                  className={cn(
+                    "p-2 rounded-md transition-colors flex items-center gap-1 ml-2",
+                    rightSidebarMode !== 'closed' ? "bg-emerald-50 text-emerald-600" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
+                  )}
+                  title="Inspector"
                 >
                   <PanelRightOpen size={20} />
                 </button>
               )}
-              {isScene ? (
-                <button
-                  onClick={handleCopyScene}
-                  className="p-2 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
-                  title="Copy Scene Text"
-                >
-                  {copied ? <Check size={20} className="text-emerald-600" /> : <Copy size={20} />}
-                </button>
-              ) : (
+
+              {!isScene && (
                 <ConfirmDeleteButton
                   onConfirm={() => dispatch({ type: 'DELETE_CHAPTER', payload: activeDocId })}
                   className="p-2"
@@ -1042,46 +1001,154 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         </div>
       </div>
       
-      {/* TOC Sidebar */}
-      {tocSections.length > 0 && isTocOpen && !state.disguiseMode && (
-        <div className="w-64 border-l border-stone-200 bg-stone-50/50 flex-col hidden lg:flex shrink-0">
-          <div className="p-4 border-b border-stone-200 flex items-center bg-white">
-            <button
-              onClick={() => setIsTocOpen(false)}
-              className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors mr-2"
-              title="Close Directory"
-            >
-              <PanelRightClose size={16} />
-            </button>
-            <div className="flex items-center">
-              <List size={16} className="text-stone-400 mr-2" />
-              <h3 className="font-semibold text-stone-900 text-sm uppercase tracking-wider">Block Directory</h3>
+      {/* Inspector Sidebar (Floating Drawer) */}
+      {rightSidebarMode !== 'closed' && !state.disguiseMode && (
+        <div className="absolute top-0 right-0 bottom-0 w-72 bg-white/95 backdrop-blur-sm shadow-2xl border-l border-stone-200 z-40 flex flex-col transform transition-transform duration-300">
+          <div className="p-3 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setRightSidebarMode('micro')}
+                className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", rightSidebarMode === 'micro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+              >
+                Directory
+              </button>
+              <button
+                onClick={() => setRightSidebarMode('meso')}
+                className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", rightSidebarMode === 'meso' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+              >
+                Lenses
+              </button>
+              {isScene && (
+                <button
+                  onClick={() => setRightSidebarMode('macro')}
+                  className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", rightSidebarMode === 'macro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                >
+                  Events
+                </button>
+              )}
             </div>
+            <button
+              onClick={() => setRightSidebarMode('closed')}
+              className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors"
+              title="Close Inspector"
+            >
+              <X size={16} />
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {tocSections.map((section, idx) => (
-              <div key={`${section.documentId}-${idx}`}>
-                <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">{section.title}</h4>
-                <div className="space-y-1">
-                  {section.entries.map(entry => (
-                    <button
-                      key={entry.id}
-                      onClick={() => navigateToBlock(entry.id)}
-                      className={cn(
-                        "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors truncate",
-                        entry.completed ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100" : "text-stone-500 hover:bg-stone-200 hover:text-stone-800"
-                      )}
-                      title={entry.description}
-                    >
-                      {entry.description}
-                    </button>
-                  ))}
-                </div>
+          <div className="flex-1 overflow-y-auto">
+            {rightSidebarMode === 'micro' && (
+              <div className="p-4 space-y-6">
+                {tocSections.length === 0 ? (
+                  <div className="text-center text-xs text-stone-500 py-4">No blocks found.</div>
+                ) : (
+                  tocSections.map((section, idx) => (
+                    <div key={`${section.documentId}-${idx}`}>
+                      <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">{section.title}</h4>
+                      <div className="space-y-1">
+                        {section.entries.map(entry => (
+                          <button
+                            key={entry.id}
+                            onClick={() => navigateToBlock(entry.id)}
+                            className={cn(
+                              "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors truncate",
+                              entry.completed ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100" : "text-stone-500 hover:bg-stone-200 hover:text-stone-800"
+                            )}
+                            title={entry.description}
+                          >
+                            {entry.description}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-            ))}
+            )}
+            {rightSidebarMode === 'meso' && activeDocId && (
+              <LensesPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} />
+            )}
+            {rightSidebarMode === 'macro' && activeDocId && isScene && (
+              <EventPoolPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} />
+            )}
           </div>
         </div>
       )}
+
+      {/* Floating View Settings Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="p-3 bg-stone-900 text-white hover:bg-stone-800 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center"
+          title="View Settings"
+        >
+          <Settings2 size={24} />
+        </button>
+        
+        {showSettings && (
+          <div className="absolute bottom-full right-0 mb-4 w-64 bg-white rounded-lg shadow-xl border border-stone-200 p-4 z-50 origin-bottom-right animate-in fade-in slide-in-from-bottom-2">
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-medium text-stone-700">Letter Spacing</label>
+                <span className="text-xs text-stone-500">{state.letterSpacing}</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max="10" 
+                value={state.letterSpacing || 0}
+                onChange={(e) => dispatch({ type: 'SET_LETTER_SPACING', payload: parseInt(e.target.value) })}
+                className="w-full accent-emerald-600"
+              />
+            </div>
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-medium text-stone-700">Editor Margin</label>
+                <span className="text-xs text-stone-500">{state.editorMargin}</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max="10" 
+                value={state.editorMargin || 0}
+                onChange={(e) => dispatch({ type: 'SET_EDITOR_MARGIN', payload: parseInt(e.target.value) })}
+                className="w-full accent-emerald-600"
+              />
+            </div>
+            <div className="border-t border-stone-100 pt-3 space-y-2">
+              {isScene && (
+                <button
+                  onClick={handleCopyScene}
+                  className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-stone-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
+                >
+                  <span>Copy Scene Text</span>
+                  {copied ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
+                </button>
+              )}
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_SHOW_DESCRIPTIONS' })}
+                className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md transition-colors"
+              >
+                <span>Show Descriptions</span>
+                {state.showDescriptions ? <MessageSquare size={16} /> : <MessageSquareOff size={16} />}
+              </button>
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_FOCUS_MODE' })}
+                className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md transition-colors"
+              >
+                <span>Focus Mode</span>
+                {state.focusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_DISGUISE_MODE' })}
+                className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md transition-colors"
+              >
+                <span>Disguise Mode</span>
+                <Eye size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

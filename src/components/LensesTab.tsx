@@ -13,7 +13,7 @@ const LENS_COLORS = {
   black: 'bg-stone-900 border-stone-700 text-stone-100 hover:bg-stone-800',
 };
 
-export function LensesTab() {
+export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   const { state, dispatch } = useStore();
   const activeWorkId = state.activeWorkId;
   const activeWork = state.works.find(w => w.id === activeWorkId);

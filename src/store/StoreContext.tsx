@@ -54,7 +54,7 @@ export type StoreState = {
   deadlines: Deadline[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'writing' | 'lenses' | 'world' | 'timeline' | 'deadline' | 'compile';
+  activeTab: 'writing' | 'board' | 'world' | 'deadline' | 'compile';
   activeLensId: string | null;
   focusMode: boolean;
   disguiseMode: boolean;
@@ -74,7 +74,7 @@ type Action =
   | { type: 'REORDER_WORKS'; payload: { startIndex: number; endIndex: number } }
   | { type: 'SET_ACTIVE_WORK'; payload: string }
   | { type: 'SET_ACTIVE_DOCUMENT'; payload: string | null }
-  | { type: 'SET_ACTIVE_TAB'; payload: 'writing' | 'lenses' | 'world' | 'timeline' | 'deadline' | 'compile' }
+  | { type: 'SET_ACTIVE_TAB'; payload: 'writing' | 'board' | 'world' | 'deadline' | 'compile' }
   | { type: 'SET_ACTIVE_LENS'; payload: string | null }
   | { type: 'TOGGLE_FOCUS_MODE' }
   | { type: 'TOGGLE_DISGUISE_MODE' }
@@ -92,7 +92,7 @@ type Action =
   | { type: 'TOGGLE_SCENE_CHARACTER'; payload: { sceneId: string; characterId: string } }
   | { type: 'TOGGLE_SCENE_EVENT'; payload: { sceneId: string; eventId: string } }
   | { type: 'REORDER_SCENE_EVENTS'; payload: { sceneId: string; startIndex: number; endIndex: number } }
-  | { type: 'ADD_BLOCK'; payload: { documentId: string; type: 'text' | 'lens'; afterBlockId?: string } }
+  | { type: 'ADD_BLOCK'; payload: { documentId: string; type: 'text' | 'lens'; afterBlockId?: string; color?: string; notes?: string; } }
   | { type: 'UPDATE_BLOCK'; payload: { id: string; content?: string; type?: 'text' | 'lens'; color?: string; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean } }
   | { type: 'REMOVE_LENS'; payload: string }
   | { type: 'DELETE_BLOCK'; payload: string }
@@ -642,14 +642,15 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       };
     }
     case 'ADD_BLOCK': {
-      const { documentId, type, afterBlockId } = action.payload;
+      const { documentId, type, afterBlockId, color, notes } = action.payload;
       const docBlocks = state.blocks.filter(b => b.documentId === documentId).sort((a, b) => a.order - b.order);
       const newBlock: Block = {
         id: uuidv4(),
         documentId,
         type,
         content: '',
-        color: type === 'lens' ? 'red' : undefined,
+        color: color || (type === 'lens' ? 'red' : undefined),
+        notes: notes,
         order: 0
       };
       

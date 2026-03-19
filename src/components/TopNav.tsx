@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store/StoreContext';
-import { Edit3, Layers, Users, Maximize2, Minimize2, Menu, ChevronLeft, FileText, MessageSquare, MessageSquareOff, Eye, Clock, MapPin } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, MapPin } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
@@ -10,9 +10,9 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
 
   const tabs = [
     { id: 'writing', label: 'Writing', icon: Edit3 },
-    { id: 'lenses', label: 'Lenses', icon: Layers },
-    { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'board', label: 'Board', icon: Layers },
     { id: 'world', label: 'World', icon: Users },
+    { id: 'deadline', label: 'Deadline', icon: Clock },
     { id: 'compile', label: 'Compile', icon: FileText },
   ] as const;
 
@@ -60,32 +60,6 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         </div>
 
         <div className="flex items-center space-x-2">
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_DISGUISE_MODE' })}
-            className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors hidden md:block"
-            title="Enter Disguise Mode"
-          >
-            <Eye size={18} />
-          </button>
-          {state.activeTab === 'writing' && (
-            <button
-              onClick={() => dispatch({ type: 'TOGGLE_SHOW_DESCRIPTIONS' })}
-              className={cn(
-                "p-2 rounded-md transition-colors hidden md:block",
-                state.showDescriptions ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100"
-              )}
-              title={state.showDescriptions ? "Hide Descriptions" : "Show Descriptions"}
-            >
-              {state.showDescriptions ? <MessageSquare size={18} /> : <MessageSquareOff size={18} />}
-            </button>
-          )}
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_FOCUS_MODE' })}
-            className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors hidden md:block"
-            title="Toggle Focus Mode"
-          >
-            {state.focusMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-          </button>
         </div>
       </div>
 
