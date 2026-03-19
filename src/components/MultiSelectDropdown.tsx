@@ -39,7 +39,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   return (
     <div className="relative w-full">
       <div 
-        className="min-h-[32px] bg-white border border-stone-200 rounded-md px-2 py-1 flex flex-wrap gap-1 items-center cursor-pointer"
+        className="min-h-[36px] bg-white border border-stone-200 rounded px-2 py-1 flex flex-wrap gap-1 items-center cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
         {selectedIds.length === 0 && <span className="text-stone-400 text-xs">{placeholder}</span>}

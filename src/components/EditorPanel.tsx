@@ -456,7 +456,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                           payload: { sceneId: activeDocId, newChapterId: e.target.value, newIndex: 0 } 
                         });
                       }}
-                      className="text-xs bg-white border border-stone-200 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                      className="text-xs bg-white border border-stone-200 rounded px-2 h-9 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
                     >
                       {chapters.map(chap => (
                         <option key={chap.id} value={chap.id}>{chap.title}</option>
@@ -546,10 +546,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   {/* Progress (Words / Goal) */}
                   <div>
                     <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Progress</label>
-                    <div className="relative overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
-                      <div className="flex items-center gap-2 px-2 py-1.5">
-                        <div className="text-sm font-bold text-stone-900 shrink-0">{totalWords}</div>
-                        <div className="text-stone-300 font-light">/</div>
+                    <div className="relative h-9 overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                      <div className="flex items-center gap-2 px-2 h-full">
+                        <div className="text-xs font-bold text-stone-900 shrink-0">{totalWords}</div>
+                        <div className="text-stone-300 font-light text-xs">/</div>
                         <input 
                           type="number"
                           value={(activeDocument as any).goalWordCount || 0}
@@ -559,7 +559,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                               dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, goalWordCount: val } });
                             }
                           }}
-                          className="w-full bg-transparent outline-none text-xs text-stone-600 font-medium"
+                          className="w-full bg-transparent outline-none text-xs text-stone-600 font-medium h-full"
                           placeholder="Goal"
                         />
                       </div>
@@ -588,7 +588,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                           dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, deadline: e.target.value } });
                         }
                       }}
-                      className="w-full bg-white border border-stone-200 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                      className="w-full h-9 bg-white border border-stone-200 rounded px-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
                     />
                   </div>
                 </div>
