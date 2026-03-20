@@ -123,16 +123,45 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
 export function EditorPanel({ compact }: { compact?: boolean }) {
   const { state, dispatch } = useStore();
   const [copied, setCopied] = useState(false);
-  const [rightSidebarMode, setRightSidebarMode] = useState<'closed' | 'micro' | 'meso' | 'macro'>(compact ? 'closed' : 'micro');
+  const [lastInspectorTab, setLastInspectorTab] = useState<'micro' | 'meso' | 'macro' | 'info'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('lastInspectorTab');
+      if (saved && ['micro', 'meso', 'macro', 'info'].includes(saved)) {
+        return saved as 'micro' | 'meso' | 'macro' | 'info';
+      }
+    }
+    return 'info';
+  });
+  const [rightSidebarMode, setRightSidebarMode] = useState<'closed' | 'micro' | 'meso' | 'macro' | 'info'>(compact ? 'closed' : lastInspectorTab);
+
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
   const showDescriptions = state.showDescriptions;
   const activeDocId = state.activeDocumentId;
   const activeWorkId = state.activeWorkId;
+  const activeDocument = state.scenes.find(s => s.id === activeDocId) || state.chapters.find(c => c.id === activeDocId);
+  const isScene = state.scenes.some(s => s.id === activeDocId);
+  const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
+  const chapter = state.chapters.find(c => c.id === chapterId);
+  const isArchived = chapter?.archived;
+  const blocks = state.blocks.filter(b => b.documentId === activeDocId).sort((a, b) => a.order - b.order);
+  const characters = state.characters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
+  const chapters = state.chapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   const isFocusMode = state.focusMode;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (rightSidebarMode !== 'closed') {
+      const canShowCurrentTab = isScene || (rightSidebarMode !== 'info' && rightSidebarMode !== 'macro');
+      if (!canShowCurrentTab) {
+        setRightSidebarMode('micro');
+      } else {
+        setLastInspectorTab(rightSidebarMode);
+        localStorage.setItem('lastInspectorTab', rightSidebarMode);
+      }
+    }
+  }, [rightSidebarMode, isScene]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -144,16 +173,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  const activeDocument = state.scenes.find(s => s.id === activeDocId) || state.chapters.find(c => c.id === activeDocId);
-  const isScene = state.scenes.some(s => s.id === activeDocId);
-  const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
-  const chapter = state.chapters.find(c => c.id === chapterId);
-  const isArchived = chapter?.archived;
-  
-  const blocks = state.blocks.filter(b => b.documentId === activeDocId).sort((a, b) => a.order - b.order);
-  const characters = state.characters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
-  const chapters = state.chapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
 
   // Global Undo/Redo Shortcuts
   useEffect(() => {
@@ -354,18 +373,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               />
             </div>
             <div className="flex items-center flex-wrap justify-end gap-1 md:gap-2 relative shrink-0">
-              {isScene && (
-                <button
-                  onClick={() => setIsInfoExpanded(!isInfoExpanded)}
-                  className={cn(
-                    "p-2 rounded-md transition-colors",
-                    isInfoExpanded ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100"
-                  )}
-                  title="Toggle Scene Info"
-                >
-                  <Info size={20} />
-                </button>
-              )}
               <button
                 onClick={() => setShowFindReplace(!showFindReplace)}
                 className={cn("p-2 rounded-md transition-colors", showFindReplace ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
@@ -376,7 +383,14 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               
               {!state.disguiseMode && (
                 <button
-                  onClick={() => setRightSidebarMode(rightSidebarMode === 'closed' ? 'micro' : 'closed')}
+                  onClick={() => {
+                    if (rightSidebarMode === 'closed') {
+                      const canShowLastTab = isScene || (lastInspectorTab !== 'info' && lastInspectorTab !== 'macro');
+                      setRightSidebarMode(canShowLastTab ? lastInspectorTab : 'micro');
+                    } else {
+                      setRightSidebarMode('closed');
+                    }
+                  }}
                   className={cn(
                     "p-2 rounded-md transition-colors flex items-center gap-1 ml-2",
                     rightSidebarMode !== 'closed' ? "bg-emerald-50 text-emerald-600" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
@@ -397,267 +411,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               )}
             </div>
           </div>
-
-          {/* Scene Info Module */}
-          {isScene && isInfoExpanded && (
-            <div className="mb-8 bg-stone-50 rounded-lg border border-stone-200 p-4">
-              <div className="space-y-6">
-                {/* Row 1: Chapter & Status */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                  {/* Parent Chapter */}
-                  <div className="md:col-span-4">
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Parent Chapter</label>
-                    <select
-                      value={(activeDocument as any).chapterId || ''}
-                      onChange={(e) => {
-                        dispatch({ 
-                          type: 'MOVE_SCENE', 
-                          payload: { sceneId: activeDocId, newChapterId: e.target.value, newIndex: 0 } 
-                        });
-                      }}
-                      className="text-xs bg-white border border-stone-200 rounded px-2 h-9 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
-                    >
-                      {chapters.map(chap => (
-                        <option key={chap.id} value={chap.id}>{chap.title}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Status */}
-                  <div className="md:col-span-8">
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Status</label>
-                    <div className={cn("grid gap-1", compact ? "grid-cols-2" : "grid-cols-3")}>
-                      {/* Row 1: Draft, First Draft */}
-                      <div className={cn("grid grid-cols-2 gap-1", compact ? "col-span-2" : "col-span-2")}>
-                        {/* Draft */}
-                        <button
-                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: undefined } })}
-                          className={cn(
-                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
-                            SCENE_STATUS_COLORS.none.bg, SCENE_STATUS_COLORS.none.border, SCENE_STATUS_COLORS.none.text,
-                            !(activeDocument as any).statusColor ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                          )}
-                        >
-                          <Circle size={10} className="text-stone-400" />
-                          {SCENE_STATUS_COLORS.none.label}
-                        </button>
-                        {/* First Draft */}
-                        <button
-                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'yellow' } })}
-                          className={cn(
-                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
-                            SCENE_STATUS_COLORS.yellow.bg, SCENE_STATUS_COLORS.yellow.border, SCENE_STATUS_COLORS.yellow.text,
-                            (activeDocument as any).statusColor === 'yellow' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                          )}
-                        >
-                          <FileText size={10} className="text-amber-500" />
-                          {SCENE_STATUS_COLORS.yellow.label}
-                        </button>
-                      </div>
-                      
-                      {/* Finished spans 2 rows in normal mode, full width in compact */}
-                      <button
-                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'green' } })}
-                        className={cn(
-                          "px-2 py-1 rounded text-[10px] font-bold border transition-all flex items-center justify-center gap-1.5",
-                          compact ? "col-span-2" : "row-span-2 flex-col",
-                          SCENE_STATUS_COLORS.green.bg, SCENE_STATUS_COLORS.green.border, SCENE_STATUS_COLORS.green.text,
-                          (activeDocument as any).statusColor === 'green' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                        )}
-                      >
-                        <Check size={14} className="text-emerald-500" />
-                        {SCENE_STATUS_COLORS.green.label}
-                      </button>
-
-                      {/* Row 2: Revised, Discarded */}
-                      <div className={cn("grid grid-cols-2 gap-1", compact ? "col-span-2" : "col-span-2")}>
-                        {/* Revised */}
-                        <button
-                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'blue' } })}
-                          className={cn(
-                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
-                            SCENE_STATUS_COLORS.blue.bg, SCENE_STATUS_COLORS.blue.border, SCENE_STATUS_COLORS.blue.text,
-                            (activeDocument as any).statusColor === 'blue' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                          )}
-                        >
-                          <RotateCcw size={10} className="text-blue-500" />
-                          {SCENE_STATUS_COLORS.blue.label}
-                        </button>
-                        {/* Discarded */}
-                        <button
-                          onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'red' } })}
-                          className={cn(
-                            "px-2 py-1 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap min-w-fit",
-                            SCENE_STATUS_COLORS.red.bg, SCENE_STATUS_COLORS.red.border, SCENE_STATUS_COLORS.red.text,
-                            (activeDocument as any).statusColor === 'red' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                          )}
-                        >
-                          <X size={10} className="text-red-500" />
-                          {SCENE_STATUS_COLORS.red.label}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 2: Progress & Deadline */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
-                  {/* Progress (Words / Goal) */}
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Progress</label>
-                    <div className="relative h-9 overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
-                      <div className="flex items-center gap-2 px-2 h-full">
-                        <div className="text-xs font-bold text-stone-900 shrink-0">{totalWords}</div>
-                        <div className="text-stone-300 font-light text-xs">/</div>
-                        <input 
-                          type="number"
-                          value={(activeDocument as any).goalWordCount || 0}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            if (isScene) {
-                              dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, goalWordCount: val } });
-                            }
-                          }}
-                          className="w-full bg-transparent outline-none text-xs text-stone-600 font-medium h-full"
-                          placeholder="Goal"
-                        />
-                      </div>
-                      {/* Progress Bar */}
-                      {((activeDocument as any).goalWordCount || 0) > 0 && (
-                        <div className="absolute bottom-0 left-0 h-0.5 w-full bg-stone-100">
-                          <div 
-                            className="h-full bg-emerald-500 transition-all duration-500"
-                            style={{ 
-                              width: `${Math.min(100, (totalWords / ((activeDocument as any).goalWordCount || 1)) * 100)}%` 
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Deadline */}
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Deadline</label>
-                    <input 
-                      type="date" 
-                      value={(activeDocument as any).deadline || ''} 
-                      onChange={(e) => {
-                        if (isScene) {
-                          dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, deadline: e.target.value } });
-                        }
-                      }}
-                      className="w-full h-9 bg-white border border-stone-200 rounded px-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
-                    />
-                  </div>
-                </div>
-
-                {/* Row 4: Characters */}
-                <div className="pt-4 border-t border-stone-200">
-                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Characters</label>
-                  <div className="flex flex-wrap gap-1">
-                    {characters.map(char => {
-                      const isIncluded = (activeDocument as any).characterIds?.includes(char.id);
-                      return (
-                        <button
-                          key={char.id}
-                          onClick={() => {
-                            const currentIds = (activeDocument as any).characterIds || [];
-                            const newIds = isIncluded 
-                              ? currentIds.filter((id: string) => id !== char.id)
-                              : [...currentIds, char.id];
-                            dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, characterIds: newIds } });
-                          }}
-                          className={cn(
-                            "px-2 py-1 rounded text-xs font-medium border transition-all",
-                            isIncluded ? "bg-stone-900 border-stone-900 text-white" : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
-                          )}
-                        >
-                          {char.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Linked Events */}
-              <div className="mt-4">
-                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">Linked Events</label>
-                <MultiSelectDropdown
-                  options={state.timelineEvents.filter(e => e.workId === activeWorkId).map(e => ({ id: e.id, title: e.title }))}
-                  selectedIds={(activeDocument as any).linkedEventIds || []}
-                  onChange={(ids) => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, linkedEventIds: ids } })}
-                  placeholder="Select events..."
-                />
-              </div>
-
-              {/* Character Actions */}
-              {(activeDocument as any).linkedEventIds?.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-stone-200">
-                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Character Actions</label>
-                  <div className="space-y-4">
-                    {(() => {
-                      const linkedEvents = state.timelineEvents
-                        .filter(e => (activeDocument as any).linkedEventIds.includes(e.id))
-                        .sort((a, b) => (a.order || 0) - (b.order || 0));
-                      
-                      const sceneCharIds = (activeDocument as any).characterIds || [];
-                      const eventCharIds = Array.from(new Set(linkedEvents.flatMap(e => Object.keys(e.characterActions))));
-                      const allRelevantCharIds = Array.from(new Set([...sceneCharIds, ...eventCharIds]));
-                      
-                      return allRelevantCharIds.map(charId => {
-                        const char = state.characters.find(c => c.id === charId);
-                        if (!char) return null;
-                        
-                        const isInScene = sceneCharIds.includes(charId);
-                        const hasAction = linkedEvents.some(e => charId in e.characterActions);
-                        if (!isInScene && !hasAction) return null;
-
-                        return (
-                          <div key={charId} className="flex items-start gap-2 text-xs border-b border-stone-100 last:border-0 pb-3 last:pb-0">
-                            <span className={cn(
-                              "font-semibold shrink-0 mt-1 w-20 truncate",
-                              isInScene ? "text-stone-900" : "text-stone-400 italic"
-                            )} title={char.name}>
-                              {char.name}:
-                            </span>
-                            <div className="flex flex-col gap-2 flex-1">
-                              {linkedEvents.map((event) => (
-                                <div key={event.id} className="flex items-start gap-2 group/action">
-                                  <span className="font-mono text-[10px] bg-stone-200 px-1.5 py-0.5 rounded mt-0.5 shrink-0 max-w-[80px] truncate" title={event.title}>
-                                    {event.title}
-                                  </span>
-                                  <AutoResizeTextarea
-                                    value={event.characterActions[charId] || ''}
-                                    placeholder="Add action..."
-                                    onChange={(e: any) => {
-                                      dispatch({
-                                        type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION',
-                                        payload: {
-                                          eventId: event.id,
-                                          characterId: charId,
-                                          action: e.target.value
-                                        }
-                                      });
-                                    }}
-                                    className="w-full bg-transparent border-none p-0 text-stone-600 focus:ring-0 resize-none overflow-hidden min-h-[1.5rem] placeholder:text-stone-300 text-xs"
-                                    scrollContainerRef={scrollContainerRef}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-            </div>
 
           {/* Chapter Scenes List */}
           {!isScene && !state.disguiseMode && (
@@ -1000,28 +753,37 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
           <div className="h-64" /> {/* Bottom padding */}
         </div>
       </div>
+      </div>
       
-      {/* Inspector Sidebar (Floating Drawer) */}
+      {/* Inspector Sidebar */}
       {rightSidebarMode !== 'closed' && !state.disguiseMode && (
-        <div className="absolute top-0 right-0 bottom-0 w-72 bg-white/95 backdrop-blur-sm shadow-2xl border-l border-stone-200 z-40 flex flex-col transform transition-transform duration-300">
-          <div className="p-3 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
-            <div className="flex space-x-1">
+        <div className="relative w-72 bg-stone-50 border-l border-stone-200 z-20 shrink-0 flex flex-col">
+          <div className="p-2 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
+            <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+              {isScene && (
+                <button
+                  onClick={() => setRightSidebarMode('info')}
+                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'info' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                >
+                  Info
+                </button>
+              )}
               <button
                 onClick={() => setRightSidebarMode('micro')}
-                className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", rightSidebarMode === 'micro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'micro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Directory
               </button>
               <button
                 onClick={() => setRightSidebarMode('meso')}
-                className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", rightSidebarMode === 'meso' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'meso' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Lenses
               </button>
               {isScene && (
                 <button
                   onClick={() => setRightSidebarMode('macro')}
-                  className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", rightSidebarMode === 'macro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'macro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
                 >
                   Events
                 </button>
@@ -1029,7 +791,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
             </div>
             <button
               onClick={() => setRightSidebarMode('closed')}
-              className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors"
+              className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors shrink-0 ml-1"
               title="Close Inspector"
             >
               <X size={16} />
@@ -1070,12 +832,251 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
             {rightSidebarMode === 'macro' && activeDocId && isScene && (
               <EventPoolPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} />
             )}
+            {rightSidebarMode === 'info' && activeDocId && isScene && (
+              <div className="p-4 space-y-6">
+                {/* Chapter & Status */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Parent Chapter</label>
+                    <select
+                      value={(activeDocument as any).chapterId || ''}
+                      onChange={(e) => {
+                        dispatch({ 
+                          type: 'MOVE_SCENE', 
+                          payload: { sceneId: activeDocId, newChapterId: e.target.value, newIndex: 0 } 
+                        });
+                      }}
+                      className="text-xs bg-white border border-stone-200 rounded px-2 h-9 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                    >
+                      {chapters.map(chap => (
+                        <option key={chap.id} value={chap.id}>{chap.title}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Status</label>
+                    <div className="grid grid-cols-2 gap-1">
+                      <button
+                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: undefined } })}
+                        className={cn(
+                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
+                          SCENE_STATUS_COLORS.none.bg, SCENE_STATUS_COLORS.none.border, SCENE_STATUS_COLORS.none.text,
+                          !(activeDocument as any).statusColor ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <Circle size={10} className="text-stone-400" />
+                        {SCENE_STATUS_COLORS.none.label}
+                      </button>
+                      <button
+                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'yellow' } })}
+                        className={cn(
+                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
+                          SCENE_STATUS_COLORS.yellow.bg, SCENE_STATUS_COLORS.yellow.border, SCENE_STATUS_COLORS.yellow.text,
+                          (activeDocument as any).statusColor === 'yellow' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <FileText size={10} className="text-amber-500" />
+                        {SCENE_STATUS_COLORS.yellow.label}
+                      </button>
+                      <button
+                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'blue' } })}
+                        className={cn(
+                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
+                          SCENE_STATUS_COLORS.blue.bg, SCENE_STATUS_COLORS.blue.border, SCENE_STATUS_COLORS.blue.text,
+                          (activeDocument as any).statusColor === 'blue' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <RotateCcw size={10} className="text-blue-500" />
+                        {SCENE_STATUS_COLORS.blue.label}
+                      </button>
+                      <button
+                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'red' } })}
+                        className={cn(
+                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
+                          SCENE_STATUS_COLORS.red.bg, SCENE_STATUS_COLORS.red.border, SCENE_STATUS_COLORS.red.text,
+                          (activeDocument as any).statusColor === 'red' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <X size={10} className="text-red-500" />
+                        {SCENE_STATUS_COLORS.red.label}
+                      </button>
+                      <button
+                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'green' } })}
+                        className={cn(
+                          "px-2 py-1.5 rounded text-[10px] font-bold border transition-all flex items-center justify-center gap-1.5 col-span-2",
+                          SCENE_STATUS_COLORS.green.bg, SCENE_STATUS_COLORS.green.border, SCENE_STATUS_COLORS.green.text,
+                          (activeDocument as any).statusColor === 'green' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        <Check size={14} className="text-emerald-500" />
+                        {SCENE_STATUS_COLORS.green.label}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress & Deadline */}
+                <div className="space-y-4 pt-4 border-t border-stone-200">
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Progress</label>
+                    <div className="relative h-9 overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                      <div className="flex items-center gap-2 px-2 h-full">
+                        <div className="text-xs font-bold text-stone-900 shrink-0">{totalWords}</div>
+                        <div className="text-stone-300 font-light text-xs">/</div>
+                        <input 
+                          type="number"
+                          value={(activeDocument as any).goalWordCount || 0}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (isScene) {
+                              dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, goalWordCount: val } });
+                            }
+                          }}
+                          className="w-full bg-transparent outline-none text-xs text-stone-600 font-medium h-full"
+                          placeholder="Goal"
+                        />
+                      </div>
+                      {((activeDocument as any).goalWordCount || 0) > 0 && (
+                        <div className="absolute bottom-0 left-0 h-0.5 w-full bg-stone-100">
+                          <div 
+                            className="h-full bg-emerald-500 transition-all duration-500"
+                            style={{ 
+                              width: `${Math.min(100, (totalWords / ((activeDocument as any).goalWordCount || 1)) * 100)}%` 
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Deadline</label>
+                    <input 
+                      type="date" 
+                      value={(activeDocument as any).deadline || ''} 
+                      onChange={(e) => {
+                        if (isScene) {
+                          dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, deadline: e.target.value } });
+                        }
+                      }}
+                      className="w-full h-9 bg-white border border-stone-200 rounded px-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                    />
+                  </div>
+                </div>
+
+                {/* Characters */}
+                <div className="pt-4 border-t border-stone-200">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Characters</label>
+                  <div className="flex flex-wrap gap-1">
+                    {characters.map(char => {
+                      const isIncluded = (activeDocument as any).characterIds?.includes(char.id);
+                      return (
+                        <button
+                          key={char.id}
+                          onClick={() => {
+                            const currentIds = (activeDocument as any).characterIds || [];
+                            const newIds = isIncluded 
+                              ? currentIds.filter((id: string) => id !== char.id)
+                              : [...currentIds, char.id];
+                            dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, characterIds: newIds } });
+                          }}
+                          className={cn(
+                            "px-2 py-1 rounded text-xs font-medium border transition-all",
+                            isIncluded ? "bg-stone-900 border-stone-900 text-white" : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
+                          )}
+                        >
+                          {char.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Linked Events */}
+                <div className="pt-4 border-t border-stone-200">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">Linked Events</label>
+                  <MultiSelectDropdown
+                    options={state.timelineEvents.filter(e => e.workId === activeWorkId).map(e => ({ id: e.id, title: e.title }))}
+                    selectedIds={(activeDocument as any).linkedEventIds || []}
+                    onChange={(ids) => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, linkedEventIds: ids } })}
+                    placeholder="Select events..."
+                  />
+                </div>
+
+                {/* Character Actions */}
+                {(activeDocument as any).linkedEventIds?.length > 0 && (
+                  <div className="pt-4 border-t border-stone-200">
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Character Actions</label>
+                    <div className="space-y-4">
+                      {(() => {
+                        const linkedEvents = state.timelineEvents
+                          .filter(e => (activeDocument as any).linkedEventIds.includes(e.id))
+                          .sort((a, b) => (a.order || 0) - (b.order || 0));
+                        
+                        const sceneCharIds = (activeDocument as any).characterIds || [];
+                        const eventCharIds = Array.from(new Set(linkedEvents.flatMap(e => Object.keys(e.characterActions))));
+                        const allRelevantCharIds = Array.from(new Set([...sceneCharIds, ...eventCharIds]));
+                        
+                        return allRelevantCharIds.map(charId => {
+                          const char = state.characters.find(c => c.id === charId);
+                          if (!char) return null;
+                          
+                          const isInScene = sceneCharIds.includes(charId);
+                          const hasAction = linkedEvents.some(e => charId in e.characterActions);
+                          if (!isInScene && !hasAction) return null;
+
+                          return (
+                            <div key={charId} className="flex flex-col gap-2 text-xs border-b border-stone-100 last:border-0 pb-3 last:pb-0">
+                              <span className={cn(
+                                "font-semibold truncate",
+                                isInScene ? "text-stone-900" : "text-stone-400 italic"
+                              )} title={char.name}>
+                                {char.name}
+                              </span>
+                              <div className="flex flex-col gap-2">
+                                {linkedEvents.map((event) => (
+                                  <div key={event.id} className="flex flex-col gap-1 group/action">
+                                    <span className="font-mono text-[10px] bg-stone-200 px-1.5 py-0.5 rounded w-fit truncate max-w-full" title={event.title}>
+                                      {event.title}
+                                    </span>
+                                    <AutoResizeTextarea
+                                      value={event.characterActions[charId] || ''}
+                                      placeholder="Add action..."
+                                      onChange={(e: any) => {
+                                        dispatch({
+                                          type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION',
+                                          payload: {
+                                            eventId: event.id,
+                                            characterId: charId,
+                                            action: e.target.value
+                                          }
+                                        });
+                                      }}
+                                      className="w-full bg-white border border-stone-200 rounded p-1.5 text-stone-600 focus:ring-1 focus:ring-emerald-500 resize-none overflow-hidden min-h-[2rem] placeholder:text-stone-300 text-xs"
+                                      scrollContainerRef={scrollContainerRef}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Floating View Settings Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className={cn(
+        "fixed bottom-6 right-6 z-50 transition-opacity duration-300 flex items-end justify-end",
+        state.focusMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100"
+      )}>
         <button
           onClick={() => setShowSettings(!showSettings)}
           className="p-3 bg-stone-900 text-white hover:bg-stone-800 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center"

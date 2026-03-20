@@ -12,8 +12,8 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
   const scene = state.scenes.find(s => s.id === documentId);
 
   const filteredEvents = events.filter(e => 
-    e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (e.description && e.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    (e.title || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
+    (e.description && e.description.toLowerCase().includes((searchTerm || '').toLowerCase()))
   );
 
   const linkedEvents = filteredEvents.filter(e => scene?.linkedEventIds?.includes(e.id));

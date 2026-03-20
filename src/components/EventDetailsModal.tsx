@@ -1,6 +1,8 @@
 import React from 'react';
 import { useStore } from '../store/StoreContext';
 import { MapPin, X, Link as LinkIcon, Plus, Tag as TagIcon } from 'lucide-react';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
+import { SearchableSelect } from './SearchableSelect';
 import { cn } from '../lib/utils';
 
 interface EventDetailsModalProps {
@@ -28,7 +30,29 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
         </div>
 
         <div className="space-y-6">
-          {/* Location */}
+          {/* Event Title and Description */}
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block">Event Title</label>
+              <input
+                type="text"
+                value={event.title}
+                onChange={(e) => dispatch({ type: 'UPDATE_TIMELINE_EVENT', payload: { id: event.id, title: e.target.value } })}
+                className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block">Event Description</label>
+              <textarea
+                value={event.description || ''}
+                onChange={(e) => dispatch({ type: 'UPDATE_TIMELINE_EVENT', payload: { id: event.id, description: e.target.value } })}
+                className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* Location and Sequence */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block">Sequence Number</label>
@@ -107,54 +131,19 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
             </div>
           </div>
 
-          {/* Linked Events */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block flex items-center">
-              <LinkIcon size={12} className="mr-1" /> Linked Events
-            </label>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                {event.linkedEventIds?.map(linkedId => {
-                  const linkedEvent = allEvents.find(e => e.id === linkedId);
-                  if (!linkedEvent) return null;
-                  return (
-                    <div key={linkedId} className="flex items-center gap-1 bg-stone-100 border border-stone-200 px-2 py-1 rounded-md text-xs">
-                      <span className="font-medium text-stone-700 truncate max-w-[150px]">{linkedEvent.title}</span>
-                      <button
-                        onClick={() => dispatch({ type: 'TOGGLE_TIMELINE_EVENT_LINK', payload: { eventId: event.id, targetEventId: linkedId } })}
-                        className="text-stone-400 hover:text-red-500"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="relative">
-                <select
-                  className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none"
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      dispatch({ type: 'TOGGLE_TIMELINE_EVENT_LINK', payload: { eventId: event.id, targetEventId: e.target.value } });
-                    }
-                  }}
-                >
-                  <option value="">+ Link another event...</option>
-                  {allEvents
-                    .filter(e => e.id !== event.id && !event.linkedEventIds?.includes(e.id))
-                    .map(e => (
-                      <option key={e.id} value={e.id}>{e.title}</option>
-                    ))}
-                </select>
-                <Plus size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-              </div>
-            </div>
-          </div>
-
           {/* Character Descriptions */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block">Character Descriptions</label>
+            <SearchableSelect
+              options={state.characters
+                .filter(c => c.workId === state.activeWorkId && !event.characterActions?.[c.id])
+                .map(c => ({ id: c.id, title: c.name }))}
+              value={null}
+              onChange={(charId) => {
+                dispatch({ type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION', payload: { eventId: event.id, characterId: charId, action: '' } });
+              }}
+              placeholder="Search and add character..."
+            />
             <div className="space-y-2">
               {Object.entries(event.characterActions || {}).map(([charId, action]) => {
                 const character = state.characters.find(c => c.id === charId);
@@ -183,23 +172,26 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
                   </div>
                 );
               })}
-              <select
-                className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                defaultValue=""
-                onChange={(e) => {
-                  if (e.target.value) {
-                    dispatch({ type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION', payload: { eventId: event.id, characterId: e.target.value, action: '' } });
-                  }
-                }}
-              >
-                <option value="">Add Character...</option>
-                {state.characters
-                  .filter(c => c.workId === state.activeWorkId && !event.characterActions?.[c.id])
-                  .map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-              </select>
             </div>
+          </div>
+
+          {/* Linked Events */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block flex items-center">
+              <LinkIcon size={12} className="mr-1" /> Linked Events
+            </label>
+            <MultiSelectDropdown
+              options={allEvents.filter(e => e.id !== event.id).map(e => ({ id: e.id, title: e.title }))}
+              selectedIds={event.linkedEventIds || []}
+              onChange={(newIds) => {
+                const oldIds = event.linkedEventIds || [];
+                const addedIds = newIds.filter(id => !oldIds.includes(id));
+                const removedIds = oldIds.filter(id => !newIds.includes(id));
+                addedIds.forEach(id => dispatch({ type: 'TOGGLE_TIMELINE_EVENT_LINK', payload: { eventId: event.id, targetEventId: id } }));
+                removedIds.forEach(id => dispatch({ type: 'TOGGLE_TIMELINE_EVENT_LINK', payload: { eventId: event.id, targetEventId: id } }));
+              }}
+              placeholder="+ Link another event..."
+            />
           </div>
         </div>
       </div>

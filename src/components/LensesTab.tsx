@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/StoreContext';
 import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search, Pin } from 'lucide-react';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { cn } from '../lib/utils';
 
 const LENS_COLORS = {
@@ -554,43 +555,12 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                   {/* Linking */}
                   <div>
                     <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Linked Lenses</label>
-                    <div className="space-y-2">
-                      {lens.linkedLensIds?.map(linkedId => {
-                        const linkedLens = allLenses.find(l => l.id === linkedId);
-                        if (!linkedLens) return null;
-                        return (
-                          <div key={linkedId} className="flex items-center justify-between p-2 rounded-md border border-stone-200 bg-white text-sm">
-                            <span className="truncate flex-1 mr-2 text-stone-600 font-medium">{linkedLens.content}</span>
-                            <button 
-                              onClick={() => handleUpdateLens(lens.id, { linkedLensIds: lens.linkedLensIds?.filter(id => id !== linkedId) })}
-                              className="text-stone-400 hover:text-red-500 p-1"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                      
-                      <div className="relative mt-2">
-                        <select
-                          className="w-full p-2 text-sm border border-stone-200 rounded-md bg-stone-50 text-stone-600 outline-none focus:border-emerald-500 appearance-none"
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              const newLinks = [...(lens.linkedLensIds || []), e.target.value];
-                              handleUpdateLens(lens.id, { linkedLensIds: newLinks });
-                              e.target.value = '';
-                            }
-                          }}
-                          value=""
-                        >
-                          <option value="" disabled>+ Link another lens...</option>
-                          {allLenses.filter(l => l.id !== lens.id && !(lens.linkedLensIds || []).includes(l.id)).map(l => (
-                            <option key={l.id} value={l.id}>{l.content.substring(0, 40)}...</option>
-                          ))}
-                        </select>
-                        <Plus size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-                      </div>
-                    </div>
+                    <MultiSelectDropdown
+                      options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: l.content.substring(0, 40) + '...' }))}
+                      selectedIds={lens.linkedLensIds || []}
+                      onChange={(ids) => handleUpdateLens(lens.id, { linkedLensIds: ids })}
+                      placeholder="+ Link another lens..."
+                    />
                   </div>
                 </div>
               </>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store/StoreContext';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, MapPin, Maximize2, Minimize2 } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, MapPin, Maximize2, Minimize2, Tag } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
@@ -14,6 +14,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     { id: 'world', label: 'World', icon: Users },
     { id: 'deadline', label: 'Deadline', icon: Clock },
     { id: 'compile', label: 'Compile', icon: FileText },
+    { id: 'tags', label: 'Tags', icon: Tag },
   ] as const;
 
   return (

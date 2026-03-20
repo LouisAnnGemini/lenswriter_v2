@@ -8,6 +8,7 @@ import { BoardTab } from './components/BoardTab';
 import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
 import { CompileTab } from './components/CompileTab';
+import { TagsTab } from './components/TagsTab';
 import { Minimize2, MessageSquare, MessageSquareOff, EyeOff, Eye } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -33,7 +34,7 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-white relative">
       {!state.disguiseMode && <TopNav setMobileOpen={setMobileOpen} />}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {state.activeTab === 'writing' && (
           <>
             {!state.disguiseMode && <OutlinePanel setMobileOpen={setMobileOpen} />}
@@ -44,6 +45,7 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         {state.activeTab === 'world' && <WorldTab />}
         {state.activeTab === 'deadline' && <DeadlineTab />}
         {state.activeTab === 'compile' && <CompileTab />}
+        {state.activeTab === 'tags' && <TagsTab />}
       </div>
       
       {state.disguiseMode && (

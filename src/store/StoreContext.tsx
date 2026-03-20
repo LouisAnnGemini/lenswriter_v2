@@ -98,6 +98,7 @@ type Action =
   | { type: 'DELETE_BLOCK'; payload: string }
   | { type: 'ADD_CHARACTER'; payload: { workId: string; name: string } }
   | { type: 'UPDATE_CHARACTER'; payload: { id: string; name?: string; description?: string } }
+  | { type: 'DELETE_CHARACTER'; payload: string }
   | { type: 'REORDER_CHARACTERS'; payload: { workId: string; startIndex: number; endIndex: number } }
   | { type: 'REORDER_CHARACTER_FIELDS'; payload: { workId: string; startIndex: number; endIndex: number } }
   | { type: 'ADD_LOCATION'; payload: { workId: string; name: string } }
@@ -189,7 +190,6 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       const scenesToDelete = state.scenes.filter(s => chaptersToDelete.includes(s.chapterId)).map(s => s.id);
       const docsToDelete = [...chaptersToDelete, ...scenesToDelete];
       const blocksToDelete = state.blocks.filter(b => docsToDelete.includes(b.documentId)).map(b => b.id);
-      const deadlinesToDelete = (state.deadlines || []).filter(d => d.workId === workId).map(d => d.id);
 
       return {
         ...state,
@@ -197,6 +197,9 @@ function innerReducer(state: StoreState, action: Action): StoreState {
         chapters: state.chapters.filter(c => c.workId !== workId),
         scenes: state.scenes.filter(s => !chaptersToDelete.includes(s.chapterId)),
         characters: state.characters.filter(c => c.workId !== workId),
+        locations: state.locations.filter(l => l.workId !== workId),
+        tags: state.tags.filter(t => t.workId !== workId),
+        timelineEvents: state.timelineEvents.filter(e => e.workId !== workId),
         blocks: state.blocks.filter(b => !docsToDelete.includes(b.documentId)).map(b => {
           if (b.linkedLensIds && b.linkedLensIds.some(id => blocksToDelete.includes(id))) {
             return { ...b, linkedLensIds: b.linkedLensIds.filter(id => !blocksToDelete.includes(id)) };
@@ -782,6 +785,25 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       return {
         ...state,
         characters: state.characters.map(c => c.id === action.payload.id ? { ...c, ...action.payload } : c)
+      };
+    }
+    case 'DELETE_CHARACTER': {
+      const charId = action.payload;
+      return {
+        ...state,
+        characters: state.characters.filter(c => c.id !== charId),
+        scenes: state.scenes.map(s => ({
+          ...s,
+          characterIds: s.characterIds.filter(id => id !== charId)
+        })),
+        timelineEvents: state.timelineEvents.map(e => {
+          if (e.characterActions && charId in e.characterActions) {
+            const newActions = { ...e.characterActions };
+            delete newActions[charId];
+            return { ...e, characterActions: newActions };
+          }
+          return e;
+        })
       };
     }
     case 'REORDER_CHARACTERS': {

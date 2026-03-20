@@ -5,10 +5,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Calendar as CalendarIc
 
 export function DeadlineTab() {
   const { state, dispatch } = useStore();
-  const [currentDate, setCurrentDate] = useState(() => {
-    // Use the provided current local time: 2026-03-06T19:19:17-08:00
-    return new Date('2026-03-06T19:19:17-08:00');
-  });
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // State to track expanded works
   const [expandedWorks, setExpandedWorks] = useState<Record<string, boolean>>({});

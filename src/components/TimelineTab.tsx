@@ -17,11 +17,13 @@ import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 import { EventDetailsModal } from './EventDetailsModal';
 import { MontageBoard } from './MontageBoard';
 import { TagManagerModal } from './TagManagerModal';
+import { TagManagerTab } from './TagManagerTab';
 import { AddEventModal } from './AddEventModal';
+import { SearchableSelect } from './SearchableSelect';
 
 export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean, overrideViewMode?: 'chronology' | 'montage' }) {
   const { state, dispatch } = useStore();
-  const [viewMode, setViewMode] = useState<'chronology' | 'montage'>(overrideViewMode || 'chronology');
+  const [viewMode, setViewMode] = useState<'chronology' | 'montage' | 'tags'>(overrideViewMode || 'chronology');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
@@ -45,8 +47,8 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
 
   const filteredEvents = events.filter(e => {
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      if (!e.title.toLowerCase().includes(query) && !(e.description || '').toLowerCase().includes(query)) {
+      const query = (searchQuery || '').toLowerCase();
+      if (!(e.title || '').toLowerCase().includes(query) && !(e.description || '').toLowerCase().includes(query)) {
         return false;
       }
     }
@@ -58,7 +60,8 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
       if (!e.locationId || !selectedLocations.includes(e.locationId)) return false;
     }
     if (selectedColors.length > 0) {
-      if (!e.color || (!e.color && !selectedColors.includes('stone')) && !selectedColors.includes(e.color)) return false;
+      const color = e.color || 'stone';
+      if (!selectedColors.includes(color)) return false;
     }
     if (selectedTags.length > 0) {
       if (!e.tagIds || !selectedTags.some(t => e.tagIds!.includes(t))) return false;
@@ -119,9 +122,18 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
               <LayoutGrid size={16} className="mr-2" />
               Montage Board
             </button>
+            <button
+              onClick={() => setViewMode('tags')}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors",
+                viewMode === 'tags' ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 hover:text-stone-700"
+              )}
+            >
+              <TagIcon size={16} className="mr-2" />
+              Manage Tags
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="bg-stone-800 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center hover:bg-stone-700 transition-colors shadow-sm"
@@ -130,34 +142,28 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
             New Event
           </button>
         </div>
-      </div>
       
       {viewMode === 'chronology' ? (
         <div className="flex-1 overflow-y-auto p-6" ref={scrollContainerRef}>
           <div className="max-w-4xl mx-auto space-y-6">
-            
-            {/* Filter Bar */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-stone-200 space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                  <input
-                    type="text"
-                    placeholder="Search events by title or description..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-                <button
-                  onClick={() => setIsTagManagerOpen(true)}
-                  className="px-3 py-2 bg-stone-100 text-stone-700 rounded-md hover:bg-stone-200 text-sm font-medium flex items-center transition-colors shrink-0"
-                >
-                  <TagIcon size={16} className="mr-2" />
-                  Manage Tags
-                </button>
+            {/* Search and Filter UI - Now integrated into the content area */}
+            <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm space-y-4">
+              <div className="flex items-center space-x-2 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
+                <Search size={16} className="text-stone-400 shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search events by title or description..."
+                  className="text-sm font-medium bg-transparent border-none outline-none text-stone-600 w-full placeholder:text-stone-400"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="text-stone-400 hover:text-stone-600 p-1">
+                    <X size={14} />
+                  </button>
+                )}
               </div>
-              
+                
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
                   <Filter size={14} className="text-stone-400" />
@@ -166,74 +172,91 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
                 
                 {/* Characters Filter */}
                 <div className="relative group">
-                  <select
-                    className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none pr-8"
+                  <SearchableSelect
+                    options={characters
+                      .filter(c => !selectedCharacters.includes(c.id))
+                      .map(c => ({
+                        id: c.id,
+                        title: c.name,
+                      }))}
                     value=""
-                    onChange={(e) => {
-                      if (e.target.value && !selectedCharacters.includes(e.target.value)) {
-                        setSelectedCharacters([...selectedCharacters, e.target.value]);
+                    onChange={(value) => {
+                      if (value && !selectedCharacters.includes(value)) {
+                        setSelectedCharacters([...selectedCharacters, value]);
                       }
                     }}
-                  >
-                    <option value="">+ Character</option>
-                    {characters.map(c => (
-                      <option key={c.id} value={c.id} disabled={selectedCharacters.includes(c.id)}>{c.name}</option>
-                    ))}
-                  </select>
+                    placeholder="+ Character"
+                  />
                 </div>
 
                 {/* Locations Filter */}
                 <div className="relative group">
-                  <select
-                    className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none pr-8"
+                  <SearchableSelect
+                    options={locations
+                      .filter(l => !selectedLocations.includes(l.id))
+                      .map(l => ({
+                        id: l.id,
+                        title: l.name,
+                      }))}
                     value=""
-                    onChange={(e) => {
-                      if (e.target.value && !selectedLocations.includes(e.target.value)) {
-                        setSelectedLocations([...selectedLocations, e.target.value]);
+                    onChange={(value) => {
+                      if (value && !selectedLocations.includes(value)) {
+                        setSelectedLocations([...selectedLocations, value]);
                       }
                     }}
-                  >
-                    <option value="">+ Location</option>
-                    {locations.map(l => (
-                      <option key={l.id} value={l.id} disabled={selectedLocations.includes(l.id)}>{l.name}</option>
-                    ))}
-                  </select>
+                    placeholder="+ Location"
+                  />
                 </div>
 
-                {/* Colors Filter */}
+                {/* Colors Filter - Updated to show only color circles */}
                 <div className="relative group">
-                  <select
-                    className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none pr-8"
+                  <SearchableSelect
+                    options={Object.keys(EVENT_COLORS)
+                      .filter(color => !selectedColors.includes(color))
+                      .map(color => ({
+                        id: color,
+                        title: color.charAt(0).toUpperCase() + color.slice(1),
+                      }))}
                     value=""
-                    onChange={(e) => {
-                      if (e.target.value && !selectedColors.includes(e.target.value)) {
-                        setSelectedColors([...selectedColors, e.target.value]);
+                    onChange={(value) => {
+                      if (value && !selectedColors.includes(value)) {
+                        setSelectedColors([...selectedColors, value]);
                       }
                     }}
-                  >
-                    <option value="">+ Color</option>
-                    {Object.keys(EVENT_COLORS).map(color => (
-                      <option key={color} value={color} disabled={selectedColors.includes(color)}>{color}</option>
-                    ))}
-                  </select>
+                    placeholder="+ Color"
+                    renderOption={(opt) => (
+                      <div className="flex items-center justify-center p-1">
+                        <div className={cn(
+                          "w-5 h-5 rounded-full border border-black/10 shadow-sm",
+                          opt.id === 'stone' && "bg-stone-200",
+                          opt.id === 'red' && "bg-red-400",
+                          opt.id === 'blue' && "bg-blue-400",
+                          opt.id === 'green' && "bg-emerald-400",
+                          opt.id === 'yellow' && "bg-amber-400",
+                          opt.id === 'purple' && "bg-purple-400"
+                        )} title={opt.title} />
+                      </div>
+                    )}
+                  />
                 </div>
 
                 {/* Tags Filter */}
                 <div className="relative group">
-                  <select
-                    className="text-sm bg-stone-50 border border-stone-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none pr-8"
+                  <SearchableSelect
+                    options={tags
+                      .filter(t => !selectedTags.includes(t.id))
+                      .map(t => ({
+                        id: t.id,
+                        title: t.name,
+                      }))}
                     value=""
-                    onChange={(e) => {
-                      if (e.target.value && !selectedTags.includes(e.target.value)) {
-                        setSelectedTags([...selectedTags, e.target.value]);
+                    onChange={(value) => {
+                      if (value && !selectedTags.includes(value)) {
+                        setSelectedTags([...selectedTags, value]);
                       }
                     }}
-                  >
-                    <option value="">+ Tag</option>
-                    {tags.map(t => (
-                      <option key={t.id} value={t.id} disabled={selectedTags.includes(t.id)}>{t.name}</option>
-                    ))}
-                  </select>
+                    placeholder="+ Tag"
+                  />
                 </div>
               </div>
 
@@ -253,9 +276,17 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
                     </span>
                   ))}
                   {selectedColors.map(color => (
-                    <span key={`color-${color}`} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-stone-100 text-stone-700 text-xs font-medium">
-                      Color: {color}
-                      <button onClick={() => setSelectedColors(selectedColors.filter(c => c !== color))} className="hover:text-red-500"><X size={12} /></button>
+                    <span key={`color-${color}`} className="inline-flex items-center gap-1.5 px-1.5 py-1 rounded bg-stone-100 text-stone-700 text-xs font-medium border border-stone-200">
+                      <div className={cn(
+                        "w-3.5 h-3.5 rounded-full border border-black/10",
+                        color === 'stone' && "bg-stone-200",
+                        color === 'red' && "bg-red-400",
+                        color === 'blue' && "bg-blue-400",
+                        color === 'green' && "bg-emerald-400",
+                        color === 'yellow' && "bg-amber-400",
+                        color === 'purple' && "bg-purple-400"
+                      )} title={color.charAt(0).toUpperCase() + color.slice(1)} />
+                      <button onClick={() => setSelectedColors(selectedColors.filter(c => c !== color))} className="hover:text-red-500 ml-0.5"><X size={12} /></button>
                     </span>
                   ))}
                   {selectedTags.map(id => {
@@ -281,7 +312,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
                 </div>
               )}
             </div>
-
+            
             {/* Events List */}
             <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId="timeline">
@@ -452,10 +483,12 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
               <p className="text-sm mt-1">Add your first event above to start building your story's chronology.</p>
             </div>
           )}
+          </div>
         </div>
-      </div>
-      ) : (
+      ) : viewMode === 'montage' ? (
         <MontageBoard />
+      ) : (
+        <TagManagerTab />
       )}
       {selectedEventId && (
         <EventDetailsModal

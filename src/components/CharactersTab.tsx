@@ -193,13 +193,23 @@ export function CharactersTab() {
                 <ChevronLeft size={20} className="mr-1" />
                 Back to List
               </button>
-              <input
-                type="text"
-                value={activeChar.name || ''}
-                onChange={(e) => handleUpdateCharacter(activeChar.id, { name: e.target.value })}
-                className="w-full text-4xl font-serif font-semibold text-stone-900 mb-2 outline-none placeholder:text-stone-300 bg-transparent"
-                placeholder="Character Name..."
-              />
+              <div className="flex items-center justify-between mb-2">
+                <input
+                  type="text"
+                  value={activeChar.name || ''}
+                  onChange={(e) => handleUpdateCharacter(activeChar.id, { name: e.target.value })}
+                  className="flex-1 text-4xl font-serif font-semibold text-stone-900 outline-none placeholder:text-stone-300 bg-transparent"
+                  placeholder="Character Name..."
+                />
+                <ConfirmDeleteButton
+                  onConfirm={() => {
+                    dispatch({ type: 'DELETE_CHARACTER', payload: activeChar.id });
+                    setActiveCharId(null);
+                  }}
+                  className="ml-4"
+                  title="Delete Character"
+                />
+              </div>
               <div className="h-1 w-12 bg-emerald-500 rounded-full" />
             </div>
 
@@ -243,10 +253,10 @@ export function CharactersTab() {
                           {field.name}
                         </label>
                         {field.type === 'text' && (
-                          <textarea value={value || ''} onChange={e => dispatch({type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: {characterId: activeChar.id, fieldId: field.id, value: e.target.value}})} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 resize-y min-h-[42px] whitespace-normal break-words transition-all" rows={1} placeholder={`Enter ${field.name.toLowerCase()}...`} />
+                          <textarea value={value || ''} onChange={e => dispatch({type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: {characterId: activeChar.id, fieldId: field.id, value: e.target.value}})} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 resize-y min-h-[42px] whitespace-normal break-words transition-all" rows={1} placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
                         )}
                         {field.type === 'number' && (
-                          <input type="number" value={value || ''} onChange={e => dispatch({type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: {characterId: activeChar.id, fieldId: field.id, value: e.target.value ? Number(e.target.value) : ''}})} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 transition-all" placeholder={`Enter ${field.name.toLowerCase()}...`} />
+                          <input type="number" value={value || ''} onChange={e => dispatch({type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: {characterId: activeChar.id, fieldId: field.id, value: e.target.value ? Number(e.target.value) : ''}})} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 transition-all" placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
                         )}
                         {field.type === 'select' && (
                           <div className="flex flex-wrap gap-1.5 pt-1">

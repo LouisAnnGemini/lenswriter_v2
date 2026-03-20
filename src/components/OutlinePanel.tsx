@@ -16,7 +16,6 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
   const [viewMode, setViewMode] = useState<'outline' | 'default' | 'scenes'>('default');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   if (state.focusMode) return null;
@@ -26,7 +25,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
 
   const chapters = state.chapters.filter(c => c.workId === activeWorkId && (showArchived || !c.archived)).sort((a, b) => a.order - b.order);
   const scenes = state.scenes.filter(s => chapters.some(c => c.id === s.chapterId));
-  const isExpanded = !isCollapsed || isHovered;
+  const isExpanded = isHovered || !state.activeDocumentId;
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -101,23 +100,17 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
 
   return (
     <>
-      {/* Placeholder for layout when collapsed */}
-      <div className={cn(
-        "hidden md:block transition-all duration-300 shrink-0",
-        isCollapsed ? "w-12" : "w-0"
-      )} />
-      
       <div 
         className={cn(
-          "border-r border-stone-200 bg-stone-50/95 backdrop-blur-sm flex flex-col h-full transition-all duration-300 z-20 overflow-hidden",
+          "absolute left-0 top-0 bottom-0 z-40 flex transition-transform duration-300 ease-in-out",
           state.activeDocumentId ? "hidden md:flex" : "w-full",
-          isCollapsed ? "absolute left-0 top-0 bottom-0 shadow-xl md:shadow-none" : "relative",
-          isExpanded ? "w-72 shadow-xl md:shadow-none" : "w-12"
+          isExpanded ? "translate-x-0" : "-translate-x-[calc(100%-12px)]"
         )}
-        onMouseEnter={() => isCollapsed && setIsHovered(true)}
-        onMouseLeave={() => isCollapsed && setIsHovered(false)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <div className={cn("flex flex-col h-full w-72 transition-opacity duration-200", !isExpanded && "opacity-0 pointer-events-none")}>
+        <div className="w-full md:w-72 h-full border-r border-stone-200 bg-stone-50/95 backdrop-blur-sm flex flex-col shadow-xl overflow-hidden relative">
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-stone-300 rounded-l-md opacity-50" />
           <div className="p-4 border-b border-stone-200 flex items-center justify-between">
             <div className="flex bg-stone-200/50 p-1 rounded-lg flex-1 mr-2">
               {(['outline', 'default', 'scenes'] as const).map(mode => (
@@ -136,13 +129,6 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors"
-              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-            >
-              {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </button>
           </div>
 
       <div className="flex-1 overflow-y-auto p-3">
@@ -364,29 +350,9 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
           <Plus size={16} className="mr-2" />
           Add Chapter
         </button>
-        </div>
+      </div>
         </div>
       </div>
-      
-      {/* Collapsed state icons */}
-      {!isExpanded && (
-        <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col items-center py-4 border-r border-stone-200 bg-stone-50 z-10 pointer-events-none">
-          <button
-            onClick={() => setIsCollapsed(false)}
-            className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors pointer-events-auto mb-4"
-            title="Expand Sidebar"
-          >
-            <PanelLeftOpen size={18} />
-          </button>
-          <div className="flex-1 overflow-y-auto w-full flex flex-col items-center space-y-3 no-scrollbar">
-            {chapters.map(chapter => (
-              <div key={chapter.id} className="w-8 h-8 rounded-md bg-stone-200 flex items-center justify-center text-stone-500 shadow-sm" title={chapter.title}>
-                <Folder size={14} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </>
   );
 }

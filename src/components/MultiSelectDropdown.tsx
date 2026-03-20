@@ -24,7 +24,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   const [search, setSearch] = useState('');
 
   const filteredOptions = useMemo(() => 
-    options.filter(opt => opt.title.toLowerCase().includes(search.toLowerCase())),
+    options.filter(opt => (opt.title || '').toLowerCase().includes((search || '').toLowerCase())),
     [options, search]
   );
 
