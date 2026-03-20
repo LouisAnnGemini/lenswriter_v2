@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../store/StoreContext';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, MapPin } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, MapPin, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
@@ -60,6 +60,13 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         </div>
 
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_FOCUS_MODE' })}
+            className="p-2 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            title="Enter Focus Mode"
+          >
+            <Maximize2 size={20} />
+          </button>
         </div>
       </div>
 

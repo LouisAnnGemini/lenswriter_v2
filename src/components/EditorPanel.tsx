@@ -1132,13 +1132,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 {state.showDescriptions ? <MessageSquare size={16} /> : <MessageSquareOff size={16} />}
               </button>
               <button
-                onClick={() => dispatch({ type: 'TOGGLE_FOCUS_MODE' })}
-                className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md transition-colors"
-              >
-                <span>Focus Mode</span>
-                {state.focusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-              </button>
-              <button
                 onClick={() => dispatch({ type: 'TOGGLE_DISGUISE_MODE' })}
                 className="w-full flex items-center justify-between px-2 py-1.5 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-md transition-colors"
               >

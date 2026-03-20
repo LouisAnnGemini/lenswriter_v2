@@ -16,14 +16,19 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && state.disguiseMode) {
-        e.preventDefault();
-        dispatch({ type: 'TOGGLE_DISGUISE_MODE' });
+      if (e.key === 'Escape') {
+        if (state.disguiseMode) {
+          e.preventDefault();
+          dispatch({ type: 'TOGGLE_DISGUISE_MODE' });
+        } else if (state.focusMode) {
+          e.preventDefault();
+          dispatch({ type: 'TOGGLE_FOCUS_MODE' });
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.disguiseMode, dispatch]);
+  }, [state.disguiseMode, state.focusMode, dispatch]);
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-white relative">
@@ -49,6 +54,18 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
             title="Exit Disguise Mode"
           >
             <EyeOff size={20} />
+          </button>
+        </div>
+      )}
+
+      {state.focusMode && !state.disguiseMode && (
+        <div className="fixed top-0 right-0 w-32 h-32 z-50 flex items-start justify-end p-6 opacity-0 hover:opacity-100 transition-opacity duration-300">
+          <button
+            onClick={() => dispatch({ type: 'TOGGLE_FOCUS_MODE' })}
+            className="p-3 bg-stone-900/80 text-white rounded-full shadow-lg backdrop-blur-sm hover:bg-stone-900 transition-colors"
+            title="Exit Focus Mode (Esc)"
+          >
+            <Minimize2 size={24} />
           </button>
         </div>
       )}
