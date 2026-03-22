@@ -3,7 +3,7 @@ import { useStore, Scene } from '../store/StoreContext';
 import { countWords, cn } from '../lib/utils';
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Calendar as CalendarIcon, Target, BookOpen, ChevronDown, ChevronRight as ChevronRightIcon, X } from 'lucide-react';
 
-export function DeadlineTab() {
+export function DeadlineTab({ workId }: { workId?: string }) {
   const { state, dispatch } = useStore();
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -33,7 +33,7 @@ export function DeadlineTab() {
 
   // Word count calculations
   const getDocumentWordCount = (docId: string) => {
-    const blocks = state.blocks.filter(b => b.documentId === docId && (b.type === 'text' || b.type === 'lens'));
+    const blocks = state.blocks.filter(b => b.documentId === docId && (!b.isLens));
     return blocks.reduce((sum, b) => sum + countWords(b.content), 0);
   };
 
@@ -66,11 +66,14 @@ export function DeadlineTab() {
   // Get all chapters and scenes across all works that have a goal set and are not completed
   const todoTasks = useMemo(() => {
     const chapterTasks = state.chapters
-      .filter(c => c.goalWordCount && !c.completed && !c.deadline)
+      .filter(c => (!workId || c.workId === workId) && c.goalWordCount && !c.completed && !c.deadline)
       .map(c => ({ ...c, type: 'chapter' as const }));
 
     const sceneTasks = state.scenes
-      .filter(s => s.goalWordCount && !isSceneCompleted(s) && !s.deadline)
+      .filter(s => {
+        const chapter = state.chapters.find(c => c.id === s.chapterId);
+        return (!workId || chapter?.workId === workId) && s.goalWordCount && !isSceneCompleted(s) && !s.deadline;
+      })
       .map(s => ({ ...s, type: 'scene' as const }));
 
     return [...chapterTasks, ...sceneTasks].sort((a, b) => {
@@ -85,7 +88,7 @@ export function DeadlineTab() {
       }
       return a.order - b.order;
     });
-  }, [state.chapters, state.scenes, state.works]);
+  }, [state.chapters, state.scenes, state.works, workId]);
 
   const handleUpdateGoal = (id: string, type: 'chapter' | 'scene', goalWordCount: number | undefined) => {
     if (type === 'chapter') {
@@ -122,10 +125,12 @@ export function DeadlineTab() {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  const filteredWorks = workId ? state.works.filter(w => w.id === workId) : state.works;
+
   return (
     <div className="flex-1 flex overflow-hidden bg-stone-50">
       {/* Left Panel: Projects, Chapters, and To-Do */}
-      <div className="w-1/3 min-w-[300px] border-r border-stone-200 bg-white flex flex-col h-full overflow-y-auto">
+      <div className="w-1/4 min-w-[280px] border-r border-stone-200 bg-white flex flex-col h-full overflow-y-auto">
         <div className="p-4 border-b border-stone-200">
           <h2 className="text-lg font-serif font-semibold text-stone-800 flex items-center">
             <Target className="mr-2 text-emerald-600" size={20} />
@@ -186,7 +191,7 @@ export function DeadlineTab() {
 
           {/* Projects and Chapters */}
           <div className="space-y-6">
-            {[...state.works].sort((a, b) => a.order - b.order).map(work => {
+            {[...filteredWorks].sort((a, b) => a.order - b.order).map(work => {
               const workTotalWords = getWorkWordCount(work.id);
               const chapters = state.chapters
                 .filter(c => c.workId === work.id)
@@ -203,26 +208,38 @@ export function DeadlineTab() {
 
               return (
                 <div key={work.id} className="space-y-3">
-                  <div 
-                    className="flex items-center justify-between pb-2 border-b border-stone-100 cursor-pointer hover:bg-stone-50 p-1 -mx-1 rounded"
-                    onClick={() => toggleWorkExpanded(work.id)}
-                  >
-                    <h3 className="font-semibold text-stone-800 flex items-center">
-                      {isExpanded ? (
-                        <ChevronDown size={16} className="mr-1 text-stone-400" />
-                      ) : (
-                        <ChevronRightIcon size={16} className="mr-1 text-stone-400" />
-                      )}
-                      <BookOpen size={16} className="mr-2 text-stone-400" />
-                      {work.title}
-                    </h3>
-                    <span className="text-xs font-medium bg-stone-100 text-stone-600 px-2 py-1 rounded-full">
-                      {workTotalWords} words
-                    </span>
-                  </div>
+                  {!workId ? (
+                    <div 
+                      className="flex items-center justify-between pb-2 border-b border-stone-100 cursor-pointer hover:bg-stone-50 p-1 -mx-1 rounded"
+                      onClick={() => {
+                        dispatch({ type: 'SET_ACTIVE_WORK', payload: work.id });
+                        dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'local' });
+                      }}
+                    >
+                      <h3 className="font-semibold text-stone-800 flex items-center">
+                        {isExpanded ? (
+                          <ChevronDown size={16} className="mr-1 text-stone-400" />
+                        ) : (
+                          <ChevronRightIcon size={16} className="mr-1 text-stone-400" />
+                        )}
+                        <BookOpen size={16} className="mr-2 text-stone-400" />
+                        {work.title}
+                      </h3>
+                      <span className="text-xs font-medium bg-stone-100 text-stone-600 px-2 py-1 rounded-full">
+                        {workTotalWords} words
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between pb-2 border-b border-stone-100 p-1 -mx-1">
+                      <span className="text-sm font-semibold text-stone-800">Total Count</span>
+                      <span className="text-xs font-medium bg-stone-100 text-stone-600 px-2 py-1 rounded-full">
+                        {workTotalWords} words
+                      </span>
+                    </div>
+                  )}
 
-                  {isExpanded && (
-                    <div className="space-y-4 pl-2">
+                  {(isExpanded || !!workId) && (
+                    <div className={cn("space-y-4", !workId && "pl-2")}>
                       {chapters.map(chapter => {
                         const chapterWords = getChapterWordCount(chapter.id);
                         const chapterScenes = state.scenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order);
@@ -331,8 +348,8 @@ export function DeadlineTab() {
       </div>
 
       {/* Right Panel: Calendar */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-stone-100 p-6">
-        <div className="bg-white rounded-xl shadow-sm border border-stone-200 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-stone-100 p-2">
+        <div className="bg-white rounded-lg shadow-sm border border-stone-200 flex flex-col h-full overflow-hidden">
           {/* Calendar Header */}
           <div className="flex items-center justify-between p-4 border-b border-stone-200">
             <h2 className="text-xl font-serif font-semibold text-stone-800">
@@ -363,7 +380,7 @@ export function DeadlineTab() {
             </div>
 
             {/* Days */}
-            <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto">
+            <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-hidden">
               {Array.from({ length: firstDayOfMonth }).map((_, i) => (
                 <div key={`empty-${i}`} className="border-b border-r border-stone-100 bg-stone-50/50" />
               ))}
@@ -401,7 +418,7 @@ export function DeadlineTab() {
                     onDrop={(e) => handleDrop(e, dateString)}
                     onDragOver={handleDragOver}
                     className={cn(
-                      "border-b border-r border-stone-200 p-1.5 flex flex-col transition-colors min-h-[100px]",
+                      "border-b border-r border-stone-200 p-1 flex flex-col transition-colors min-h-0",
                       isWeekend ? "bg-stone-50/80" : "bg-white",
                       isToday && "ring-2 ring-inset ring-emerald-500/50"
                     )}

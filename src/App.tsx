@@ -8,7 +8,6 @@ import { BoardTab } from './components/BoardTab';
 import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
 import { CompileTab } from './components/CompileTab';
-import { TagsTab } from './components/TagsTab';
 import { Minimize2, MessageSquare, MessageSquareOff, EyeOff, Eye } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -43,9 +42,10 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         )}
         {state.activeTab === 'board' && <BoardTab />}
         {state.activeTab === 'world' && <WorldTab />}
-        {state.activeTab === 'deadline' && <DeadlineTab />}
+        {state.activeTab === 'deadline' && (
+          <DeadlineTab workId={state.deadlineViewMode === 'local' ? (state.activeWorkId || undefined) : undefined} />
+        )}
         {state.activeTab === 'compile' && <CompileTab />}
-        {state.activeTab === 'tags' && <TagsTab />}
       </div>
       
       {state.disguiseMode && (

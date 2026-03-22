@@ -5,7 +5,7 @@ export type Work = { id: string; title: string; createdAt: number; order: number
 export type Character = { id: string; workId: string; name: string; description: string; order: number; customFields?: Record<string, any> };
 export type Chapter = { id: string; workId: string; title: string; order: number; goalWordCount?: number; deadline?: string; completed?: boolean; archived?: boolean };
 export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; statusColor?: string; linkedEventIds?: string[]; goalWordCount?: number; deadline?: string };
-export type Block = { id: string; documentId: string; type: 'text' | 'lens'; content: string; color?: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean };
+export type Block = { id: string; documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; content: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean };
 
 export type Location = { id: string; workId: string; name: string; description: string; order: number };
 
@@ -55,6 +55,8 @@ export type StoreState = {
   activeWorkId: string | null;
   activeDocumentId: string | null;
   activeTab: 'writing' | 'board' | 'world' | 'deadline' | 'compile';
+  deadlineViewMode: 'global' | 'local';
+  boardViewMode: 'micro' | 'meso' | 'macro';
   activeLensId: string | null;
   focusMode: boolean;
   disguiseMode: boolean;
@@ -75,6 +77,8 @@ type Action =
   | { type: 'SET_ACTIVE_WORK'; payload: string }
   | { type: 'SET_ACTIVE_DOCUMENT'; payload: string | null }
   | { type: 'SET_ACTIVE_TAB'; payload: 'writing' | 'board' | 'world' | 'deadline' | 'compile' }
+  | { type: 'SET_DEADLINE_VIEW_MODE'; payload: 'global' | 'local' }
+  | { type: 'SET_BOARD_VIEW_MODE'; payload: 'micro' | 'meso' | 'macro' }
   | { type: 'SET_ACTIVE_LENS'; payload: string | null }
   | { type: 'TOGGLE_FOCUS_MODE' }
   | { type: 'TOGGLE_DISGUISE_MODE' }
@@ -92,8 +96,8 @@ type Action =
   | { type: 'TOGGLE_SCENE_CHARACTER'; payload: { sceneId: string; characterId: string } }
   | { type: 'TOGGLE_SCENE_EVENT'; payload: { sceneId: string; eventId: string } }
   | { type: 'REORDER_SCENE_EVENTS'; payload: { sceneId: string; startIndex: number; endIndex: number } }
-  | { type: 'ADD_BLOCK'; payload: { documentId: string; type: 'text' | 'lens'; afterBlockId?: string; color?: string; notes?: string; } }
-  | { type: 'UPDATE_BLOCK'; payload: { id: string; content?: string; type?: 'text' | 'lens'; color?: string; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean } }
+  | { type: 'ADD_BLOCK'; payload: { documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; afterBlockId?: string; notes?: string; } }
+  | { type: 'UPDATE_BLOCK'; payload: { id: string; content?: string; type?: 'text'; isLens?: boolean; lensColor?: string; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean } }
   | { type: 'REMOVE_LENS'; payload: string }
   | { type: 'DELETE_BLOCK'; payload: string }
   | { type: 'ADD_CHARACTER'; payload: { workId: string; name: string } }
@@ -155,7 +159,7 @@ const initialState: StoreState = {
   ],
   blocks: [
     { id: initialBlockId1, documentId: initialSceneId, type: 'text', content: 'The rain poured relentlessly over the neon-lit streets of Neo-Veridia. Elias stood over the body, his coat heavy with water.', order: 0 },
-    { id: initialBlockId2, documentId: initialSceneId, type: 'lens', content: 'The victim held a small, silver locket tightly in their left hand. It bore the insignia of the old regime.', color: 'red', order: 1, notes: 'Crucial evidence. Connects to the mayor.', linkedLensIds: [] },
+    { id: initialBlockId2, documentId: initialSceneId, type: 'text', isLens: true, lensColor: 'red', content: 'The victim held a small, silver locket tightly in their left hand. It bore the insignia of the old regime.', order: 1, notes: 'Crucial evidence. Connects to the mayor.', linkedLensIds: [] },
     { id: uuidv4(), documentId: initialSceneId, type: 'text', content: 'He sighed, knowing this case would be unlike any other.', order: 2 }
   ],
   deadlines: [
@@ -164,6 +168,8 @@ const initialState: StoreState = {
   activeWorkId: initialWorkId,
   activeDocumentId: initialSceneId,
   activeTab: 'writing',
+  deadlineViewMode: 'local',
+  boardViewMode: 'meso',
   activeLensId: null,
   focusMode: false,
   disguiseMode: false,
@@ -245,6 +251,10 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       return { ...state, activeDocumentId: action.payload };
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.payload };
+    case 'SET_DEADLINE_VIEW_MODE':
+      return { ...state, deadlineViewMode: action.payload };
+    case 'SET_BOARD_VIEW_MODE':
+      return { ...state, boardViewMode: action.payload };
     case 'SET_ACTIVE_LENS':
       return { ...state, activeLensId: action.payload };
     case 'TOGGLE_FOCUS_MODE':
@@ -645,14 +655,15 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       };
     }
     case 'ADD_BLOCK': {
-      const { documentId, type, afterBlockId, color, notes } = action.payload;
+      const { documentId, type, isLens, lensColor, afterBlockId, notes } = action.payload;
       const docBlocks = state.blocks.filter(b => b.documentId === documentId).sort((a, b) => a.order - b.order);
       const newBlock: Block = {
         id: uuidv4(),
         documentId,
         type,
+        isLens: isLens,
+        lensColor: lensColor,
         content: '',
-        color: color || (type === 'lens' ? 'red' : undefined),
         notes: notes,
         order: 0
       };
@@ -679,9 +690,6 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       
       const applyUpdates = (block: Block) => {
         const newBlock = { ...block, ...updates };
-        if (updates.type === 'lens' && block.type === 'text' && !updates.color && !block.color) {
-            newBlock.color = 'red';
-        }
         return newBlock;
       };
 
@@ -742,7 +750,7 @@ function innerReducer(state: StoreState, action: Action): StoreState {
         ...state,
         blocks: state.blocks.map(b => {
           if (b.id === action.payload) {
-            return { ...b, type: 'text', color: undefined, notes: undefined, linkedLensIds: undefined };
+            return { ...b, isLens: false, lensColor: undefined, linkedLensIds: undefined };
           }
           if (b.linkedLensIds?.includes(action.payload)) {
             return { ...b, linkedLensIds: b.linkedLensIds.filter(id => id !== action.payload) };
@@ -988,6 +996,17 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
+        
+        // Migration: Convert type: 'lens' to type: 'text', isLens: true
+        if (parsed.blocks) {
+          parsed.blocks = parsed.blocks.map((b: any) => {
+            if (b.type === 'lens') {
+              return { ...b, type: 'text', isLens: true, lensColor: b.color || 'red' };
+            }
+            return b;
+          });
+        }
+
         return {
           ...initial,
           ...parsed,

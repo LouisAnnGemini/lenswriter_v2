@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/StoreContext';
-import { Highlighter, Plus, X, Search } from 'lucide-react';
+import { Highlighter, Plus, X, Search, ArrowLeft, Link as LinkIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const LENS_COLORS = {
@@ -13,28 +13,51 @@ const LENS_COLORS = {
   black: 'bg-stone-900 border-stone-700 text-stone-100',
 };
 
-export function LensesPanel({ documentId, onClose }: { documentId: string, onClose: () => void }) {
+function LensNoteTextarea({ lens, dispatch }: { lens: any, dispatch: any }) {
+  return (
+    <textarea
+      value={lens.notes || ''}
+      onChange={(e) => {
+        dispatch({ type: 'UPDATE_BLOCK', payload: { id: lens.id, notes: e.target.value } });
+      }}
+      placeholder="Add private notes, lore, or ideas here..."
+      className="w-full h-24 p-2 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm text-stone-700"
+    />
+  );
+}
+
+export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { documentId: string, onClose: () => void, onNavigateToBlock: (blockId: string) => void }) {
   const { state, dispatch } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedLensId, setExpandedLensId] = useState<string | null>(null);
+  const lensRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+
+  React.useEffect(() => {
+    if (state.activeLensId && lensRefs.current[state.activeLensId]) {
+      lensRefs.current[state.activeLensId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [state.activeLensId]);
 
   const activeWorkId = state.activeWorkId;
   const workChapters = state.chapters.filter(c => c.workId === activeWorkId);
   const workScenes = state.scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
   const documentIds = [...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
   
-  const allLenses = state.blocks.filter(b => b.type === 'lens' && documentIds.includes(b.documentId));
+  const allLenses = state.blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
   
-  const filteredLenses = allLenses.filter(l => 
-    l.notes && l.notes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLenses = allLenses.filter(l => {
+    if (!searchTerm) return true;
+    return l.notes && l.notes.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const handleAddLens = (color: string) => {
     dispatch({
       type: 'ADD_BLOCK',
       payload: {
         documentId,
-        type: 'lens',
-        color: color,
+        type: 'text',
+        isLens: true,
+        lensColor: color,
         notes: ''
       }
     });
@@ -80,13 +103,67 @@ export function LensesPanel({ documentId, onClose }: { documentId: string, onClo
           filteredLenses.map(lens => (
             <div 
               key={lens.id} 
+              ref={el => lensRefs.current[lens.id] = el}
               className={cn(
-                "p-3 rounded-lg border text-sm shadow-sm",
-                LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.black
+                "p-3 rounded-lg border text-sm shadow-sm transition-colors",
+                LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.black,
+                state.activeLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-1"
               )}
             >
-              <div className="font-medium mb-1">{lens.notes || 'Untitled Lens'}</div>
-              <div className="text-xs opacity-70 line-clamp-2">{lens.content}</div>
+              <div className="flex justify-between items-start">
+                <div className="text-sm font-medium mb-1 flex-1 cursor-pointer line-clamp-2" onClick={() => setExpandedLensId(expandedLensId === lens.id ? null : lens.id)}>
+                  {lens.content}
+                </div>
+                <div className="flex items-center ml-2">
+                  <button
+                    onClick={() => onNavigateToBlock(lens.id)}
+                    className="p-1 hover:bg-black/5 rounded transition-colors"
+                    title="Jump to Text"
+                  >
+                    <ArrowLeft size={14} />
+                  </button>
+                </div>
+              </div>
+              
+              {expandedLensId === lens.id && (
+                <div className="mt-3 pt-3 border-t border-black/10 space-y-3">
+                  <LensNoteTextarea lens={lens} dispatch={dispatch} />
+                  
+                  {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {lens.linkedLensIds.map((linkedId: string) => {
+                        const linkedLens = state.blocks.find((b: any) => b.id === linkedId);
+                        if (!linkedLens) return null;
+                        return (
+                          <button
+                            key={linkedId}
+                            onClick={() => onNavigateToBlock(linkedId)}
+                            className={cn(
+                              "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
+                              lens.lensColor === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                            )}
+                          >
+                            <LinkIcon size={10} className="mr-1 shrink-0" />
+                            <span className="truncate max-w-[200px]">
+                              {linkedLens.lensColor === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="flex justify-end pt-2">
+                    <button 
+                      onClick={() => dispatch({ type: 'REMOVE_LENS', payload: lens.id })}
+                      className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                      title="Remove Lens (keep text)"
+                    >
+                      Remove Lens
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))
         )}

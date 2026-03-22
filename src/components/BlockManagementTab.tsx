@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/StoreContext';
-import { AlignLeft, Search, CheckCircle2, Circle, ChevronRight, ChevronDown, Folder, FileText } from 'lucide-react';
+import { AlignLeft, Search, CheckCircle2, Circle, ChevronRight, ChevronDown, Folder, FileText, ExternalLink } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function BlockManagementTab() {
@@ -15,13 +15,20 @@ export function BlockManagementTab() {
   const workScenes = state.scenes.filter(s => workChapters.some(c => c.id === s.chapterId)).sort((a, b) => a.order - b.order);
   
   const allBlocks = state.blocks.filter(b => 
-    b.type === 'text' && 
     (workChapters.some(c => c.id === b.documentId) || workScenes.some(s => s.id === b.documentId))
   );
 
   const filteredBlocks = allBlocks.filter(b => {
     // Filter by document
-    if (selectedDocId && b.documentId !== selectedDocId) return false;
+    if (selectedDocId) {
+      const isChapter = workChapters.some(c => c.id === selectedDocId);
+      if (isChapter) {
+        const childSceneIds = workScenes.filter(s => s.chapterId === selectedDocId).map(s => s.id);
+        if (b.documentId !== selectedDocId && !childSceneIds.includes(b.documentId)) return false;
+      } else if (b.documentId !== selectedDocId) {
+        return false;
+      }
+    }
     
     // Filter by search
     if (!searchTerm) return true;
@@ -143,16 +150,36 @@ export function BlockManagementTab() {
                             value={block.description || ''}
                             onChange={(e) => dispatch({ type: 'UPDATE_BLOCK', payload: { id: block.id, description: e.target.value } })}
                             placeholder="Add a description for this block..."
-                            className="w-full bg-transparent border-none outline-none resize-none text-stone-900 font-medium placeholder:text-stone-400 focus:ring-0 p-0"
-                            rows={1}
+                            className="w-full bg-transparent border-none outline-none resize-none text-stone-900 font-medium placeholder:text-stone-400 focus:ring-0 p-0 whitespace-pre-wrap"
+                            rows={2}
                             onInput={(e) => {
                               const target = e.target as HTMLTextAreaElement;
                               target.style.height = 'auto';
                               target.style.height = `${target.scrollHeight}px`;
                             }}
                           />
-                          <div className="text-sm text-stone-500 line-clamp-2 bg-stone-50 p-2 rounded border border-stone-100">
-                            {block.content || <span className="italic text-stone-400">Empty block</span>}
+                          <div className="text-sm text-stone-500 bg-stone-50 p-2 rounded border border-stone-100 flex items-start gap-2 group/block">
+                            <div className="flex-1 line-clamp-2">
+                              {block.content || <span className="italic text-stone-400">Empty block</span>}
+                            </div>
+                            <button
+                              onClick={() => {
+                                dispatch({ type: 'SET_ACTIVE_TAB', payload: 'writing' });
+                                dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: block.documentId });
+                                setTimeout(() => {
+                                  const el = document.getElementById(`block-${block.id}`);
+                                  if (el) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md');
+                                    setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md'), 2000);
+                                  }
+                                }, 100);
+                              }}
+                              className="p-1 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors shrink-0 opacity-0 group-hover/block:opacity-100"
+                              title="Jump to block in editor"
+                            >
+                              <ExternalLink size={16} />
+                            </button>
                           </div>
                         </div>
                       </div>

@@ -116,6 +116,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
           <button
             onClick={() => {
               dispatch({ type: 'SET_ACTIVE_TAB', payload: 'deadline' });
+              dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'global' });
               setMobileOpen?.(false);
             }}
             className={cn(
@@ -163,6 +164,9 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                           className="flex-1 flex items-center min-w-0 cursor-pointer"
                           onClick={() => {
                             dispatch({ type: 'SET_ACTIVE_WORK', payload: work.id });
+                            if (state.activeTab === 'deadline' && state.deadlineViewMode === 'global') {
+                              dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'local' });
+                            }
                             setMobileOpen?.(false);
                           }}
                         >

@@ -50,11 +50,11 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   const workScenes = state.scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
   const documentIds = [...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
   
-  let allLenses = state.blocks.filter(b => b.type === 'lens' && documentIds.includes(b.documentId));
+  let allLenses = state.blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
   
   // Apply filters
   if (filterColors.length > 0) {
-    allLenses = allLenses.filter(l => filterColors.includes(l.color));
+    allLenses = allLenses.filter(l => l.lensColor && filterColors.includes(l.lensColor));
   }
 
   if (filterChapterIds.length > 0) {
@@ -268,7 +268,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       id={`lens-card-${lens.id}`}
                       className={cn(
                         "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
-                        LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                        LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
                         selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
                       )}
                       onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id })}
@@ -303,7 +303,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       </div>
                       
                       <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
-                        {lens.color === 'black' ? (
+                        {lens.lensColor === 'black' ? (
                           <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
                         ) : (
                           lens.content || <span className="italic opacity-50">Empty lens...</span>
@@ -331,12 +331,12 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                                 }}
                                 className={cn(
                                   "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
-                                  lens.color === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                                  lens.lensColor === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
                                 )}
                               >
                                 <LinkIcon size={10} className="mr-1 shrink-0" />
                                 <span className="truncate max-w-[150px]">
-                                  {linkedLens.color === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                                  {linkedLens.lensColor === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
                                 </span>
                               </button>
                             );
@@ -375,7 +375,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     id={`lens-card-${lens.id}`}
                     className={cn(
                       "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
-                      LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                      LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
                       selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
                     )}
                     onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id })}
@@ -410,7 +410,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     </div>
                     
                     <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
-                      {lens.color === 'black' ? (
+                      {lens.lensColor === 'black' ? (
                         <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
                       ) : (
                         lens.content || <span className="italic opacity-50">Empty lens...</span>
@@ -438,12 +438,12 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                               }}
                               className={cn(
                                 "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
-                                lens.color === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                                lens.lensColor === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
                               )}
                             >
                               <LinkIcon size={10} className="mr-1 shrink-0" />
                               <span className="truncate max-w-[150px]">
-                                {linkedLens.color === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                                {linkedLens.lensColor === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
                               </span>
                             </button>
                           );
@@ -505,7 +505,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       {Object.keys(LENS_COLORS).map(color => (
                         <button
                           key={color}
-                          onClick={() => handleUpdateLens(lens.id, { color })}
+                          onClick={() => handleUpdateLens(lens.id, { lensColor: color })}
                           className={cn(
                             "w-6 h-6 rounded-full border border-black/10 transition-transform hover:scale-110",
                             color === 'red' && "bg-red-400",
@@ -515,7 +515,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                             color === 'purple' && "bg-purple-400",
                             color === 'brown' && "bg-orange-400",
                             color === 'black' && "bg-stone-900",
-                            lens.color === color && "ring-2 ring-offset-2 ring-stone-400"
+                            lens.lensColor === color && "ring-2 ring-offset-2 ring-stone-400"
                           )}
                           title={color.charAt(0).toUpperCase() + color.slice(1)}
                         />
@@ -529,11 +529,11 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     <textarea
                       value={lens.content || ''}
                       onChange={(e) => handleUpdateLens(lens.id, { content: e.target.value })}
-                      placeholder={lens.color === 'black' ? "Hidden content..." : "Enter lens content..."}
+                      placeholder={lens.lensColor === 'black' ? "Hidden content..." : "Enter lens content..."}
                       className={cn(
                         "w-full h-48 p-4 rounded-lg border resize-none outline-none text-base md:text-sm font-medium leading-relaxed shadow-inner transition-colors",
-                        LENS_COLORS[lens.color as keyof typeof LENS_COLORS] || LENS_COLORS.red,
-                        lens.color === 'black' ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : "focus:ring-2 focus:ring-emerald-500/20"
+                        LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                        lens.lensColor === 'black' ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : "focus:ring-2 focus:ring-emerald-500/20"
                       )}
                     />
                   </div>
