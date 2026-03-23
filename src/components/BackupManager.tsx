@@ -24,6 +24,10 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   const [cloudHistory, setCloudHistory] = useState<Array<{id: string, timestamp: number}>>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [confirmRestoreId, setConfirmRestoreId] = useState<string | null>(null);
+  
+  // Initial Sync Prompt State
+  const [syncPrompt, setSyncPrompt] = useState<{ cloudState: any, localDate: number, cloudDate: number } | null>(null);
+  const [isCheckingCloud, setIsCheckingCloud] = useState(false);
 
   // Supabase Config State
   const [tempUrl, setTempUrl] = useState(() => {
@@ -39,6 +43,56 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
 
   const handleSaveConfig = () => {
     updateSupabaseConfig(tempUrl, tempKey);
+  };
+
+  const handleToggleSync = async () => {
+    if (state.supabaseSyncEnabled) {
+      dispatch({ type: 'TOGGLE_SUPABASE_SYNC' });
+      return;
+    }
+
+    if (!supabase) return;
+
+    setIsCheckingCloud(true);
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state')
+        .eq('id', '00000000-0000-0000-0000-000000000000')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw error;
+      }
+
+      if (data && data.state) {
+        // Cloud data exists, prompt user
+        setSyncPrompt({
+          cloudState: data.state,
+          localDate: state.lastModified,
+          cloudDate: data.state.lastModified || 0
+        });
+      } else {
+        // No cloud data, just enable
+        dispatch({ type: 'TOGGLE_SUPABASE_SYNC' });
+      }
+    } catch (err) {
+      console.error("Error checking cloud state", err);
+      alert("Failed to check cloud state. Please check your Supabase configuration.");
+    } finally {
+      setIsCheckingCloud(false);
+    }
+  };
+
+  const handleSyncChoice = (choice: 'local' | 'cloud') => {
+    if (!syncPrompt) return;
+
+    if (choice === 'cloud') {
+      dispatch({ type: 'IMPORT_DATA', payload: syncPrompt.cloudState });
+    }
+    
+    dispatch({ type: 'TOGGLE_SUPABASE_SYNC' });
+    setSyncPrompt(null);
   };
 
   const handlePullFromSupabase = async () => {
@@ -261,12 +315,12 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     Supabase Cloud Sync
                   </div>
                   <button
-                    onClick={() => dispatch({ type: 'TOGGLE_SUPABASE_SYNC' })}
-                    disabled={!supabase}
+                    onClick={handleToggleSync}
+                    disabled={!supabase || isCheckingCloud}
                     className={cn(
                       "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
                       state.supabaseSyncEnabled ? "bg-blue-500" : "bg-stone-200",
-                      !supabase && "opacity-50 cursor-not-allowed"
+                      (!supabase || isCheckingCloud) && "opacity-50 cursor-not-allowed"
                     )}
                   >
                     <span
@@ -278,6 +332,39 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                   </button>
                 </div>
                 
+                {syncPrompt && (
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="text-sm font-medium text-blue-900">Cloud Data Found</div>
+                    <div className="text-xs text-blue-800">
+                      We found existing data in the cloud. How would you like to initialize sync?
+                    </div>
+                    <div className="text-[10px] text-blue-700 space-y-1">
+                      <div>Local last modified: {new Date(syncPrompt.localDate).toLocaleString()}</div>
+                      <div>Cloud last modified: {new Date(syncPrompt.cloudDate).toLocaleString()}</div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => handleSyncChoice('cloud')}
+                        className="flex-1 px-3 py-2 bg-white border border-blue-200 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-50 transition-colors"
+                      >
+                        Use Cloud Data
+                      </button>
+                      <button
+                        onClick={() => handleSyncChoice('local')}
+                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Keep Local Data
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setSyncPrompt(null)}
+                      className="w-full px-3 py-1.5 bg-transparent text-blue-600 hover:text-blue-800 text-xs text-center"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Supabase URL</label>
