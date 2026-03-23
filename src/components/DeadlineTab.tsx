@@ -128,7 +128,10 @@ export function DeadlineTab({ workId }: { workId?: string }) {
   const filteredWorks = workId ? state.works.filter(w => w.id === workId) : state.works;
 
   return (
-    <div className="flex-1 flex overflow-hidden bg-stone-50">
+    <div className={cn(
+      "flex-1 flex overflow-hidden bg-stone-50",
+      "pb-16 md:pb-0" // Space for mobile bottom nav
+    )}>
       {/* Left Panel: Projects, Chapters, and To-Do */}
       <div className="w-1/4 min-w-[280px] border-r border-stone-200 bg-white flex flex-col h-full overflow-y-auto">
         <div className="p-4 border-b border-stone-200">

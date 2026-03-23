@@ -69,7 +69,7 @@ export function TagManagerModal({ onClose }: TagManagerModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center p-6 border-b border-stone-100 shrink-0">
           <h3 className="text-xl font-bold text-stone-800">Manage Tags</h3>

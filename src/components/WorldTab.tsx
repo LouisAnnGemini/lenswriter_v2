@@ -8,7 +8,10 @@ export function WorldTab() {
   const [activeSubTab, setActiveSubTab] = useState<'characters' | 'locations'>('characters');
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-stone-50 overflow-hidden">
+    <div className={cn(
+      "flex-1 flex flex-col h-full bg-stone-50 overflow-hidden",
+      "pb-16 md:pb-0" // Space for mobile bottom nav
+    )}>
       <div className="p-4 border-b border-stone-200 bg-white shrink-0 flex items-center space-x-4">
         <h2 className="text-xl font-bold text-stone-800 mr-4">World</h2>
         <div className="flex bg-stone-100 p-1 rounded-lg">

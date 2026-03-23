@@ -123,16 +123,7 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
 export function EditorPanel({ compact }: { compact?: boolean }) {
   const { state, dispatch } = useStore();
   const [copied, setCopied] = useState(false);
-  const [lastInspectorTab, setLastInspectorTab] = useState<'micro' | 'meso' | 'macro' | 'info'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('lastInspectorTab');
-      if (saved && ['micro', 'meso', 'macro', 'info'].includes(saved)) {
-        return saved as 'micro' | 'meso' | 'macro' | 'info';
-      }
-    }
-    return 'info';
-  });
-  const [rightSidebarMode, setRightSidebarMode] = useState<'closed' | 'micro' | 'meso' | 'macro' | 'info'>(compact ? 'closed' : lastInspectorTab);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -149,19 +140,34 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   const characters = state.characters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   const chapters = state.chapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   const isFocusMode = state.focusMode;
+  const rightSidebarMode = state.rightSidebarMode;
+  const lastInspectorTab = state.lastInspectorTab;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (rightSidebarMode !== 'closed') {
       const canShowCurrentTab = isScene || (rightSidebarMode !== 'info' && rightSidebarMode !== 'macro');
       if (!canShowCurrentTab) {
-        setRightSidebarMode('micro');
-      } else {
-        setLastInspectorTab(rightSidebarMode);
-        localStorage.setItem('lastInspectorTab', rightSidebarMode);
+        dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'micro' });
       }
     }
-  }, [rightSidebarMode, isScene]);
+  }, [rightSidebarMode, isScene, dispatch]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setShowBackToTop(container.scrollTop > 500);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -213,6 +219,12 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       if (block.documentId !== activeDocId) {
         dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: block.documentId });
       }
+      
+      // Auto-close inspector on mobile when jumping to text
+      if (window.innerWidth < 768) {
+        dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' });
+      }
+
       setTimeout(() => {
         const el = document.getElementById(`block-${blockId}`);
         if (el) {
@@ -391,26 +403,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 </button>
               )}
               
-              {!state.disguiseMode && (
-                <button
-                  onClick={() => {
-                    if (rightSidebarMode === 'closed') {
-                      const canShowLastTab = isScene || (lastInspectorTab !== 'info' && lastInspectorTab !== 'macro');
-                      setRightSidebarMode(canShowLastTab ? lastInspectorTab : 'micro');
-                    } else {
-                      setRightSidebarMode('closed');
-                    }
-                  }}
-                  className={cn(
-                    "p-2 rounded-md transition-colors flex items-center gap-1 ml-2",
-                    rightSidebarMode !== 'closed' ? "bg-emerald-50 text-emerald-600" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
-                  )}
-                  title="Inspector"
-                >
-                  <PanelRightOpen size={20} />
-                </button>
-              )}
-
               {!isScene && (
                 <ConfirmDeleteButton
                   onConfirm={() => dispatch({ type: 'DELETE_CHAPTER', payload: activeDocId })}
@@ -718,32 +710,35 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       
       {/* Inspector Sidebar */}
       {rightSidebarMode !== 'closed' && !state.disguiseMode && (
-        <div className="relative w-72 bg-stone-50 border-l border-stone-200 z-20 shrink-0 flex flex-col">
+        <div className={cn(
+          "bg-stone-50 border-l border-stone-200 shrink-0 flex flex-col transition-all duration-300",
+          "fixed inset-0 w-full z-[60] md:relative md:w-72 md:inset-auto md:z-20"
+        )}>
           <div className="p-2 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
             <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
               {isScene && (
                 <button
-                  onClick={() => setRightSidebarMode('info')}
+                  onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'info' })}
                   className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'info' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
                 >
                   Info
                 </button>
               )}
               <button
-                onClick={() => setRightSidebarMode('micro')}
+                onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'micro' })}
                 className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'micro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Directory
               </button>
               <button
-                onClick={() => setRightSidebarMode('meso')}
+                onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'meso' })}
                 className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'meso' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Lenses
               </button>
               {isScene && (
                 <button
-                  onClick={() => setRightSidebarMode('macro')}
+                  onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'macro' })}
                   className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'macro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
                 >
                   Events
@@ -751,7 +746,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               )}
             </div>
             <button
-              onClick={() => setRightSidebarMode('closed')}
+              onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })}
               className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors shrink-0 ml-1"
               title="Close Inspector"
             >
@@ -801,10 +796,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               </div>
             )}
             {rightSidebarMode === 'meso' && activeDocId && (
-              <LensesPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} onNavigateToBlock={navigateToBlock} />
+              <LensesPanel documentId={activeDocId} onClose={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })} onNavigateToBlock={navigateToBlock} />
             )}
             {rightSidebarMode === 'macro' && activeDocId && isScene && (
-              <EventPoolPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} />
+              <EventPoolPanel documentId={activeDocId} onClose={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })} />
             )}
             {rightSidebarMode === 'info' && activeDocId && isScene && (
               <div className="p-4 space-y-6">
@@ -1043,6 +1038,22 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Floating Back to Top Button */}
+      {showBackToTop && (
+        <div className={cn(
+          "fixed bottom-20 right-6 z-50 transition-all duration-300",
+          state.focusMode ? "opacity-0 hover:opacity-100" : "opacity-100"
+        )}>
+          <button
+            onClick={scrollToTop}
+            className="p-3 bg-white border border-stone-200 text-stone-500 hover:text-emerald-600 hover:border-emerald-200 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center group"
+            title="Back to Top"
+          >
+            <ArrowUpToLine size={24} className="group-hover:-translate-y-0.5 transition-transform" />
+          </button>
         </div>
       )}
 

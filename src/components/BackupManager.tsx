@@ -17,7 +17,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   } = useBackup();
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50">
           <h3 className="font-semibold text-stone-900 flex items-center">

@@ -435,7 +435,7 @@ export function CharactersTab() {
 
       {/* Field Manager Modal */}
       {showFieldManager && activeWorkId && (
-        <div className="fixed inset-0 bg-stone-900/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-stone-900/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
             <div className="p-4 border-b border-stone-200 flex justify-between items-center">
               <h2 className="text-lg font-semibold text-stone-900">Configure Character Fields</h2>

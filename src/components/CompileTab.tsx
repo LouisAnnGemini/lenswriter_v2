@@ -224,7 +224,10 @@ export function CompileTab() {
   if (!activeWork) return <div className="p-8 text-stone-500">No active work selected.</div>;
 
   return (
-    <div className="flex h-full bg-stone-50">
+    <div className={cn(
+      "flex h-full bg-stone-50",
+      "pb-16 md:pb-0" // Space for mobile bottom nav
+    )}>
       {/* Left Sidebar: Selection */}
       <div className="w-80 bg-white border-r border-stone-200 flex flex-col">
         <div className="p-4 border-b border-stone-200">

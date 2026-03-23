@@ -60,6 +60,8 @@ export type StoreState = {
   activeLensId: string | null;
   focusMode: boolean;
   disguiseMode: boolean;
+  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info';
+  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info';
   showDescriptions: boolean;
   letterSpacing: number;
   editorMargin: number;
@@ -82,6 +84,7 @@ type Action =
   | { type: 'SET_ACTIVE_LENS'; payload: string | null }
   | { type: 'TOGGLE_FOCUS_MODE' }
   | { type: 'TOGGLE_DISGUISE_MODE' }
+  | { type: 'SET_RIGHT_SIDEBAR_MODE'; payload: 'closed' | 'micro' | 'meso' | 'macro' | 'info' }
   | { type: 'TOGGLE_SHOW_DESCRIPTIONS' }
   | { type: 'ADD_CHAPTER'; payload: { workId: string; title: string } }
   | { type: 'UPDATE_CHAPTER'; payload: { id: string; title: string } }
@@ -173,6 +176,8 @@ const initialState: StoreState = {
   activeLensId: null,
   focusMode: false,
   disguiseMode: false,
+  rightSidebarMode: 'closed',
+  lastInspectorTab: 'micro',
   showDescriptions: true,
   letterSpacing: 0,
   editorMargin: 0,
@@ -266,7 +271,14 @@ function innerReducer(state: StoreState, action: Action): StoreState {
         disguiseMode: newDisguiseMode,
         // When entering disguise mode, enable focus mode and hide descriptions
         focusMode: newDisguiseMode ? true : state.focusMode,
-        showDescriptions: newDisguiseMode ? false : state.showDescriptions
+        showDescriptions: newDisguiseMode ? false : state.showDescriptions,
+        rightSidebarMode: newDisguiseMode ? 'closed' : state.rightSidebarMode
+      };
+    case 'SET_RIGHT_SIDEBAR_MODE':
+      return { 
+        ...state, 
+        rightSidebarMode: action.payload,
+        lastInspectorTab: action.payload !== 'closed' ? action.payload : state.lastInspectorTab
       };
     case 'TOGGLE_SHOW_DESCRIPTIONS':
       return { ...state, showDescriptions: !state.showDescriptions };
@@ -961,6 +973,7 @@ function storeReducer(state: StoreState, action: Action): StoreState {
     action.type === 'SET_ACTIVE_LENS' ||
     action.type === 'TOGGLE_FOCUS_MODE' ||
     action.type === 'TOGGLE_DISGUISE_MODE' ||
+    action.type === 'SET_RIGHT_SIDEBAR_MODE' ||
     action.type === 'TOGGLE_SHOW_DESCRIPTIONS';
 
   if (isEphemeralAction) {
