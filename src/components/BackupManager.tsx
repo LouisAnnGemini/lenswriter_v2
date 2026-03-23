@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useBackup } from '../context/BackupContext';
 import { useStore } from '../store/StoreContext';
-import { supabase } from '../lib/supabase';
-import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X, Cloud, Download } from 'lucide-react';
+import { supabase, updateSupabaseConfig } from '../lib/supabase';
+import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X, Cloud, Download, Settings, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function BackupManager({ onClose }: { onClose: () => void }) {
@@ -21,6 +21,22 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   const { state, dispatch } = useStore();
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  // Supabase Config State
+  const [tempUrl, setTempUrl] = useState(() => {
+    const stored = localStorage.getItem('supabase_config');
+    if (stored) return JSON.parse(stored).url;
+    return import.meta.env.VITE_SUPABASE_URL || '';
+  });
+  const [tempKey, setTempKey] = useState(() => {
+    const stored = localStorage.getItem('supabase_config');
+    if (stored) return JSON.parse(stored).key;
+    return import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  });
+
+  const handleSaveConfig = () => {
+    updateSupabaseConfig(tempUrl, tempKey);
+  };
 
   const handlePullFromSupabase = async () => {
     if (!supabase) return;
@@ -51,8 +67,8 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50 shrink-0">
           <h3 className="font-semibold text-stone-900 flex items-center">
             <Save size={18} className="mr-2 text-emerald-600" />
             Data & Backup Settings
@@ -62,7 +78,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {!isSupported ? (
             <div className="p-4 bg-red-50 text-red-800 rounded-lg text-sm flex items-start">
               <AlertCircle size={16} className="mr-2 mt-0.5 shrink-0" />
@@ -183,9 +199,39 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                   </button>
                 </div>
                 
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Supabase URL</label>
+                    <input
+                      type="text"
+                      value={tempUrl}
+                      onChange={(e) => setTempUrl(e.target.value)}
+                      placeholder="https://your-project.supabase.co"
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Anon Key</label>
+                    <input
+                      type="password"
+                      value={tempKey}
+                      onChange={(e) => setTempKey(e.target.value)}
+                      placeholder="your-anon-key"
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSaveConfig}
+                    className="flex items-center justify-center w-full px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    <RefreshCw size={14} className="mr-1.5" />
+                    Save & Reload App
+                  </button>
+                </div>
+
                 {!supabase ? (
-                  <div className="text-xs text-stone-500 italic">
-                    Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.
+                  <div className="text-xs text-stone-500 italic bg-amber-50 p-3 rounded-lg border border-amber-100">
+                    Supabase is not yet connected. Enter your credentials above and click Save.
                   </div>
                 ) : (
                   <div className="space-y-3">

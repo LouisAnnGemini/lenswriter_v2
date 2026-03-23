@@ -298,11 +298,11 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
           </div>
         </div>
       )}
-      
-      {showBackupManager && (
-        <BackupManager onClose={() => setShowBackupManager(false)} />
-      )}
     </div>
+      
+    {showBackupManager && (
+      <BackupManager onClose={() => setShowBackupManager(false)} />
+    )}
     </>
   );
 }
