@@ -14,7 +14,11 @@ const EVENT_COLORS = {
   purple: 'bg-purple-50 border-purple-200 text-purple-900',
 };
 
-export function MontageBoard() {
+interface MontageBoardProps {
+  onEventDoubleClick?: (eventId: string) => void;
+}
+
+export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
   const { state, dispatch } = useStore();
   const [showArchived, setShowArchived] = useState(false);
   const [isEventPoolOpen, setIsEventPoolOpen] = useState(true);
@@ -178,6 +182,7 @@ export function MontageBoard() {
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
+                                        onDoubleClick={() => onEventDoubleClick?.(event.id)}
                                         className={cn(
                                           "px-3 py-1.5 rounded-md border text-xs font-medium flex items-center gap-2",
                                           EVENT_COLORS[(event.color as keyof typeof EVENT_COLORS) || 'stone'],
@@ -252,6 +257,7 @@ export function MontageBoard() {
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
+                          onDoubleClick={() => onEventDoubleClick?.(event.id)}
                           className={cn(
                             "p-3 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing",
                             EVENT_COLORS[(event.color as keyof typeof EVENT_COLORS) || 'stone'],

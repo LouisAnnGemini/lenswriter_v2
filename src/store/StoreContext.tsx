@@ -112,7 +112,7 @@ type Action =
   | { type: 'UPDATE_LOCATION'; payload: { id: string; name?: string; description?: string } }
   | { type: 'DELETE_LOCATION'; payload: string }
   | { type: 'REORDER_LOCATIONS'; payload: { workId: string; startIndex: number; endIndex: number } }
-  | { type: 'ADD_TIMELINE_EVENT'; payload: { workId: string; title: string; timestamp: string; locationId?: string; characterActions?: Record<string, string>; tagIds?: string[] } }
+  | { type: 'ADD_TIMELINE_EVENT'; payload: { workId: string; title: string; timestamp: string; locationId?: string; characterActions?: Record<string, string>; tagIds?: string[]; sequenceNumber?: number; description?: string } }
   | { type: 'UPDATE_TIMELINE_EVENT'; payload: { id: string; title?: string; timestamp?: string; locationId?: string; description?: string; color?: string; tagIds?: string[] } }
   | { type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION'; payload: { eventId: string; characterId: string; action: string } }
   | { type: 'TOGGLE_TIMELINE_EVENT_LINK'; payload: { eventId: string; targetEventId: string } }
@@ -383,10 +383,11 @@ function innerReducer(state: StoreState, action: Action): StoreState {
         title: action.payload.title,
         timestamp: action.payload.timestamp,
         locationId: action.payload.locationId,
+        description: action.payload.description,
         characterActions: action.payload.characterActions || {},
         tagIds: action.payload.tagIds || [],
         order: events.length,
-        sequenceNumber: events.length
+        sequenceNumber: action.payload.sequenceNumber ?? 0
       };
       return { ...state, timelineEvents: [...state.timelineEvents, newEvent] };
     }

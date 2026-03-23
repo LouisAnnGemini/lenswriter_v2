@@ -153,7 +153,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
                 "p-2 rounded-md transition-colors",
                 state.rightSidebarMode !== 'closed' ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
               )}
-              title="Toggle Inspector"
+              title="Toggle Inspector (Ctrl+I)"
             >
               {state.rightSidebarMode !== 'closed' ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
             </button>

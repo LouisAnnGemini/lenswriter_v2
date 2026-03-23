@@ -25,10 +25,24 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
           dispatch({ type: 'TOGGLE_FOCUS_MODE' });
         }
       }
+
+      // Ctrl+I toggle Inspector
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+        if (state.activeTab === 'writing' && state.activeDocumentId && !state.disguiseMode) {
+          e.preventDefault();
+          if (state.rightSidebarMode === 'closed') {
+            const isScene = state.scenes.some(s => s.id === state.activeDocumentId);
+            const canShowLastTab = isScene || (state.lastInspectorTab !== 'info' && state.lastInspectorTab !== 'macro');
+            dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: canShowLastTab ? state.lastInspectorTab : 'micro' });
+          } else {
+            dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' });
+          }
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.disguiseMode, state.focusMode, dispatch]);
+  }, [state.disguiseMode, state.focusMode, state.activeTab, state.activeDocumentId, state.rightSidebarMode, state.lastInspectorTab, state.scenes, dispatch]);
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-white relative">
