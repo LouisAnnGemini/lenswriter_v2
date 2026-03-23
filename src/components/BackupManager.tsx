@@ -79,7 +79,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
         </div>
         
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
-          {!isSupported ? (
+          {!isSupported && (
             <div className="space-y-4">
               <div className="p-4 bg-amber-50 text-amber-800 rounded-lg text-sm flex items-start border border-amber-100">
                 <AlertCircle size={16} className="mr-2 mt-0.5 shrink-0" />
@@ -105,7 +105,9 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                 </p>
               </div>
             </div>
-          ) : (
+          )}
+
+          {isSupported && (
             <>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -192,8 +194,11 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                   </div>
                 )}
               </div>
-              {/* Supabase Cloud Sync Section */}
-              <div className="pt-6 border-t border-stone-100 space-y-4">
+            </>
+          )}
+
+          {/* Supabase Cloud Sync Section - Always visible */}
+          <div className="pt-6 border-t border-stone-100 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-sm font-medium text-stone-700">
                     <Cloud size={16} className="mr-2 text-blue-500" />
@@ -309,8 +314,6 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                   </div>
                 )}
               </div>
-            </>
-          )}
         </div>
         
         <div className="p-4 bg-stone-50 border-t border-stone-100 flex justify-end">
