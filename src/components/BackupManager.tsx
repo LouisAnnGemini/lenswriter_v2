@@ -18,7 +18,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     isSupported
   } = useBackup();
 
-  const { state, dispatch } = useStore();
+  const { state, dispatch, syncStatus, syncError } = useStore();
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
@@ -46,7 +46,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       const { data, error } = await supabase
         .from('app_state')
         .select('state')
-        .eq('id', 'default')
+        .eq('id', '00000000-0000-0000-0000-000000000000')
         .single();
       
       if (error) throw error;
@@ -242,6 +242,34 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     <div className="text-[10px] text-stone-400 bg-stone-100 p-2 rounded border border-stone-200">
                       <strong>Note:</strong> Requires a table named <code>app_state</code> with columns <code>id</code> (text/uuid, primary key) and <code>state</code> (jsonb).
                     </div>
+                    
+                    {state.supabaseSyncEnabled && (
+                      <div className={cn(
+                        "text-xs p-3 rounded-lg border",
+                        syncStatus === 'syncing' ? "bg-blue-50 border-blue-100 text-blue-700" :
+                        syncStatus === 'success' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
+                        syncStatus === 'error' ? "bg-red-50 border-red-100 text-red-700" :
+                        "bg-stone-50 border-stone-100 text-stone-500"
+                      )}>
+                        <div className="flex items-center font-medium mb-1">
+                          {syncStatus === 'syncing' && <RefreshCw size={12} className="mr-1.5 animate-spin" />}
+                          {syncStatus === 'success' && <CheckCircle2 size={12} className="mr-1.5" />}
+                          {syncStatus === 'error' && <AlertCircle size={12} className="mr-1.5" />}
+                          {syncStatus === 'idle' && <Clock size={12} className="mr-1.5" />}
+                          Status: {syncStatus.charAt(0).toUpperCase() + syncStatus.slice(1)}
+                        </div>
+                        {syncError && (
+                          <div className="mt-1 text-[10px] opacity-80 break-words">
+                            {syncError}
+                            {(syncError.includes('RLS') || syncError.includes('row-level security') || syncError.includes('401') || syncError.includes('403')) && (
+                              <div className="mt-1 font-semibold">
+                                Tip: You must disable Row Level Security (RLS) on the `app_state` table, or add a policy allowing anon inserts/updates.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     
                     <button
                       onClick={handlePullFromSupabase}

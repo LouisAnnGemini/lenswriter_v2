@@ -1006,7 +1006,12 @@ function storeReducer(state: StoreState, action: Action): StoreState {
   };
 }
 
-const StoreContext = createContext<{ state: StoreState; dispatch: React.Dispatch<Action> } | undefined>(undefined);
+const StoreContext = createContext<{ 
+  state: StoreState; 
+  dispatch: React.Dispatch<Action>;
+  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+  syncError: string | null;
+} | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'lenswriter_data';
 
@@ -1040,6 +1045,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const [state, dispatch] = useReducer(storeReducer, initialState, initializer);
+  const [syncStatus, setSyncStatus] = React.useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [syncError, setSyncError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     try {
@@ -1055,17 +1062,25 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!state.supabaseSyncEnabled || !supabase) return;
 
     const syncToSupabase = async () => {
+      setSyncStatus('syncing');
+      setSyncError(null);
       try {
         const { past, future, ...stateToSave } = state;
         const { error } = await supabase
           .from('app_state')
-          .upsert({ id: 'default', state: stateToSave });
+          .upsert({ id: '00000000-0000-0000-0000-000000000000', state: stateToSave });
         
         if (error) {
           console.error("Failed to sync to Supabase", error);
+          setSyncStatus('error');
+          setSyncError(error.message || 'Unknown Supabase error. Check RLS policies.');
+        } else {
+          setSyncStatus('success');
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error syncing to Supabase", e);
+        setSyncStatus('error');
+        setSyncError(e.message || 'Network error');
       }
     };
 
@@ -1073,7 +1088,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return () => clearTimeout(timeoutId);
   }, [state, state.supabaseSyncEnabled]);
 
-  return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>;
+  return <StoreContext.Provider value={{ state, dispatch, syncStatus, syncError }}>{children}</StoreContext.Provider>;
 };
 
 export const useStore = () => {
