@@ -202,7 +202,7 @@ export function AddEventModal({ onClose, initialSequenceNumber }: AddEventModalP
                 </button>
               </div>
               <MultiSelectDropdown
-                options={tags.map(t => ({ id: t.id, title: t.name }))}
+                options={tags.map(t => ({ id: t.id, title: t.name, color: t.color }))}
                 selectedIds={selectedTagIds}
                 onChange={setSelectedTagIds}
                 placeholder="Select tags..."

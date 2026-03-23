@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 interface Option {
   id: string;
   title: string;
+  color?: string;
 }
 
 interface MultiSelectDropdownProps {
@@ -12,13 +13,15 @@ interface MultiSelectDropdownProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   placeholder?: string;
+  renderOption?: (option: Option) => React.ReactNode;
 }
 
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   options,
   selectedIds,
   onChange,
-  placeholder = 'Select events...'
+  placeholder = 'Select events...',
+  renderOption
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -46,7 +49,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         {selectedIds.map(id => {
           const option = options.find(o => o.id === id);
           return option ? (
-            <span key={id} className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+            <span key={id} className={cn("text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 border", option.color || "bg-amber-100 text-amber-800 border-amber-200")}>
               {option.title}
               <X size={10} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); toggleOption(id); }} />
             </span>
@@ -75,8 +78,16 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                 className="px-3 py-2 text-xs hover:bg-stone-50 cursor-pointer flex items-center justify-between"
                 onClick={() => toggleOption(opt.id)}
               >
-                {opt.title}
-                {selectedIds.includes(opt.id) && <Check size={12} className="text-emerald-600" />}
+                {renderOption ? renderOption(opt) : (
+                  opt.color ? (
+                    <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border", opt.color)}>
+                      {opt.title}
+                    </span>
+                  ) : (
+                    <span className="truncate">{opt.title}</span>
+                  )
+                )}
+                {selectedIds.includes(opt.id) && <Check size={12} className="text-emerald-600 shrink-0" />}
               </div>
             ))}
           </div>

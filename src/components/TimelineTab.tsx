@@ -182,7 +182,13 @@ const InlineMultiSelect = ({
                   className="px-3 py-1.5 text-xs hover:bg-stone-50 cursor-pointer flex items-center justify-between"
                   onClick={() => toggleOption(opt.id)}
                 >
-                  <span className="truncate">{opt.title}</span>
+                  {opt.color ? (
+                    <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border", opt.color)}>
+                      {opt.title}
+                    </span>
+                  ) : (
+                    <span className="truncate">{opt.title}</span>
+                  )}
                   {selectedIds.includes(opt.id) && <Check size={12} className="text-emerald-600 shrink-0" />}
                 </div>
               ))
@@ -474,6 +480,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
                       .map(t => ({
                         id: t.id,
                         title: t.name,
+                        color: t.color
                       }))}
                     value=""
                     onChange={(value) => {
@@ -482,6 +489,11 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
                       }
                     }}
                     placeholder="+ Tag"
+                    renderOption={(opt) => (
+                      <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border", opt.color || 'bg-stone-100 text-stone-700 border-stone-200')}>
+                        {opt.title}
+                      </span>
+                    )}
                   />
                 </div>
               </div>

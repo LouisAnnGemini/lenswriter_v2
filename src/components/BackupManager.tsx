@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useBackup } from '../context/BackupContext';
-import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X } from 'lucide-react';
+import { useStore } from '../store/StoreContext';
+import { supabase } from '../lib/supabase';
+import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X, Cloud, Download } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function BackupManager({ onClose }: { onClose: () => void }) {
@@ -16,13 +18,44 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     isSupported
   } = useBackup();
 
+  const { state, dispatch } = useStore();
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const handlePullFromSupabase = async () => {
+    if (!supabase) return;
+    setIsPulling(true);
+    setPullStatus(null);
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state')
+        .eq('id', 'default')
+        .single();
+      
+      if (error) throw error;
+      
+      if (data && data.state) {
+        dispatch({ type: 'IMPORT_DATA', payload: data.state });
+        setPullStatus({ type: 'success', message: 'Successfully loaded data from Supabase.' });
+      } else {
+        setPullStatus({ type: 'error', message: 'No data found in Supabase.' });
+      }
+    } catch (e: any) {
+      console.error("Error pulling from Supabase", e);
+      setPullStatus({ type: 'error', message: e.message || 'Failed to pull data from Supabase.' });
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50">
           <h3 className="font-semibold text-stone-900 flex items-center">
             <Save size={18} className="mr-2 text-emerald-600" />
-            Local Backup Settings
+            Data & Backup Settings
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-stone-200 rounded-full transition-colors">
             <X size={18} className="text-stone-500" />
@@ -122,6 +155,65 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     "bg-blue-50 text-blue-600"
                   )}>
                     {statusMessage}
+                  </div>
+                )}
+              </div>
+              {/* Supabase Cloud Sync Section */}
+              <div className="pt-6 border-t border-stone-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-sm font-medium text-stone-700">
+                    <Cloud size={16} className="mr-2 text-blue-500" />
+                    Supabase Cloud Sync
+                  </div>
+                  <button
+                    onClick={() => dispatch({ type: 'TOGGLE_SUPABASE_SYNC' })}
+                    disabled={!supabase}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                      state.supabaseSyncEnabled ? "bg-blue-500" : "bg-stone-200",
+                      !supabase && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                        state.supabaseSyncEnabled ? "translate-x-6" : "translate-x-1"
+                      )}
+                    />
+                  </button>
+                </div>
+                
+                {!supabase ? (
+                  <div className="text-xs text-stone-500 italic">
+                    Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="text-xs text-stone-500">
+                      When enabled, your data will automatically sync to Supabase in the background. Local storage remains your primary data source.
+                    </div>
+                    
+                    <div className="text-[10px] text-stone-400 bg-stone-100 p-2 rounded border border-stone-200">
+                      <strong>Note:</strong> Requires a table named <code>app_state</code> with columns <code>id</code> (text/uuid, primary key) and <code>state</code> (jsonb).
+                    </div>
+                    
+                    <button
+                      onClick={handlePullFromSupabase}
+                      disabled={isPulling}
+                      className="flex items-center justify-center w-full px-3 py-2 bg-white border border-stone-300 text-stone-700 rounded-md text-xs font-medium hover:bg-stone-50 transition-colors disabled:opacity-50"
+                    >
+                      <Download size={14} className="mr-1.5" />
+                      {isPulling ? 'Pulling Data...' : 'Pull Data from Supabase'}
+                    </button>
+                    
+                    {pullStatus && (
+                      <div className={cn(
+                        "text-xs p-2 rounded",
+                        pullStatus.type === 'error' ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+                      )}>
+                        {pullStatus.message}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

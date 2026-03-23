@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '../lib/supabase';
 
 export type Work = { id: string; title: string; createdAt: number; order: number; characterFields?: CharacterFieldDef[]; lensesDescription?: string; icon?: string };
 export type Character = { id: string; workId: string; name: string; description: string; order: number; customFields?: Record<string, any> };
@@ -65,6 +66,7 @@ export type StoreState = {
   showDescriptions: boolean;
   letterSpacing: number;
   editorMargin: number;
+  supabaseSyncEnabled?: boolean;
   past?: StoreState[];
   future?: StoreState[];
 };
@@ -134,7 +136,8 @@ type Action =
   | { type: 'DELETE_DEADLINE'; payload: string }
   | { type: 'BULK_UPDATE_BLOCKS'; payload: { id: string; content: string }[] }
   | { type: 'SET_LETTER_SPACING'; payload: number }
-  | { type: 'SET_EDITOR_MARGIN'; payload: number };
+  | { type: 'SET_EDITOR_MARGIN'; payload: number }
+  | { type: 'TOGGLE_SUPABASE_SYNC' };
 
 const initialWorkId = uuidv4();
 const initialChapterId = uuidv4();
@@ -181,6 +184,7 @@ const initialState: StoreState = {
   showDescriptions: true,
   letterSpacing: 0,
   editorMargin: 0,
+  supabaseSyncEnabled: false,
 };
 
 function innerReducer(state: StoreState, action: Action): StoreState {
@@ -929,6 +933,8 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       return { ...state, letterSpacing: action.payload };
     case 'SET_EDITOR_MARGIN':
       return { ...state, editorMargin: action.payload };
+    case 'TOGGLE_SUPABASE_SYNC':
+      return { ...state, supabaseSyncEnabled: !state.supabaseSyncEnabled };
     default:
       return state;
   }
@@ -1043,6 +1049,29 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       console.error("Failed to save to local storage", e);
     }
   }, [state]);
+
+  // Supabase sync
+  React.useEffect(() => {
+    if (!state.supabaseSyncEnabled || !supabase) return;
+
+    const syncToSupabase = async () => {
+      try {
+        const { past, future, ...stateToSave } = state;
+        const { error } = await supabase
+          .from('app_state')
+          .upsert({ id: 'default', state: stateToSave });
+        
+        if (error) {
+          console.error("Failed to sync to Supabase", error);
+        }
+      } catch (e) {
+        console.error("Error syncing to Supabase", e);
+      }
+    };
+
+    const timeoutId = setTimeout(syncToSupabase, 2000); // 2 second debounce
+    return () => clearTimeout(timeoutId);
+  }, [state, state.supabaseSyncEnabled]);
 
   return <StoreContext.Provider value={{ state, dispatch }}>{children}</StoreContext.Provider>;
 };

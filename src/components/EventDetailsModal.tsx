@@ -207,7 +207,7 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
               <TagIcon size={12} className="mr-1" /> Tags
             </label>
             <MultiSelectDropdown
-              options={tags.map(t => ({ id: t.id, title: t.name }))}
+              options={tags.map(t => ({ id: t.id, title: t.name, color: t.color }))}
               selectedIds={event.tagIds || []}
               onChange={(newIds) => dispatch({ type: 'UPDATE_TIMELINE_EVENT', payload: { id: event.id, tagIds: newIds } })}
               placeholder="Select tags..."
