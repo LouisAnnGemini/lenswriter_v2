@@ -90,7 +90,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
       )}
 
       <div className={cn(
-        "h-screen bg-stone-900 text-stone-300 flex flex-col transition-all duration-300 border-r border-stone-800 z-50",
+        "h-[100dvh] bg-stone-900 text-stone-300 flex flex-col transition-all duration-300 border-r border-stone-800 z-50",
         collapsed ? "md:w-16 w-64" : "w-64",
         "fixed md:relative", // Fixed on mobile, relative on desktop
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0" // Slide in on mobile
@@ -262,7 +262,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
       </div>
 
       {isExpanded && (
-        <div className="p-4 border-t border-stone-800 space-y-4">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-stone-800 space-y-4">
           <div className="relative">
             <Plus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
             <input

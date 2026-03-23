@@ -45,7 +45,7 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
   }, [state.disguiseMode, state.focusMode, state.activeTab, state.activeDocumentId, state.rightSidebarMode, state.lastInspectorTab, state.scenes, dispatch]);
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden bg-white relative">
+    <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden bg-white relative">
       {!state.disguiseMode && <TopNav setMobileOpen={setMobileOpen} />}
       <div className="flex-1 flex overflow-hidden relative">
         {state.activeTab === 'writing' && (
@@ -94,7 +94,7 @@ function Layout() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden font-sans text-stone-900 bg-stone-900 selection:bg-emerald-200 selection:text-emerald-900">
+    <div className="flex h-[100dvh] w-full overflow-hidden font-sans text-stone-900 bg-stone-900 selection:bg-emerald-200 selection:text-emerald-900">
       {!state.disguiseMode && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
       <MainContent mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
     </div>

@@ -80,11 +80,29 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
         
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {!isSupported ? (
-            <div className="p-4 bg-red-50 text-red-800 rounded-lg text-sm flex items-start">
-              <AlertCircle size={16} className="mr-2 mt-0.5 shrink-0" />
-              <div>
-                Your browser does not support the File System Access API required for local backups. 
-                Please use Chrome, Edge, or a compatible browser.
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 text-amber-800 rounded-lg text-sm flex items-start border border-amber-100">
+                <AlertCircle size={16} className="mr-2 mt-0.5 shrink-0" />
+                <div className="space-y-2">
+                  <p className="font-semibold">Local Backup Not Supported</p>
+                  <p>
+                    The <strong>File System Access API</strong> is required for local folder backups, but it is currently 
+                    <strong> not supported on mobile browsers</strong> (including Chrome for Android/iOS) or some desktop browsers like Safari.
+                  </p>
+                  <p className="text-xs opacity-80">
+                    Please use Chrome or Edge on a <strong>Desktop</strong> computer to use local folder backups.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-blue-50 text-blue-800 rounded-lg text-sm border border-blue-100">
+                <div className="flex items-center font-semibold mb-2">
+                  <Cloud size={16} className="mr-2" />
+                  Recommended for Mobile
+                </div>
+                <p>
+                  Use <strong>Supabase Cloud Sync</strong> below to keep your data synchronized across all your devices, including mobile.
+                </p>
               </div>
             </div>
           ) : (
