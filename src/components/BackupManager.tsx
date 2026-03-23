@@ -21,6 +21,9 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   const { state, dispatch, syncStatus, syncError } = useStore();
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [cloudHistory, setCloudHistory] = useState<Array<{id: string, timestamp: number}>>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [confirmRestoreId, setConfirmRestoreId] = useState<string | null>(null);
 
   // Supabase Config State
   const [tempUrl, setTempUrl] = useState(() => {
@@ -64,6 +67,59 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       setIsPulling(false);
     }
   };
+
+  const fetchCloudHistory = async () => {
+    if (!supabase) return;
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('id, state')
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (error) throw error;
+      if (data) {
+        const history = data
+          .filter(row => row.state?._isHistory)
+          .map(row => ({ id: row.id, timestamp: row.state._timestamp }))
+          .sort((a, b) => b.timestamp - a.timestamp);
+        setCloudHistory(history);
+      }
+    } catch (err) {
+      console.error('Failed to fetch history', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const restoreHistory = async (id: string) => {
+    if (!supabase) return;
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      if (data && data.state) {
+        const { _isHistory, _timestamp, ...stateToRestore } = data.state;
+        stateToRestore.lastModified = Date.now();
+        dispatch({ type: 'IMPORT_DATA', payload: stateToRestore });
+        setPullStatus({ type: 'success', message: 'Successfully restored historical version.' });
+        setConfirmRestoreId(null);
+      }
+    } catch (err) {
+      console.error('Failed to restore history', err);
+      setPullStatus({ type: 'error', message: 'Failed to restore history.' });
+    }
+  };
+
+  React.useEffect(() => {
+    if (state.supabaseSyncEnabled && supabase) {
+      fetchCloudHistory();
+    }
+  }, [state.supabaseSyncEnabled, supabase]);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -264,6 +320,8 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     
                     <div className="text-[10px] text-stone-400 bg-stone-100 p-2 rounded border border-stone-200">
                       <strong>Note:</strong> Requires a table named <code>app_state</code> with columns <code>id</code> (text/uuid, primary key) and <code>state</code> (jsonb).
+                      <br />
+                      <strong>Important:</strong> To enable real-time cross-device sync, you must enable <strong>Realtime</strong> for the <code>app_state</code> table in your Supabase Database settings (Database &gt; Replication).
                     </div>
                     
                     {state.supabaseSyncEnabled && (
@@ -309,6 +367,72 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                         pullStatus.type === 'error' ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
                       )}>
                         {pullStatus.message}
+                      </div>
+                    )}
+
+                    {/* Cloud History Section */}
+                    {state.supabaseSyncEnabled && (
+                      <div className="pt-4 border-t border-stone-100 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium text-stone-700">Cloud History</div>
+                          <button
+                            onClick={fetchCloudHistory}
+                            disabled={isLoadingHistory}
+                            className="p-1 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded transition-colors disabled:opacity-50"
+                            title="Refresh History"
+                          >
+                            <RefreshCw size={14} className={cn(isLoadingHistory && "animate-spin")} />
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-stone-500">
+                          Automatically saves a version every 5 minutes. Keeps the last 20 versions.
+                        </div>
+                        
+                        <div className="max-h-40 overflow-y-auto border border-stone-200 rounded-md divide-y divide-stone-100">
+                          {cloudHistory.length === 0 ? (
+                            <div className="p-3 text-xs text-stone-500 text-center italic">
+                              No history versions available yet.
+                            </div>
+                          ) : (
+                            cloudHistory.map((item, index) => (
+                              <div key={item.id} className="flex flex-col p-2 hover:bg-stone-50">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-xs text-stone-700">
+                                    {new Date(item.timestamp).toLocaleString()}
+                                    {index === 0 && <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Latest</span>}
+                                  </div>
+                                  {confirmRestoreId !== item.id && (
+                                    <button
+                                      onClick={() => setConfirmRestoreId(item.id)}
+                                      className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 hover:underline px-2 py-1"
+                                    >
+                                      Restore
+                                    </button>
+                                  )}
+                                </div>
+                                {confirmRestoreId === item.id && (
+                                  <div className="mt-2 p-2 bg-amber-50 border border-amber-100 rounded text-[10px] text-amber-800 flex flex-col gap-2">
+                                    <div>Are you sure? Current unsaved changes will be lost.</div>
+                                    <div className="flex gap-2 justify-end">
+                                      <button 
+                                        onClick={() => setConfirmRestoreId(null)}
+                                        className="px-2 py-1 bg-white border border-stone-200 rounded text-stone-600 hover:bg-stone-50"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button 
+                                        onClick={() => restoreHistory(item.id)}
+                                        className="px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                                      >
+                                        Yes, Restore
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

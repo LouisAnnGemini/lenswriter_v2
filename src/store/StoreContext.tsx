@@ -67,6 +67,7 @@ export type StoreState = {
   letterSpacing: number;
   editorMargin: number;
   supabaseSyncEnabled?: boolean;
+  lastModified: number;
   past?: StoreState[];
   future?: StoreState[];
 };
@@ -137,7 +138,8 @@ type Action =
   | { type: 'BULK_UPDATE_BLOCKS'; payload: { id: string; content: string }[] }
   | { type: 'SET_LETTER_SPACING'; payload: number }
   | { type: 'SET_EDITOR_MARGIN'; payload: number }
-  | { type: 'TOGGLE_SUPABASE_SYNC' };
+  | { type: 'TOGGLE_SUPABASE_SYNC' }
+  | { type: 'SYNC_FROM_CLOUD'; payload: StoreState };
 
 const initialWorkId = uuidv4();
 const initialChapterId = uuidv4();
@@ -185,6 +187,7 @@ const initialState: StoreState = {
   letterSpacing: 0,
   editorMargin: 0,
   supabaseSyncEnabled: false,
+  lastModified: Date.now()
 };
 
 function innerReducer(state: StoreState, action: Action): StoreState {
@@ -935,6 +938,8 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       return { ...state, editorMargin: action.payload };
     case 'TOGGLE_SUPABASE_SYNC':
       return { ...state, supabaseSyncEnabled: !state.supabaseSyncEnabled };
+    case 'SYNC_FROM_CLOUD':
+      return { ...action.payload };
     default:
       return state;
   }
@@ -991,6 +996,11 @@ function storeReducer(state: StoreState, action: Action): StoreState {
     };
   }
 
+  // If it's a mutating action, update lastModified
+  const finalState = action.type !== 'SYNC_FROM_CLOUD' && action.type !== 'IMPORT_DATA'
+    ? { ...newState, lastModified: Date.now() }
+    : newState;
+
   const { past, future, ...stateWithoutHistory } = state;
 
   const MAX_HISTORY = 50;
@@ -1000,7 +1010,7 @@ function storeReducer(state: StoreState, action: Action): StoreState {
   }
 
   return {
-    ...newState,
+    ...finalState,
     past: newPast,
     future: []
   };
@@ -1048,6 +1058,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [syncStatus, setSyncStatus] = React.useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = React.useState<string | null>(null);
 
+  const stateRef = React.useRef(state);
+  const lastSyncedModifiedRef = React.useRef(state.lastModified);
+  React.useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   React.useEffect(() => {
     try {
       const { past, future, ...stateToSave } = state;
@@ -1060,6 +1076,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Supabase sync
   React.useEffect(() => {
     if (!state.supabaseSyncEnabled || !supabase) return;
+    if (state.lastModified <= lastSyncedModifiedRef.current) return;
 
     const syncToSupabase = async () => {
       setSyncStatus('syncing');
@@ -1076,6 +1093,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           setSyncError(error.message || 'Unknown Supabase error. Check RLS policies.');
         } else {
           setSyncStatus('success');
+          lastSyncedModifiedRef.current = state.lastModified;
         }
       } catch (e: any) {
         console.error("Error syncing to Supabase", e);
@@ -1087,6 +1105,79 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const timeoutId = setTimeout(syncToSupabase, 2000); // 2 second debounce
     return () => clearTimeout(timeoutId);
   }, [state, state.supabaseSyncEnabled]);
+
+  // Supabase Realtime Subscription
+  React.useEffect(() => {
+    if (!state.supabaseSyncEnabled || !supabase) return;
+
+    const channel = supabase
+      .channel('app_state_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'app_state',
+          filter: 'id=eq.00000000-0000-0000-0000-000000000000'
+        },
+        (payload) => {
+          const incomingState = payload.new?.state;
+          if (incomingState && incomingState.lastModified > stateRef.current.lastModified) {
+            console.log('Cloud state is newer, syncing to local...');
+            lastSyncedModifiedRef.current = incomingState.lastModified;
+            dispatch({ type: 'SYNC_FROM_CLOUD', payload: incomingState });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [state.supabaseSyncEnabled]);
+
+  // Supabase Cloud History (Every 5 minutes)
+  React.useEffect(() => {
+    if (!state.supabaseSyncEnabled || !supabase) return;
+
+    const HISTORY_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+    const saveHistory = async () => {
+      try {
+        const timestamp = Date.now();
+        const historyId = uuidv4();
+        const { past, future, ...stateToSave } = stateRef.current;
+
+        // Save new history
+        await supabase.from('app_state').insert({
+          id: historyId,
+          state: { ...stateToSave, _isHistory: true, _timestamp: timestamp }
+        });
+
+        // Cleanup old history (keep 20)
+        const { data } = await supabase
+          .from('app_state')
+          .select('id, state')
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+
+        if (data) {
+          const historyRows = data
+            .filter(row => row.state?._isHistory)
+            .sort((a, b) => (b.state._timestamp || 0) - (a.state._timestamp || 0));
+
+          if (historyRows.length > 20) {
+            const toDelete = historyRows.slice(20).map(row => row.id);
+            await supabase.from('app_state').delete().in('id', toDelete);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to save cloud history', err);
+      }
+    };
+
+    const timer = setInterval(saveHistory, HISTORY_INTERVAL);
+    return () => clearInterval(timer);
+  }, [state.supabaseSyncEnabled]);
 
   return <StoreContext.Provider value={{ state, dispatch, syncStatus, syncError }}>{children}</StoreContext.Provider>;
 };
