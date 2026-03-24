@@ -253,19 +253,23 @@ function innerReducer(state: StoreState, action: Action): StoreState {
     }
     case 'SET_ACTIVE_WORK': {
       const workId = action.payload;
-      // Find the first chapter of this work
+      // Find the first non-archived chapter of this work
       const firstChapter = state.chapters
-        .filter(c => c.workId === workId)
+        .filter(c => c.workId === workId && !c.archived)
         .sort((a, b) => a.order - b.order)[0];
       
       let firstDocId = null;
       if (firstChapter) {
-        // Find the first scene of this chapter
-        const firstScene = state.scenes
-          .filter(s => s.chapterId === firstChapter.id)
+        firstDocId = firstChapter.id;
+      } else {
+        // If no non-archived chapters, try to find any chapter (even archived)
+        const anyChapter = state.chapters
+          .filter(c => c.workId === workId)
           .sort((a, b) => a.order - b.order)[0];
         
-        firstDocId = firstScene ? firstScene.id : firstChapter.id;
+        if (anyChapter) {
+          firstDocId = anyChapter.id;
+        }
       }
       
       return { ...state, activeWorkId: workId, activeDocumentId: firstDocId };
