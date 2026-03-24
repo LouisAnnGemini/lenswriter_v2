@@ -149,8 +149,11 @@ export function BlockManagementTab() {
                           <textarea
                             value={block.description || ''}
                             onChange={(e) => dispatch({ type: 'UPDATE_BLOCK', payload: { id: block.id, description: e.target.value } })}
-                            placeholder="Add a description for this block..."
-                            className="w-full bg-transparent border-none outline-none resize-none text-stone-900 font-medium placeholder:text-stone-400 focus:ring-0 p-0 whitespace-pre-wrap"
+                            placeholder="Untitled block"
+                            className={cn(
+                              "w-full bg-transparent border-none outline-none resize-none text-stone-900 font-medium placeholder:text-stone-400 focus:ring-0 p-0 whitespace-pre-wrap",
+                              !block.description ? "text-stone-400 italic" : ""
+                            )}
                             rows={2}
                             onInput={(e) => {
                               const target = e.target as HTMLTextAreaElement;

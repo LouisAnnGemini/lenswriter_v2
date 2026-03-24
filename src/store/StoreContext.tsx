@@ -1083,9 +1083,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setSyncError(null);
       try {
         const { past, future, ...stateToSave } = state;
+        const getDeviceType = () => {
+          return /Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
+        };
         const { error } = await supabase
           .from('app_state')
-          .upsert({ id: '00000000-0000-0000-0000-000000000000', state: stateToSave });
+          .upsert({ id: '00000000-0000-0000-0000-000000000000', state: { ...stateToSave, _device: getDeviceType() } });
         
         if (error) {
           console.error("Failed to sync to Supabase", error);
@@ -1148,10 +1151,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const historyId = uuidv4();
         const { past, future, ...stateToSave } = stateRef.current;
 
+        const getDeviceType = () => {
+          return /Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
+        };
+
         // Save new history
         await supabase.from('app_state').insert({
           id: historyId,
-          state: { ...stateToSave, _isHistory: true, _timestamp: timestamp }
+          state: { ...stateToSave, _isHistory: true, _timestamp: timestamp, _device: getDeviceType() }
         });
 
         // Cleanup old history (keep 20)

@@ -606,14 +606,17 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                       />
                       
                       {/* Description Editor - Removed as requested */}
-                      {/* {block.description !== undefined && showDescriptions && (
+                      {block.description !== undefined && showDescriptions && (
                         <div className="mt-2 pl-4 border-l-2 border-emerald-200 flex items-start gap-2">
                           <AutoResizeTextarea
                             scrollContainerRef={scrollContainerRef}
                             value={block.description || ''}
                             onChange={(e: any) => handleBlockChange(block.id, { description: e.target.value })}
-                            placeholder="Enter block description..."
-                            className="flex-1 text-sm text-stone-600 bg-stone-50 p-2 rounded-md outline-none focus:ring-1 focus:ring-emerald-500"
+                            placeholder="Untitled block"
+                            className={cn(
+                              "flex-1 text-sm bg-stone-50 p-2 rounded-md outline-none focus:ring-1 focus:ring-emerald-500",
+                              block.description === '' ? "text-stone-400 italic" : "text-stone-600"
+                            )}
                           />
                           <button
                             onClick={() => handleBlockChange(block.id, { completed: !block.completed })}
@@ -626,7 +629,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                             {block.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
                           </button>
                         </div>
-                      )} */}
+                      )}
                     </div>
 
                     {/* Block Actions (Hover) */}
@@ -774,9 +777,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                                 onChange={(e) => dispatch({ type: 'UPDATE_BLOCK', payload: { id: entry.id, description: e.target.value } })}
                                 className={cn(
                                   "w-full bg-transparent border-none outline-none text-sm font-medium focus:ring-0 p-0 resize-none",
-                                  entry.completed ? "text-emerald-700" : "text-stone-900"
+                                  entry.completed ? "text-emerald-700" : "text-stone-900",
+                                  !entry.description ? "text-stone-400 italic" : ""
                                 )}
-                                placeholder="Add description..."
+                                placeholder="Untitled block"
                                 rows={2}
                               />
                               <button

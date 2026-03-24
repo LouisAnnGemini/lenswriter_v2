@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useBackup } from '../context/BackupContext';
 import { useStore } from '../store/StoreContext';
 import { supabase, updateSupabaseConfig } from '../lib/supabase';
-import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X, Cloud, Download, Settings, RefreshCw } from 'lucide-react';
+import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X, Cloud, Download, Settings, RefreshCw, Smartphone, Monitor } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function BackupManager({ onClose }: { onClose: () => void }) {
@@ -21,7 +21,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   const { state, dispatch, syncStatus, syncError } = useStore();
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [cloudHistory, setCloudHistory] = useState<Array<{id: string, timestamp: number}>>([]);
+  const [cloudHistory, setCloudHistory] = useState<Array<{id: string, timestamp: number, device?: string}>>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [confirmRestoreId, setConfirmRestoreId] = useState<string | null>(null);
   
@@ -138,7 +138,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       if (data) {
         const history = data
           .filter(row => row.state?._isHistory)
-          .map(row => ({ id: row.id, timestamp: row.state._timestamp }))
+          .map(row => ({ id: row.id, timestamp: row.state._timestamp, device: row.state._device }))
           .sort((a, b) => b.timestamp - a.timestamp);
         setCloudHistory(history);
       }
@@ -343,7 +343,15 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     </div>
                     <div className="text-[10px] text-blue-700 space-y-1">
                       <div>Local last modified: {new Date(syncPrompt.localDate).toLocaleString()}</div>
-                      <div>Cloud last modified: {new Date(syncPrompt.cloudDate).toLocaleString()}</div>
+                      <div className="flex items-center gap-1">
+                        Cloud last modified: {new Date(syncPrompt.cloudDate).toLocaleString()}
+                        {syncPrompt.cloudState._device && (
+                          <span className="flex items-center text-[10px] text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded ml-1" title={`Saved from ${syncPrompt.cloudState._device}`}>
+                            {syncPrompt.cloudState._device === 'Mobile' ? <Smartphone size={10} className="mr-1" /> : <Monitor size={10} className="mr-1" />}
+                            {syncPrompt.cloudState._device}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-2 pt-2">
                       <button
@@ -487,9 +495,15 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                             cloudHistory.map((item, index) => (
                               <div key={item.id} className="flex flex-col p-2 hover:bg-stone-50">
                                 <div className="flex items-center justify-between">
-                                  <div className="text-xs text-stone-700">
-                                    {new Date(item.timestamp).toLocaleString()}
-                                    {index === 0 && <span className="ml-2 text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Latest</span>}
+                                  <div className="text-xs text-stone-700 flex items-center gap-2">
+                                    <span>{new Date(item.timestamp).toLocaleString()}</span>
+                                    {item.device && (
+                                      <span className="flex items-center text-[10px] text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded" title={`Saved from ${item.device}`}>
+                                        {item.device === 'Mobile' ? <Smartphone size={10} className="mr-1" /> : <Monitor size={10} className="mr-1" />}
+                                        {item.device}
+                                      </span>
+                                    )}
+                                    {index === 0 && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Latest</span>}
                                   </div>
                                   {confirmRestoreId !== item.id && (
                                     <button
