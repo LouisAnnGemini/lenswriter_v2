@@ -1021,6 +1021,7 @@ const StoreContext = createContext<{
   dispatch: React.Dispatch<Action>;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
+  saveHistoryVersion: () => Promise<void>;
 } | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'lenswriter_data';
@@ -1139,54 +1140,53 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
   }, [state.supabaseSyncEnabled]);
 
+  const saveHistoryVersion = React.useCallback(async () => {
+    if (!stateRef.current.supabaseSyncEnabled || !supabase) return;
+    try {
+      const timestamp = Date.now();
+      const historyId = uuidv4();
+      const { past, future, ...stateToSave } = stateRef.current;
+
+      const getDeviceType = () => {
+        return /Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
+      };
+
+      // Save new history
+      await supabase.from('app_state').insert({
+        id: historyId,
+        state: { ...stateToSave, _isHistory: true, _timestamp: timestamp, _device: getDeviceType() }
+      });
+
+      // Cleanup old history (keep 20)
+      const { data } = await supabase
+        .from('app_state')
+        .select('id, state')
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      if (data) {
+        const historyRows = data
+          .filter(row => row.state?._isHistory)
+          .sort((a, b) => (b.state._timestamp || 0) - (a.state._timestamp || 0));
+
+        if (historyRows.length > 20) {
+          const toDelete = historyRows.slice(20).map(row => row.id);
+          await supabase.from('app_state').delete().in('id', toDelete);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to save cloud history', err);
+    }
+  }, []);
+
   // Supabase Cloud History (Every 5 minutes)
   React.useEffect(() => {
     if (!state.supabaseSyncEnabled || !supabase) return;
-
     const HISTORY_INTERVAL = 5 * 60 * 1000; // 5 minutes
-
-    const saveHistory = async () => {
-      try {
-        const timestamp = Date.now();
-        const historyId = uuidv4();
-        const { past, future, ...stateToSave } = stateRef.current;
-
-        const getDeviceType = () => {
-          return /Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
-        };
-
-        // Save new history
-        await supabase.from('app_state').insert({
-          id: historyId,
-          state: { ...stateToSave, _isHistory: true, _timestamp: timestamp, _device: getDeviceType() }
-        });
-
-        // Cleanup old history (keep 20)
-        const { data } = await supabase
-          .from('app_state')
-          .select('id, state')
-          .neq('id', '00000000-0000-0000-0000-000000000000');
-
-        if (data) {
-          const historyRows = data
-            .filter(row => row.state?._isHistory)
-            .sort((a, b) => (b.state._timestamp || 0) - (a.state._timestamp || 0));
-
-          if (historyRows.length > 20) {
-            const toDelete = historyRows.slice(20).map(row => row.id);
-            await supabase.from('app_state').delete().in('id', toDelete);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to save cloud history', err);
-      }
-    };
-
-    const timer = setInterval(saveHistory, HISTORY_INTERVAL);
+    const timer = setInterval(saveHistoryVersion, HISTORY_INTERVAL);
     return () => clearInterval(timer);
-  }, [state.supabaseSyncEnabled]);
+  }, [state.supabaseSyncEnabled, saveHistoryVersion]);
 
-  return <StoreContext.Provider value={{ state, dispatch, syncStatus, syncError }}>{children}</StoreContext.Provider>;
+  return <StoreContext.Provider value={{ state, dispatch, syncStatus, syncError, saveHistoryVersion }}>{children}</StoreContext.Provider>;
 };
 
 export const useStore = () => {

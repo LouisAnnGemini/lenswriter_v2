@@ -18,7 +18,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     isSupported
   } = useBackup();
 
-  const { state, dispatch, syncStatus, syncError } = useStore();
+  const { state, dispatch, syncStatus, syncError, saveHistoryVersion } = useStore();
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [cloudHistory, setCloudHistory] = useState<Array<{id: string, timestamp: number, device?: string}>>([]);
@@ -473,14 +473,27 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                       <div className="pt-4 border-t border-stone-100 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="text-sm font-medium text-stone-700">Cloud History</div>
-                          <button
-                            onClick={fetchCloudHistory}
-                            disabled={isLoadingHistory}
-                            className="p-1 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded transition-colors disabled:opacity-50"
-                            title="Refresh History"
-                          >
-                            <RefreshCw size={14} className={cn(isLoadingHistory && "animate-spin")} />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={async () => {
+                                if (saveHistoryVersion) {
+                                  await saveHistoryVersion();
+                                  fetchCloudHistory();
+                                }
+                              }}
+                              className="px-2 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded hover:bg-blue-100 transition-colors"
+                            >
+                              Save Version Now
+                            </button>
+                            <button
+                              onClick={fetchCloudHistory}
+                              disabled={isLoadingHistory}
+                              className="p-1 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded transition-colors disabled:opacity-50"
+                              title="Refresh History"
+                            >
+                              <RefreshCw size={14} className={cn(isLoadingHistory && "animate-spin")} />
+                            </button>
+                          </div>
                         </div>
                         <div className="text-[10px] text-stone-500">
                           Automatically saves a version every 5 minutes. Keeps the last 20 versions.
