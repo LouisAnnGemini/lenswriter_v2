@@ -89,9 +89,6 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
 
     if (choice === 'cloud') {
       dispatch({ type: 'IMPORT_DATA', payload: syncPrompt.cloudState });
-      lastSyncedModifiedRef.current = syncPrompt.cloudDate;
-    } else {
-      lastSyncedModifiedRef.current = state.lastModified;
     }
     
     dispatch({ type: 'TOGGLE_SUPABASE_SYNC' });

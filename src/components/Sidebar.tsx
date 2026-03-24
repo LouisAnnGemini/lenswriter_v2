@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/StoreContext';
-import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar } from 'lucide-react';
+import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar, Inbox } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '../lib/utils';
 import { WorkIcon } from './WorkIcon';
@@ -113,6 +113,21 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
 
       <div className="flex-1 overflow-y-auto py-4">
         <div className="mb-4 px-2 space-y-1">
+          <button
+            onClick={() => {
+              dispatch({ type: 'SET_ACTIVE_TAB', payload: 'inbox' });
+              setMobileOpen?.(false);
+            }}
+            className={cn(
+              "w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+              state.activeTab === 'inbox'
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
+            )}
+          >
+            <Inbox size={16} className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")} />
+            {isExpanded && <span>Inbox</span>}
+          </button>
           <button
             onClick={() => {
               dispatch({ type: 'SET_ACTIVE_TAB', payload: 'deadline' });

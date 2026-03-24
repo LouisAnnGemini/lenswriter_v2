@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/StoreContext';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, ChevronDown, Eye, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, ChevronDown, PanelRightOpen, PanelRightClose } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
@@ -158,16 +158,6 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
               {state.rightSidebarMode !== 'closed' ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
             </button>
           )}
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_DISGUISE_MODE' })}
-            className={cn(
-              "p-2 rounded-md transition-colors",
-              state.disguiseMode ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
-            )}
-            title="Toggle Disguise Mode"
-          >
-            <Eye size={20} />
-          </button>
           <button
             onClick={() => dispatch({ type: 'TOGGLE_FOCUS_MODE' })}
             className="p-2 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"

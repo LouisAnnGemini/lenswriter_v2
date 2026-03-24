@@ -43,6 +43,12 @@ export type Deadline = {
   completed: boolean;
 };
 
+export type InboxItem = {
+  id: string;
+  content: string;
+  createdAt: number;
+};
+
 export type StoreState = {
   works: Work[];
   characters: Character[];
@@ -53,16 +59,17 @@ export type StoreState = {
   scenes: Scene[];
   blocks: Block[];
   deadlines: Deadline[];
+  inbox: InboxItem[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'writing' | 'board' | 'world' | 'deadline' | 'compile';
+  activeTab: 'writing' | 'board' | 'world' | 'deadline' | 'compile' | 'inbox';
   deadlineViewMode: 'global' | 'local';
   boardViewMode: 'micro' | 'meso' | 'macro';
   activeLensId: string | null;
   focusMode: boolean;
   disguiseMode: boolean;
-  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info';
-  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info';
+  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'inbox';
+  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info' | 'inbox';
   showDescriptions: boolean;
   letterSpacing: number;
   editorMargin: number;
@@ -81,13 +88,16 @@ type Action =
   | { type: 'REORDER_WORKS'; payload: { startIndex: number; endIndex: number } }
   | { type: 'SET_ACTIVE_WORK'; payload: string }
   | { type: 'SET_ACTIVE_DOCUMENT'; payload: string | null }
-  | { type: 'SET_ACTIVE_TAB'; payload: 'writing' | 'board' | 'world' | 'deadline' | 'compile' }
+  | { type: 'SET_ACTIVE_TAB'; payload: 'writing' | 'board' | 'world' | 'deadline' | 'compile' | 'inbox' }
   | { type: 'SET_DEADLINE_VIEW_MODE'; payload: 'global' | 'local' }
   | { type: 'SET_BOARD_VIEW_MODE'; payload: 'micro' | 'meso' | 'macro' }
   | { type: 'SET_ACTIVE_LENS'; payload: string | null }
   | { type: 'TOGGLE_FOCUS_MODE' }
   | { type: 'TOGGLE_DISGUISE_MODE' }
-  | { type: 'SET_RIGHT_SIDEBAR_MODE'; payload: 'closed' | 'micro' | 'meso' | 'macro' | 'info' }
+  | { type: 'ADD_INBOX_ITEM'; payload: { content: string } }
+  | { type: 'UPDATE_INBOX_ITEM'; payload: { id: string; content: string } }
+  | { type: 'DELETE_INBOX_ITEM'; payload: { id: string } }
+  | { type: 'SET_RIGHT_SIDEBAR_MODE'; payload: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'inbox' }
   | { type: 'TOGGLE_SHOW_DESCRIPTIONS' }
   | { type: 'ADD_CHAPTER'; payload: { workId: string; title: string } }
   | { type: 'UPDATE_CHAPTER'; payload: { id: string; title: string } }
@@ -173,6 +183,7 @@ const initialState: StoreState = {
   deadlines: [
     { id: uuidv4(), workId: initialWorkId, title: 'First Draft', date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false }
   ],
+  inbox: [],
   activeWorkId: initialWorkId,
   activeDocumentId: initialSceneId,
   activeTab: 'writing',
@@ -289,6 +300,23 @@ function innerReducer(state: StoreState, action: Action): StoreState {
       };
     case 'TOGGLE_SHOW_DESCRIPTIONS':
       return { ...state, showDescriptions: !state.showDescriptions };
+    case 'ADD_INBOX_ITEM':
+      return {
+        ...state,
+        inbox: [{ id: uuidv4(), content: action.payload.content, createdAt: Date.now() }, ...(state.inbox || [])]
+      };
+    case 'UPDATE_INBOX_ITEM':
+      return {
+        ...state,
+        inbox: (state.inbox || []).map(item => 
+          item.id === action.payload.id ? { ...item, content: action.payload.content } : item
+        )
+      };
+    case 'DELETE_INBOX_ITEM':
+      return {
+        ...state,
+        inbox: (state.inbox || []).filter(item => item.id !== action.payload.id)
+      };
     case 'ADD_CHAPTER': {
       const chapters = state.chapters.filter(c => c.workId === action.payload.workId);
       const newChapterId = uuidv4();

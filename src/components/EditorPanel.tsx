@@ -8,6 +8,7 @@ import { MultiSelectDropdown } from './MultiSelectDropdown';
 
 import { LensesPanel } from './LensesPanel';
 import { EventPoolPanel } from './EventPoolPanel';
+import { InboxPanel } from './InboxPanel';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -27,7 +28,7 @@ const SCENE_STATUS_COLORS: Record<string, { bg: string; border: string; text: st
   red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', dot: 'bg-red-500', label: 'Discarded' },
 };
 
-const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, ...props }: any) => {
+const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, ...props }: any) => {
   const ref = useRef<HTMLTextAreaElement>(null);
   
   const adjustHeight = React.useCallback(() => {
@@ -50,7 +51,7 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
 
   useLayoutEffect(() => {
     adjustHeight();
-  }, [value, adjustHeight]);
+  }, [value, className, style?.letterSpacing, adjustHeight]);
 
   useEffect(() => {
     const element = ref.current;
@@ -90,7 +91,7 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
     return (
       <div 
         className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words text-transparent bg-transparent z-0")} 
-        style={props.style}
+        style={style}
         aria-hidden="true"
       >
         {parts.map((part: string, i: number) => {
@@ -113,6 +114,7 @@ const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollCon
         onChange={onChange}
         placeholder={placeholder}
         className={cn("overflow-hidden resize-none relative z-10 bg-transparent w-full", className)}
+        style={style}
         rows={1}
         {...props}
       />
@@ -302,7 +304,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         tocSections.push({
           title: chapter.title || 'Untitled Chapter',
           documentId: chapterId,
-          entries: chapterBlocks.map(b => ({ id: b.id, description: b.description || 'Untitled Block', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
+          entries: chapterBlocks.map(b => ({ id: b.id, description: b.description || '', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
         });
       }
       
@@ -313,7 +315,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
           tocSections.push({
             title: scene.title || 'Untitled Scene',
             documentId: scene.id,
-            entries: sceneBlocks.map(b => ({ id: b.id, description: b.description || 'Untitled Block', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
+            entries: sceneBlocks.map(b => ({ id: b.id, description: b.description || '', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
           });
         }
       }
@@ -747,6 +749,12 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   Events
                 </button>
               )}
+              <button
+                onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'inbox' })}
+                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'inbox' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+              >
+                Inbox
+              </button>
             </div>
             <button
               onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })}
@@ -798,6 +806,9 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   ))
                 )}
               </div>
+            )}
+            {rightSidebarMode === 'inbox' && (
+              <InboxPanel />
             )}
             {rightSidebarMode === 'meso' && activeDocId && (
               <LensesPanel documentId={activeDocId} onClose={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })} onNavigateToBlock={navigateToBlock} />
@@ -1103,6 +1114,24 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 onChange={(e) => dispatch({ type: 'SET_EDITOR_MARGIN', payload: parseInt(e.target.value) })}
                 className="w-full accent-emerald-600"
               />
+            </div>
+            <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Eye size={16} className="text-stone-500" />
+                <label className="text-sm font-medium text-stone-700">Disguise Mode</label>
+              </div>
+              <button
+                onClick={() => dispatch({ type: 'TOGGLE_DISGUISE_MODE' })}
+                className={cn(
+                  "w-10 h-5 rounded-full transition-colors relative",
+                  state.disguiseMode ? "bg-emerald-500" : "bg-stone-200"
+                )}
+              >
+                <div className={cn(
+                  "absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform",
+                  state.disguiseMode ? "translate-x-5" : "translate-x-0"
+                )} />
+              </button>
             </div>
           </div>
         )}

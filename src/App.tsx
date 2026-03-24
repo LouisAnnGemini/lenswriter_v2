@@ -8,6 +8,7 @@ import { BoardTab } from './components/BoardTab';
 import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
 import { CompileTab } from './components/CompileTab';
+import { InboxTab } from './components/InboxTab';
 import { Minimize2, MessageSquare, MessageSquareOff, EyeOff, Eye } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -60,19 +61,8 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
           <DeadlineTab workId={state.deadlineViewMode === 'local' ? (state.activeWorkId || undefined) : undefined} />
         )}
         {state.activeTab === 'compile' && <CompileTab />}
+        {state.activeTab === 'inbox' && <InboxTab />}
       </div>
-      
-      {state.disguiseMode && (
-        <div className="fixed top-6 right-6 flex items-center space-x-2 z-50 transition-opacity duration-300 opacity-0 hover:opacity-100">
-          <button
-            onClick={() => dispatch({ type: 'TOGGLE_DISGUISE_MODE' })}
-            className="p-2 bg-white text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md shadow-sm border border-stone-200 transition-colors"
-            title="Exit Disguise Mode"
-          >
-            <EyeOff size={20} />
-          </button>
-        </div>
-      )}
 
       {state.focusMode && !state.disguiseMode && (
         <div className="fixed top-0 right-0 w-32 h-32 z-50 flex items-start justify-end p-6 opacity-0 hover:opacity-100 transition-opacity duration-300">
@@ -89,6 +79,8 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
   );
 }
 
+import { QuickCapture } from './components/QuickCapture';
+
 function Layout() {
   const { state } = useStore();
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -97,6 +89,7 @@ function Layout() {
     <div className="flex h-[100dvh] w-full overflow-hidden font-sans text-stone-900 bg-stone-900 selection:bg-emerald-200 selection:text-emerald-900">
       {!state.disguiseMode && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
       <MainContent mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <QuickCapture />
     </div>
   );
 }
