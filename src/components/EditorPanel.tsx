@@ -606,32 +606,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         )}
                         style={{ letterSpacing: `${(state.letterSpacing || 0) * 0.05}em` }}
                       />
-                      
-                      {/* Description Editor - Removed as requested */}
-                      {block.description !== undefined && showDescriptions && (
-                        <div className="mt-2 pl-4 border-l-2 border-emerald-200 flex items-start gap-2">
-                          <AutoResizeTextarea
-                            scrollContainerRef={scrollContainerRef}
-                            value={block.description || ''}
-                            onChange={(e: any) => handleBlockChange(block.id, { description: e.target.value })}
-                            placeholder="Untitled block"
-                            className={cn(
-                              "flex-1 text-sm bg-stone-50 p-2 rounded-md outline-none focus:ring-1 focus:ring-emerald-500",
-                              block.description === '' ? "text-stone-400 italic" : "text-stone-600"
-                            )}
-                          />
-                          <button
-                            onClick={() => handleBlockChange(block.id, { completed: !block.completed })}
-                            className={cn(
-                              "mt-1 p-1 rounded-full transition-colors shrink-0",
-                              block.completed ? "text-emerald-500 hover:bg-emerald-50" : "text-stone-300 hover:text-stone-400 hover:bg-stone-100"
-                            )}
-                            title={block.completed ? "Mark as incomplete" : "Mark as complete"}
-                          >
-                            {block.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                          </button>
-                        </div>
-                      )}
                     </div>
 
                     {/* Block Actions (Hover) */}
