@@ -276,8 +276,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         </DragDropContext>
       </div>
 
-      {isExpanded && (
-      <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-stone-800 space-y-4">
+      <div className={cn("p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-stone-800 space-y-4", !isExpanded && "p-2")}>
         {isExpanded && (
           <div className="relative">
             <Plus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
@@ -291,36 +290,35 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
             />
           </div>
         )}
-        <div className={cn("flex space-x-2", !isExpanded && "flex-col space-x-0 space-y-2")}>
-          <button
-            onClick={handleExport}
-            className={cn("flex-1 flex items-center justify-center py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors", !isExpanded && "p-2")}
-            title="Export Data"
-          >
-            <Upload size={14} className={cn(isExpanded && "mr-2")} />
-            {isExpanded && "Export"}
-          </button>
-          <label className={cn("flex-1 flex items-center justify-center py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors cursor-pointer", !isExpanded && "p-2")} title="Import Data">
-            <Download size={14} className={cn(isExpanded && "mr-2")} />
-            {isExpanded && "Import"}
-            <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-          </label>
-        </div>
         
-        {/* Supabase / Cloud Sync Section */}
-        <div className="pt-2 border-t border-stone-800 space-y-2">
-          {isExpanded && <div className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Cloud Sync</div>}
+        <div className={cn("flex space-x-2", !isExpanded && "flex-col space-x-0")}>
+          {isExpanded && (
+            <>
+              <button
+                onClick={handleExport}
+                className="flex-1 flex items-center justify-center py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors"
+                title="Export Data"
+              >
+                <Upload size={12} className="mr-1.5" />
+                Export
+              </button>
+              <label className="flex-1 flex items-center justify-center py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors cursor-pointer" title="Import Data">
+                <Download size={12} className="mr-1.5" />
+                Import
+                <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+              </label>
+            </>
+          )}
           <button
             onClick={() => setShowBackupManager(true)}
-            className={cn("w-full flex items-center justify-center p-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors")}
+            className={cn("flex items-center justify-center bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors", isExpanded ? "flex-1 py-1.5" : "p-2 w-full")}
             title="Data & Backup Settings"
           >
-            <Save size={14} className={cn(isExpanded && "mr-2")} />
-            {isExpanded && "Data & Backup"}
+            <Save size={12} className={cn(isExpanded && "mr-1.5")} />
+            {isExpanded && "Sync"}
           </button>
         </div>
       </div>
-      )}
     </div>
       
     {showBackupManager && (
