@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, LucideIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function ConfirmDeleteButton({ 
   onConfirm, 
   className,
   title = "Delete",
-  iconSize = 16
+  iconSize = 16,
+  icon: Icon = Trash2
 }: { 
   onConfirm: () => void;
   className?: string;
   title?: string;
   iconSize?: number;
+  icon?: LucideIcon;
 }) {
   const [confirming, setConfirming] = useState(false);
 
@@ -41,7 +43,7 @@ export function ConfirmDeleteButton({
       className={cn("text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors", className)}
       title={title}
     >
-      <Trash2 size={iconSize} />
+      <Icon size={iconSize} />
     </button>
   );
 }

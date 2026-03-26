@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search, Pin } from 'lucide-react';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { cn } from '../lib/utils';
@@ -15,10 +16,35 @@ const LENS_COLORS = {
 };
 
 export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
-  const { state, dispatch } = useStore();
-  const activeWorkId = state.activeWorkId;
-  const activeWork = state.works.find(w => w.id === activeWorkId);
-  const selectedLensId = state.activeLensId;
+  const { 
+    activeWorkId, 
+    works, 
+    activeLensId: selectedLensId, 
+    chapters, 
+    scenes, 
+    blocks,
+    updateBlock,
+    setActiveTab,
+    setActiveDocument,
+    updateWork,
+    setActiveLens,
+    toggleLensPin
+  } = useStore(useShallow(state => ({
+    activeWorkId: state.activeWorkId,
+    works: state.works,
+    activeLensId: state.activeLensId,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    blocks: state.blocks,
+    updateBlock: state.updateBlock,
+    setActiveTab: state.setActiveTab,
+    setActiveDocument: state.setActiveDocument,
+    updateWork: state.updateWork,
+    setActiveLens: state.setActiveLens,
+    toggleLensPin: state.toggleLensPin
+  })));
+
+  const activeWork = works.find(w => w.id === activeWorkId);
   const [filterColors, setFilterColors] = useState<string[]>([]);
   const [filterChapterIds, setFilterChapterIds] = useState<string[]>([]);
   const [privateSearchTerm, setPrivateSearchTerm] = useState('');
@@ -46,11 +72,11 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   if (!activeWorkId) return <div className="flex-1 flex items-center justify-center text-stone-400">Select a work</div>;
 
   // Get all lenses for the active work
-  const workChapters = state.chapters.filter(c => c.workId === activeWorkId);
-  const workScenes = state.scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
+  const workChapters = chapters.filter(c => c.workId === activeWorkId);
+  const workScenes = scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
   const documentIds = [...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
   
-  let allLenses = state.blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
+  let allLenses = blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
   
   // Apply filters
   if (filterColors.length > 0) {
@@ -63,7 +89,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
       if (filterChapterIds.includes(l.documentId)) return true;
       
       // Scene lens belonging to this chapter
-      const scene = state.scenes.find(s => s.id === l.documentId);
+      const scene = scenes.find(s => s.id === l.documentId);
       if (scene && filterChapterIds.includes(scene.chapterId)) return true;
       
       return false;
@@ -79,17 +105,17 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   const unpinnedLenses = allLenses.filter(l => !l.pinned);
 
   const getLensLocation = (docId: string) => {
-    const scene = state.scenes.find(s => s.id === docId);
+    const scene = scenes.find(s => s.id === docId);
     if (scene) {
-      const chapter = state.chapters.find(c => c.id === scene.chapterId);
+      const chapter = chapters.find(c => c.id === scene.chapterId);
       return `${chapter?.title || 'Unknown Chapter'} > ${scene.title}`;
     }
-    const chapter = state.chapters.find(c => c.id === docId);
+    const chapter = chapters.find(c => c.id === docId);
     return chapter?.title || 'Unknown Location';
   };
 
   const handleUpdateLens = (id: string, updates: any) => {
-    dispatch({ type: 'UPDATE_BLOCK', payload: { id, ...updates } });
+    updateBlock({ id, ...updates });
   };
 
   const scrollToLens = (lensId: string) => {
@@ -102,8 +128,8 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   };
 
   const handleNavigateToLens = (lensId: string, documentId: string) => {
-    dispatch({ type: 'SET_ACTIVE_TAB', payload: 'writing' });
-    dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: documentId });
+    setActiveTab('writing');
+    setActiveDocument(documentId);
     setTimeout(() => {
       const el = document.getElementById(`block-${lensId}`);
       if (el) {
@@ -126,7 +152,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                 ref={descriptionRef}
                 value={activeWork?.lensesDescription ?? "Global summary of all highlighted information."}
                 onChange={(e) => {
-                  dispatch({ type: 'UPDATE_WORK', payload: { id: activeWorkId, lensesDescription: e.target.value } });
+                  updateWork({ id: activeWorkId, lensesDescription: e.target.value });
                   e.target.style.height = 'auto';
                   e.target.style.height = e.target.scrollHeight + 'px';
                 }}
@@ -271,7 +297,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                         LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
                         selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
                       )}
-                      onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id })}
+                      onClick={() => setActiveLens(lens.id)}
                     >
                       <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
                         <div className="flex items-center text-xs font-medium opacity-60">
@@ -282,7 +308,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              dispatch({ type: 'TOGGLE_LENS_PIN', payload: lens.id });
+                              toggleLensPin(lens.id);
                             }}
                             className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
                             title={lens.pinned ? "Unpin lens" : "Pin lens"}
@@ -355,7 +381,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                         </div>
                         <button 
                           className="opacity-0 group-hover:opacity-100 px-2.5 py-1 bg-black/5 hover:bg-black/10 rounded-md text-xs font-bold transition-all"
-                          onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id }); }}
+                          onClick={(e) => { e.stopPropagation(); setActiveLens(lens.id); }}
                         >
                           Details
                         </button>
@@ -378,7 +404,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
                       selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
                     )}
-                    onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id })}
+                    onClick={() => setActiveLens(lens.id)}
                   >
                     <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
                       <div className="flex items-center text-xs font-medium opacity-60">
@@ -389,7 +415,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            dispatch({ type: 'TOGGLE_LENS_PIN', payload: lens.id });
+                            toggleLensPin(lens.id);
                           }}
                           className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
                           title={lens.pinned ? "Unpin lens" : "Pin lens"}
@@ -462,7 +488,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       </div>
                       <button 
                         className="opacity-0 group-hover:opacity-100 px-2.5 py-1 bg-black/5 hover:bg-black/10 rounded-md text-xs font-bold transition-all"
-                        onClick={(e) => { e.stopPropagation(); dispatch({ type: 'SET_ACTIVE_LENS', payload: lens.id }); }}
+                        onClick={(e) => { e.stopPropagation(); setActiveLens(lens.id); }}
                       >
                         Details
                       </button>
@@ -490,7 +516,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     Lens Details
                   </h3>
                   <button 
-                    onClick={() => dispatch({ type: 'SET_ACTIVE_LENS', payload: null })}
+                    onClick={() => setActiveLens(null)}
                     className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded-md transition-colors"
                   >
                     <X size={16} />

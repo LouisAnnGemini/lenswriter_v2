@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { useStore, StoreState } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { State } from '../store/types';
+import { initialState } from '../store/constants';
 
 type BackupContextType = {
   directoryHandle: FileSystemDirectoryHandle | null;
@@ -17,7 +19,7 @@ type BackupContextType = {
 const BackupContext = createContext<BackupContextType | undefined>(undefined);
 
 export const BackupProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { state } = useStore();
+  const store = useStore();
   const [directoryHandle, setDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [isBackupEnabled, setIsBackupEnabled] = useState(false);
   const [lastBackupTime, setLastBackupTime] = useState<Date | null>(null);
@@ -25,13 +27,8 @@ export const BackupProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const stateRef = useRef<StoreState>(state);
 
   const isSupported = 'showDirectoryPicker' in window;
-
-  useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
 
   const selectDirectory = async () => {
     if (!isSupported) {
@@ -70,8 +67,13 @@ export const BackupProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const timestamp = now.toISOString().replace(/[:.]/g, '-');
       const filename = `lenswriter_backup_${timestamp}.json`;
       
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { past, future, ...stateToBackup } = stateRef.current;
+      // Extract only data fields from the store
+      const currentState = useStore.getState();
+      const dataKeys = Object.keys(initialState);
+      const stateToBackup = Object.fromEntries(
+        Object.entries(currentState).filter(([key]) => dataKeys.includes(key))
+      );
+
       const content = JSON.stringify(stateToBackup, null, 2);
 
       // 2. Write new file

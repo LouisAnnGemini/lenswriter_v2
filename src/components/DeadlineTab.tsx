@@ -1,10 +1,38 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useStore, Scene } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
+import { Scene } from '../store/types';
 import { countWords, cn } from '../lib/utils';
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Calendar as CalendarIcon, Target, BookOpen, ChevronDown, ChevronRight as ChevronRightIcon, X } from 'lucide-react';
 
 export function DeadlineTab({ workId }: { workId?: string }) {
-  const { state, dispatch } = useStore();
+  const { 
+    works, 
+    chapters, 
+    scenes, 
+    blocks, 
+    deadlines,
+    updateChapter,
+    updateScene,
+    addDeadline,
+    updateDeadline,
+    deleteDeadline,
+    setActiveWork,
+    setDeadlineViewMode
+  } = useStore(useShallow(state => ({
+    works: state.works,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    blocks: state.blocks,
+    deadlines: state.deadlines,
+    updateChapter: state.updateChapter,
+    updateScene: state.updateScene,
+    addDeadline: state.addDeadline,
+    updateDeadline: state.updateDeadline,
+    deleteDeadline: state.deleteDeadline,
+    setActiveWork: state.setActiveWork,
+    setDeadlineViewMode: state.setDeadlineViewMode
+  })));
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // State to track expanded works
@@ -12,11 +40,11 @@ export function DeadlineTab({ workId }: { workId?: string }) {
 
   // Initialize expanded works (first work expanded by default)
   useEffect(() => {
-    if (state.works.length > 0 && Object.keys(expandedWorks).length === 0) {
-      const sortedWorks = [...state.works].sort((a, b) => a.order - b.order);
+    if (works.length > 0 && Object.keys(expandedWorks).length === 0) {
+      const sortedWorks = [...works].sort((a, b) => a.order - b.order);
       setExpandedWorks({ [sortedWorks[0].id]: true });
     }
-  }, [state.works]);
+  }, [works]);
 
   const toggleWorkExpanded = (workId: string) => {
     setExpandedWorks(prev => ({ ...prev, [workId]: !prev[workId] }));
@@ -33,8 +61,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
 
   // Word count calculations
   const getDocumentWordCount = (docId: string) => {
-    const blocks = state.blocks.filter(b => b.documentId === docId && (!b.isLens));
-    return blocks.reduce((sum, b) => sum + countWords(b.content), 0);
+    const docBlocks = blocks.filter(b => b.documentId === docId && (!b.isLens));
+    return docBlocks.reduce((sum, b) => sum + countWords(b.content), 0);
   };
 
   const getSceneWordCount = (sceneId: string) => {
@@ -43,17 +71,17 @@ export function DeadlineTab({ workId }: { workId?: string }) {
 
   const getChapterWordCount = (chapterId: string) => {
     let count = getDocumentWordCount(chapterId);
-    const scenes = state.scenes.filter(s => s.chapterId === chapterId);
-    for (const scene of scenes) {
+    const chapterScenes = scenes.filter(s => s.chapterId === chapterId);
+    for (const scene of chapterScenes) {
       count += getSceneWordCount(scene.id);
     }
     return count;
   };
 
   const getWorkWordCount = (workId: string) => {
-    const chapters = state.chapters.filter(c => c.workId === workId);
+    const workChapters = chapters.filter(c => c.workId === workId);
     let count = 0;
-    for (const chapter of chapters) {
+    for (const chapter of workChapters) {
       count += getChapterWordCount(chapter.id);
     }
     return count;
@@ -65,44 +93,44 @@ export function DeadlineTab({ workId }: { workId?: string }) {
 
   // Get all chapters and scenes across all works that have a goal set and are not completed
   const todoTasks = useMemo(() => {
-    const chapterTasks = state.chapters
+    const chapterTasks = chapters
       .filter(c => (!workId || c.workId === workId) && c.goalWordCount && !c.completed && !c.deadline)
       .map(c => ({ ...c, type: 'chapter' as const }));
 
-    const sceneTasks = state.scenes
+    const sceneTasks = scenes
       .filter(s => {
-        const chapter = state.chapters.find(c => c.id === s.chapterId);
+        const chapter = chapters.find(c => c.id === s.chapterId);
         return (!workId || chapter?.workId === workId) && s.goalWordCount && !isSceneCompleted(s) && !s.deadline;
       })
       .map(s => ({ ...s, type: 'scene' as const }));
 
     return [...chapterTasks, ...sceneTasks].sort((a, b) => {
-      const workAId = a.type === 'chapter' ? a.workId : state.chapters.find(c => c.id === a.chapterId)?.workId;
-      const workBId = b.type === 'chapter' ? b.workId : state.chapters.find(c => c.id === b.chapterId)?.workId;
+      const workAId = a.type === 'chapter' ? a.workId : chapters.find(c => c.id === a.chapterId)?.workId;
+      const workBId = b.type === 'chapter' ? b.workId : chapters.find(c => c.id === b.chapterId)?.workId;
       
-      const workA = state.works.find(w => w.id === workAId);
-      const workB = state.works.find(w => w.id === workBId);
+      const workA = works.find(w => w.id === workAId);
+      const workB = works.find(w => w.id === workBId);
       
       if (workA && workB && workA.order !== workB.order) {
         return workA.order - workB.order;
       }
       return a.order - b.order;
     });
-  }, [state.chapters, state.scenes, state.works, workId]);
+  }, [chapters, scenes, works, workId]);
 
   const handleUpdateGoal = (id: string, type: 'chapter' | 'scene', goalWordCount: number | undefined) => {
     if (type === 'chapter') {
-      dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id, goalWordCount } });
+      updateChapter({ id, goalWordCount });
     } else {
-      dispatch({ type: 'UPDATE_SCENE', payload: { id, goalWordCount } });
+      updateScene({ id, goalWordCount });
     }
   };
 
   const handleToggleComplete = (id: string, type: 'chapter' | 'scene', completed: boolean) => {
     if (type === 'chapter') {
-      dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id, completed } });
+      updateChapter({ id, completed });
     } else {
-      dispatch({ type: 'UPDATE_SCENE', payload: { id, statusColor: completed ? 'green' : undefined } });
+      updateScene({ id, statusColor: completed ? 'green' : undefined });
     }
   };
 
@@ -111,9 +139,9 @@ export function DeadlineTab({ workId }: { workId?: string }) {
     const data = JSON.parse(e.dataTransfer.getData('text/plain'));
     if (data && data.id) {
       if (data.type === 'chapter') {
-        dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: data.id, deadline: dateString } });
+        updateChapter({ id: data.id, deadline: dateString });
       } else {
-        dispatch({ type: 'UPDATE_SCENE', payload: { id: data.id, deadline: dateString } });
+        updateScene({ id: data.id, deadline: dateString });
       }
     }
   };
@@ -125,7 +153,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  const filteredWorks = workId ? state.works.filter(w => w.id === workId) : state.works;
+  const filteredWorks = workId ? works.filter(w => w.id === workId) : works;
 
   return (
     <div className={cn(
@@ -151,8 +179,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
               </h3>
               <div className="space-y-2">
                 {todoTasks.map(task => {
-                  const workId = task.type === 'chapter' ? task.workId : state.chapters.find(c => c.id === task.chapterId)?.workId;
-                  const work = state.works.find(w => w.id === workId);
+                  const workId = task.type === 'chapter' ? task.workId : chapters.find(c => c.id === task.chapterId)?.workId;
+                  const work = works.find(w => w.id === workId);
                   const currentWords = task.type === 'chapter' ? getChapterWordCount(task.id) : getSceneWordCount(task.id);
                   const percentage = task.goalWordCount ? Math.min(100, Math.round((currentWords / task.goalWordCount) * 100)) : 0;
                   return (
@@ -196,7 +224,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
           <div className="space-y-6">
             {[...filteredWorks].sort((a, b) => a.order - b.order).map(work => {
               const workTotalWords = getWorkWordCount(work.id);
-              const chapters = state.chapters
+              const workChapters = chapters
                 .filter(c => c.workId === work.id)
                 .sort((a, b) => {
                   const aCompleted = !!a.completed;
@@ -215,8 +243,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                     <div 
                       className="flex items-center justify-between pb-2 border-b border-stone-100 cursor-pointer hover:bg-stone-50 p-1 -mx-1 rounded"
                       onClick={() => {
-                        dispatch({ type: 'SET_ACTIVE_WORK', payload: work.id });
-                        dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'local' });
+                        setActiveWork(work.id);
+                        setDeadlineViewMode('local');
                       }}
                     >
                       <h3 className="font-semibold text-stone-800 flex items-center">
@@ -243,9 +271,9 @@ export function DeadlineTab({ workId }: { workId?: string }) {
 
                   {(isExpanded || !!workId) && (
                     <div className={cn("space-y-4", !workId && "pl-2")}>
-                      {chapters.map(chapter => {
+                      {workChapters.map(chapter => {
                         const chapterWords = getChapterWordCount(chapter.id);
-                        const chapterScenes = state.scenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order);
+                        const chapterScenes = scenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order);
                         
                         return (
                           <div key={chapter.id} className="space-y-2">
@@ -396,19 +424,19 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                 
                 // Find tasks for this day
-                const chapterTasks = state.chapters
+                const dayChapterTasks = chapters
                   .filter(c => c.deadline === dateString)
                   .map(c => ({ ...c, type: 'chapter' as const }));
                 
-                const sceneTasks = state.scenes
+                const daySceneTasks = scenes
                   .filter(s => s.deadline === dateString)
                   .map(s => ({ ...s, type: 'scene' as const }));
 
-                const dayTasks = [...chapterTasks, ...sceneTasks].sort((a, b) => {
-                  const workAId = a.type === 'chapter' ? a.workId : state.chapters.find(c => c.id === a.chapterId)?.workId;
-                  const workBId = b.type === 'chapter' ? b.workId : state.chapters.find(c => c.id === b.chapterId)?.workId;
-                  const workA = state.works.find(w => w.id === workAId);
-                  const workB = state.works.find(w => w.id === workBId);
+                const dayTasks = [...dayChapterTasks, ...daySceneTasks].sort((a, b) => {
+                  const workAId = a.type === 'chapter' ? a.workId : chapters.find(c => c.id === a.chapterId)?.workId;
+                  const workBId = b.type === 'chapter' ? b.workId : chapters.find(c => c.id === b.chapterId)?.workId;
+                  const workA = works.find(w => w.id === workAId);
+                  const workB = works.find(w => w.id === workBId);
                   if (workA && workB && workA.order !== workB.order) {
                     return workA.order - workB.order;
                   }
@@ -437,8 +465,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                     
                     <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                       {dayTasks.map(task => {
-                        const workId = task.type === 'chapter' ? task.workId : state.chapters.find(c => c.id === task.chapterId)?.workId;
-                        const work = state.works.find(w => w.id === workId);
+                        const workId = task.type === 'chapter' ? task.workId : chapters.find(c => c.id === task.chapterId)?.workId;
+                        const work = works.find(w => w.id === workId);
                         const currentWords = task.type === 'chapter' ? getChapterWordCount(task.id) : getSceneWordCount(task.id);
                         const completed = task.type === 'chapter' ? !!task.completed : isSceneCompleted(task as Scene);
                         const percentage = task.goalWordCount ? Math.min(100, Math.round((currentWords / task.goalWordCount) * 100)) : 0;
@@ -465,9 +493,9 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (task.type === 'chapter') {
-                                    dispatch({ type: 'UPDATE_CHAPTER_GOAL', payload: { id: task.id, deadline: undefined } });
+                                    updateChapter({ id: task.id, deadline: undefined });
                                   } else {
-                                    dispatch({ type: 'UPDATE_SCENE', payload: { id: task.id, deadline: undefined } });
+                                    updateScene({ id: task.id, deadline: undefined });
                                   }
                                 }}
                                 className="opacity-0 group-hover:opacity-100 absolute top-1 right-1 text-stone-400 hover:text-red-500 transition-opacity"

@@ -1,11 +1,48 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useStore } from '../store/StoreContext';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, ChevronDown, PanelRightOpen, PanelRightClose } from 'lucide-react';
+import { useStore } from '../store/stores/useStore';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, ChevronDown, PanelRightOpen, PanelRightClose, Inbox } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useShallow } from 'zustand/react/shallow';
+import { MobileInboxDrawer } from './MobileInboxDrawer';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
-  const { state, dispatch } = useStore();
+  const { 
+    focusMode,
+    scenes,
+    activeDocumentId,
+    activeTab,
+    works,
+    activeWorkId,
+    rightSidebarMode,
+    disguiseMode,
+    lastInspectorTab,
+    boardViewMode,
+    setActiveDocument, 
+    setActiveTab, 
+    setBoardViewMode, 
+    setDeadlineViewMode, 
+    toggleFocusMode, 
+    setRightSidebarMode 
+  } = useStore(useShallow(state => ({
+    focusMode: state.focusMode,
+    scenes: state.scenes,
+    activeDocumentId: state.activeDocumentId,
+    activeTab: state.activeTab,
+    works: state.works,
+    activeWorkId: state.activeWorkId,
+    rightSidebarMode: state.rightSidebarMode,
+    disguiseMode: state.disguiseMode,
+    lastInspectorTab: state.lastInspectorTab,
+    boardViewMode: state.boardViewMode,
+    setActiveDocument: state.setActiveDocument,
+    setActiveTab: state.setActiveTab,
+    setBoardViewMode: state.setBoardViewMode,
+    setDeadlineViewMode: state.setDeadlineViewMode,
+    toggleFocusMode: state.toggleFocusMode,
+    setRightSidebarMode: state.setRightSidebarMode
+  })));
   const [isBoardDropdownOpen, setIsBoardDropdownOpen] = useState(false);
+  const [isMobileInboxOpen, setIsMobileInboxOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,7 +55,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (state.focusMode) return null;
+  if (focusMode) return null;
 
   const tabs = [
     { id: 'writing', label: 'Writing', icon: Edit3 },
@@ -34,17 +71,17 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     { id: 'macro', label: 'Timeline Events', icon: Clock },
   ] as const;
   
-  const isScene = state.scenes.some(s => s.id === state.activeDocumentId);
+  const isScene = scenes.some(s => s.id === activeDocumentId);
 
   return (
     <>
       {/* Desktop Top Nav */}
       <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-4 md:px-6 shrink-0">
         <div className="flex items-center">
-          {state.activeTab === 'writing' && state.activeDocumentId ? (
+          {activeTab === 'writing' && activeDocumentId ? (
             <button 
               className="md:hidden mr-4 p-2 -ml-2 text-stone-500 hover:bg-stone-100 rounded-md"
-              onClick={() => dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: null })}
+              onClick={() => setActiveDocument(null)}
             >
               <ChevronLeft size={20} />
             </button>
@@ -64,27 +101,27 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
                   <div key={tab.id} className="relative flex items-center h-full" ref={dropdownRef}>
                     <button
                       onClick={() => {
-                        if (state.activeTab === 'board') {
+                        if (activeTab === 'board') {
                           setIsBoardDropdownOpen(!isBoardDropdownOpen);
                         } else {
-                          dispatch({ type: 'SET_ACTIVE_TAB', payload: 'board' });
+                          setActiveTab('board');
                         }
                       }}
                       className={cn(
                         "flex items-center space-x-2 h-full px-1 border-b-2 text-sm font-medium transition-colors",
-                        state.activeTab === 'board'
+                        activeTab === 'board'
                           ? "border-emerald-500 text-stone-900"
                           : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300"
                       )}
                     >
                       <tab.icon size={16} />
                       <span>{tab.label}</span>
-                      {state.activeTab === 'board' && (
+                      {activeTab === 'board' && (
                         <ChevronDown size={14} className="ml-1 text-stone-500" />
                       )}
                     </button>
                     
-                    {isBoardDropdownOpen && state.activeTab === 'board' && (
+                    {isBoardDropdownOpen && activeTab === 'board' && (
                       <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-stone-200 rounded-b-md shadow-lg z-50 py-1">
                         {boardViewOptions.map((option) => {
                           const Icon = option.icon;
@@ -92,15 +129,15 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
                             <button
                               key={option.id}
                               onClick={() => {
-                                dispatch({ type: 'SET_BOARD_VIEW_MODE', payload: option.id });
+                                setBoardViewMode(option.id as any);
                                 setIsBoardDropdownOpen(false);
                               }}
                               className={cn(
                                 "w-full flex items-center space-x-2 px-3 py-2 text-sm text-left transition-colors",
-                                state.boardViewMode === option.id ? "bg-stone-100 text-stone-900 font-medium" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
+                                boardViewMode === option.id ? "bg-stone-100 text-stone-900 font-medium" : "text-stone-600 hover:bg-stone-50 hover:text-stone-900"
                               )}
                             >
-                              <Icon size={16} className={state.boardViewMode === option.id ? "text-stone-700" : "text-stone-400"} />
+                              <Icon size={16} className={boardViewMode === option.id ? "text-stone-700" : "text-stone-400"} />
                               <span>{option.label}</span>
                             </button>
                           );
@@ -115,14 +152,14 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
                 <button
                   key={tab.id}
                   onClick={() => {
-                    dispatch({ type: 'SET_ACTIVE_TAB', payload: tab.id });
+                    setActiveTab(tab.id as any);
                     if (tab.id === 'deadline') {
-                      dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'local' });
+                      setDeadlineViewMode('local');
                     }
                   }}
                   className={cn(
                     "flex items-center space-x-2 h-full px-1 border-b-2 text-sm font-medium transition-colors",
-                    state.activeTab === tab.id
+                    activeTab === tab.id
                       ? "border-emerald-500 text-stone-900"
                       : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300"
                   )}
@@ -134,32 +171,41 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
             })}
           </div>
           <div className="md:hidden font-semibold text-stone-900">
-            {state.works.find(w => w.id === state.activeWorkId)?.title || 'LensWriter'}
+            {works.find(w => w.id === activeWorkId)?.title || 'LensWriter'}
           </div>
         </div>
 
         <div className="flex items-center space-x-2">
-          {state.activeTab === 'writing' && state.activeDocumentId && !state.disguiseMode && (
+          {activeTab === 'writing' && activeDocumentId && !disguiseMode && (
             <button
               onClick={() => {
-                if (state.rightSidebarMode === 'closed') {
-                  const canShowLastTab = isScene || (state.lastInspectorTab !== 'info' && state.lastInspectorTab !== 'macro');
-                  dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: canShowLastTab ? state.lastInspectorTab : 'micro' });
+                if (rightSidebarMode === 'closed') {
+                  const canShowLastTab = isScene || (lastInspectorTab !== 'info' && lastInspectorTab !== 'macro');
+                  setRightSidebarMode(canShowLastTab ? lastInspectorTab : 'micro');
                 } else {
-                  dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' });
+                  setRightSidebarMode('closed');
                 }
               }}
               className={cn(
                 "p-2 rounded-md transition-colors",
-                state.rightSidebarMode !== 'closed' ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
+                rightSidebarMode !== 'closed' ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
               )}
               title="Toggle Inspector (Ctrl+I)"
             >
-              {state.rightSidebarMode !== 'closed' ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
+              {rightSidebarMode !== 'closed' ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
             </button>
           )}
+          
           <button
-            onClick={() => dispatch({ type: 'TOGGLE_FOCUS_MODE' })}
+            onClick={() => setIsMobileInboxOpen(true)}
+            className="md:hidden p-2 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+            title="Inbox"
+          >
+            <Inbox size={20} />
+          </button>
+
+          <button
+            onClick={() => toggleFocusMode()}
             className="p-2 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
             title="Enter Focus Mode"
           >
@@ -168,9 +214,14 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         </div>
       </div>
 
+      <MobileInboxDrawer 
+        isOpen={isMobileInboxOpen} 
+        onClose={() => setIsMobileInboxOpen(false)} 
+      />
+
       {/* Mobile Bottom Nav */}
       <div className="md:hidden">
-        {state.activeTab === 'board' && (
+        {activeTab === 'board' && (
           <div className="fixed bottom-16 left-0 right-0 h-12 bg-white border-t border-stone-200 flex items-center justify-around z-30 px-2 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
             {boardViewOptions.map((option) => {
               const Icon = option.icon;
@@ -178,10 +229,10 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
               return (
                 <button
                   key={option.id}
-                  onClick={() => dispatch({ type: 'SET_BOARD_VIEW_MODE', payload: option.id })}
+                  onClick={() => setBoardViewMode(option.id as any)}
                   className={cn(
                     "flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all",
-                    state.boardViewMode === option.id 
+                    boardViewMode === option.id 
                       ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" 
                       : "text-stone-500 hover:bg-stone-50"
                   )}
@@ -198,14 +249,14 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
             <button
               key={tab.id}
               onClick={() => {
-                dispatch({ type: 'SET_ACTIVE_TAB', payload: tab.id });
+                setActiveTab(tab.id as any);
                 if (tab.id === 'deadline') {
-                  dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'local' });
+                  setDeadlineViewMode('local');
                 }
               }}
               className={cn(
                 "flex flex-col items-center justify-center w-full h-full space-y-1",
-                state.activeTab === tab.id
+                activeTab === tab.id
                   ? "text-emerald-600"
                   : "text-stone-400"
               )}

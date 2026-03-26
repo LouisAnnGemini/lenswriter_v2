@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/StoreContext';
-import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar, Inbox } from 'lucide-react';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
+import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '../lib/utils';
 import { WorkIcon } from './WorkIcon';
@@ -8,7 +9,35 @@ import { WorkIconPicker } from './WorkIconPicker';
 import { BackupManager } from './BackupManager';
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, setMobileOpen?: (open: boolean) => void }) {
-  const { state, dispatch } = useStore();
+  const { 
+    works, 
+    activeWorkId, 
+    activeTab, 
+    deadlineViewMode, 
+    focusMode,
+    addWork,
+    updateWork,
+    deleteWork,
+    reorderWorks,
+    setActiveWork,
+    setActiveTab,
+    setDeadlineViewMode,
+    importData
+  } = useStore(useShallow(state => ({
+    works: state.works,
+    activeWorkId: state.activeWorkId,
+    activeTab: state.activeTab,
+    deadlineViewMode: state.deadlineViewMode,
+    focusMode: state.focusMode,
+    addWork: state.addWork,
+    updateWork: state.updateWork,
+    deleteWork: state.deleteWork,
+    reorderWorks: state.reorderWorks,
+    setActiveWork: state.setActiveWork,
+    setActiveTab: state.setActiveTab,
+    setDeadlineViewMode: state.setDeadlineViewMode,
+    importData: state.importData
+  })));
   const [collapsed, setCollapsed] = useState(true);
   const isExpanded = !collapsed || !!mobileOpen;
   const [newWorkTitle, setNewWorkTitle] = useState('');
@@ -17,39 +46,42 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
   const [deletingWorkId, setDeletingWorkId] = useState<string | null>(null);
   const [showBackupManager, setShowBackupManager] = useState(false);
 
-  if (state.focusMode) return null;
+  if (focusMode) return null;
 
   const handleAddWork = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newWorkTitle.trim()) {
-      dispatch({ type: 'ADD_WORK', payload: { title: newWorkTitle.trim() } });
+      addWork(newWorkTitle.trim());
       setNewWorkTitle('');
     }
   };
 
   const handleRenameWork = (id: string) => {
     if (editTitle.trim()) {
-      dispatch({ type: 'UPDATE_WORK', payload: { id, title: editTitle.trim() } });
+      updateWork({ id, title: editTitle.trim() });
       setEditingWorkId(null);
     }
   };
 
   const confirmDeleteWork = (id: string) => {
-    dispatch({ type: 'DELETE_WORK', payload: id });
+    deleteWork(id);
     setDeletingWorkId(null);
   };
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
-    dispatch({
-      type: 'REORDER_WORKS',
-      payload: { startIndex: result.source.index, endIndex: result.destination.index }
-    });
+    reorderWorks(result.source.index, result.destination.index);
   };
 
   const handleExport = () => {
+    // Get current state from store
+    const state = useStore.getState();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { past, future, ...stateToExport } = state;
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stateToExport));
+    // Filter out functions from stateToExport
+    const dataToExport = Object.fromEntries(
+      Object.entries(stateToExport).filter(([_, v]) => typeof v !== 'function')
+    );
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", "story-weaver-data.json");
@@ -67,7 +99,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
       try {
         const json = JSON.parse(event.target?.result as string);
         if (json && typeof json === 'object' && 'works' in json) {
-          dispatch({ type: 'IMPORT_DATA', payload: json });
+          importData(json);
         } else {
           alert('Invalid data format');
         }
@@ -115,28 +147,13 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         <div className="mb-4 px-2 space-y-1">
           <button
             onClick={() => {
-              dispatch({ type: 'SET_ACTIVE_TAB', payload: 'inbox' });
+              setActiveTab('deadline');
+              setDeadlineViewMode('global');
               setMobileOpen?.(false);
             }}
             className={cn(
               "w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-              state.activeTab === 'inbox'
-                ? "bg-emerald-500/10 text-emerald-400"
-                : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
-            )}
-          >
-            <Inbox size={16} className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")} />
-            {isExpanded && <span>Inbox</span>}
-          </button>
-          <button
-            onClick={() => {
-              dispatch({ type: 'SET_ACTIVE_TAB', payload: 'deadline' });
-              dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'global' });
-              setMobileOpen?.(false);
-            }}
-            className={cn(
-              "w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-              state.activeTab === 'deadline'
+              activeTab === 'deadline'
                 ? "bg-emerald-500/10 text-emerald-400"
                 : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
             )}
@@ -150,7 +167,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
           <Droppable droppableId="works" type="work">
             {(provided) => (
               <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1">
-                {[...state.works].sort((a, b) => a.order - b.order).map((work, index) => (
+                {[...works].sort((a, b) => a.order - b.order).map((work, index) => (
                   // @ts-expect-error React 19 key prop issue
                   <Draggable key={work.id} draggableId={work.id} index={index}>
                     {(provided, snapshot) => (
@@ -159,7 +176,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                         {...provided.draggableProps}
                         className={cn(
                           "group relative flex items-center px-4 py-2 text-sm transition-colors",
-                          state.activeWorkId === work.id 
+                          activeWorkId === work.id 
                             ? "bg-stone-800 text-stone-100 border-r-2 border-emerald-500" 
                             : "hover:bg-stone-800/50 hover:text-stone-200",
                           snapshot.isDragging && "bg-stone-800 shadow-xl z-50"
@@ -178,16 +195,16 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                         <div 
                           className="flex-1 flex items-center min-w-0 cursor-pointer"
                           onClick={() => {
-                            dispatch({ type: 'SET_ACTIVE_WORK', payload: work.id });
-                            if (state.activeTab === 'deadline' && state.deadlineViewMode === 'global') {
-                              dispatch({ type: 'SET_DEADLINE_VIEW_MODE', payload: 'local' });
+                            setActiveWork(work.id);
+                            if (activeTab === 'deadline' && deadlineViewMode === 'global') {
+                              setDeadlineViewMode('local');
                             }
                             setMobileOpen?.(false);
                           }}
                         >
                           <div 
-                            onClick={(e) => isExpanded && e.stopPropagation()} 
                             className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")}
+                            onClick={(e) => isExpanded && e.stopPropagation()} 
                           >
                             {!isExpanded ? (
                               <div className="hover:opacity-80 transition-opacity">
@@ -196,7 +213,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                             ) : (
                               <WorkIconPicker 
                                 currentIcon={work.icon} 
-                                onSelect={(icon) => dispatch({ type: 'UPDATE_WORK', payload: { id: work.id, icon } })}
+                                onSelect={(icon) => updateWork({ id: work.id, icon })}
                               >
                                 <div className="hover:opacity-80 transition-opacity">
                                   <WorkIcon icon={work.icon} size={16} />

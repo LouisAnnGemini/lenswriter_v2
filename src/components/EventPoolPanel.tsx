@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/StoreContext';
-import { Character } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
+import { Character } from '../store/types';
 import { Clock, Link as LinkIcon, Unlink, Search, X, Pencil } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { EventDetailsModal } from './EventDetailsModal';
 
 export function EventPoolPanel({ documentId, onClose }: { documentId: string, onClose: () => void }) {
-  const { state, dispatch } = useStore();
+  const { 
+    activeWorkId, 
+    timelineEvents, 
+    scenes, 
+    characters, 
+    toggleSceneEvent 
+  } = useStore(useShallow(state => ({
+    activeWorkId: state.activeWorkId,
+    timelineEvents: state.timelineEvents,
+    scenes: state.scenes,
+    characters: state.characters,
+    toggleSceneEvent: state.toggleSceneEvent
+  })));
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
-  const activeWorkId = state.activeWorkId;
-  const events = state.timelineEvents.filter(e => e.workId === activeWorkId);
-  const scene = state.scenes.find(s => s.id === documentId);
+  const events = timelineEvents.filter(e => e.workId === activeWorkId);
+  const scene = scenes.find(s => s.id === documentId);
 
   const filteredEvents = events.filter(e => 
     (e.title || '').toLowerCase().includes((searchTerm || '').toLowerCase()) ||
@@ -24,10 +36,7 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
 
   const toggleEventLink = (eventId: string) => {
     if (!scene) return;
-    dispatch({
-      type: 'TOGGLE_SCENE_EVENT',
-      payload: { sceneId: scene.id, eventId }
-    });
+    toggleSceneEvent(scene.id, eventId);
   };
 
   if (!scene) {
@@ -66,7 +75,7 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
           <div className="space-y-2">
             {linkedEvents.map(event => {
               const eventCharacters = Object.keys(event.characterActions).map(charId => 
-                state.characters.find(c => c.id === charId)
+                characters.find(c => c.id === charId)
               ).filter(Boolean) as Character[];
 
               return (

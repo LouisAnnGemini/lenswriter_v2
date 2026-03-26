@@ -1,24 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { Copy, Download, Upload, CheckSquare, Square, ChevronRight, ChevronDown, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function CompileTab() {
-  const { state } = useStore();
+  const { 
+    works, 
+    activeWorkId, 
+    chapters, 
+    scenes, 
+    blocks, 
+    activeDocumentId 
+  } = useStore(useShallow(state => ({
+    works: state.works,
+    activeWorkId: state.activeWorkId,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    blocks: state.blocks,
+    activeDocumentId: state.activeDocumentId
+  })));
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewText, setPreviewText] = useState('');
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
 
-  const activeWork = state.works.find(w => w.id === state.activeWorkId);
-  const workChapters = state.chapters
-    .filter(c => c.workId === state.activeWorkId)
+  const activeWork = works.find(w => w.id === activeWorkId);
+  const workChapters = chapters
+    .filter(c => c.workId === activeWorkId)
     .sort((a, b) => a.order - b.order);
 
   // Helper to get scenes for a chapter
   const getScenes = (chapterId: string) => 
-    state.scenes
+    scenes
       .filter(s => s.chapterId === chapterId)
       .sort((a, b) => a.order - b.order);
 
@@ -65,10 +81,10 @@ export function CompileTab() {
   };
 
   const selectCurrentChapter = () => {
-    if (!state.activeDocumentId) return;
+    if (!activeDocumentId) return;
     // Find which chapter the active document belongs to
     // activeDocumentId is a scene ID usually
-    const scene = state.scenes.find(s => s.id === state.activeDocumentId);
+    const scene = scenes.find(s => s.id === activeDocumentId);
     if (scene) {
       const chapterId = scene.chapterId;
       const newSelected = new Set<string>();
@@ -79,10 +95,10 @@ export function CompileTab() {
   };
 
   const selectCurrentScene = () => {
-    if (!state.activeDocumentId) return;
+    if (!activeDocumentId) return;
     const newSelected = new Set<string>();
     // Find scene
-    const scene = state.scenes.find(s => s.id === state.activeDocumentId);
+    const scene = scenes.find(s => s.id === activeDocumentId);
     if (scene) {
       // Also add chapter? Maybe just the scene. 
       // User said "current scene output". Usually implies just the text.
@@ -111,11 +127,11 @@ export function CompileTab() {
 
         selectedScenes.forEach((scene, index) => {
           // Get blocks
-          const blocks = state.blocks
+          const sceneBlocks = blocks
             .filter(b => b.documentId === scene.id)
             .sort((a, b) => a.order - b.order);
           
-          blocks.forEach(block => {
+          sceneBlocks.forEach(block => {
             // Skip hidden (black) lenses
             if (block.isLens && block.lensColor?.toLowerCase() === 'black') return;
             
@@ -139,7 +155,7 @@ export function CompileTab() {
     });
 
     setPreviewText(text);
-  }, [selectedIds, state.blocks, state.scenes, state.chapters, activeWork]);
+  }, [selectedIds, blocks, scenes, chapters, activeWork]);
 
   // Export to Word
   const handleExport = async () => {
@@ -166,11 +182,11 @@ export function CompileTab() {
         }
 
         selectedScenes.forEach((scene, index) => {
-          const blocks = state.blocks
+          const sceneBlocks = blocks
             .filter(b => b.documentId === scene.id)
             .sort((a, b) => a.order - b.order);
           
-          blocks.forEach(block => {
+          sceneBlocks.forEach(block => {
             if (block.isLens && block.lensColor?.toLowerCase() === 'black') return;
             
             if (block.content.trim()) {

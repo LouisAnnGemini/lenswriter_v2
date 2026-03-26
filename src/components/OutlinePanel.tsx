@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FileText, Folder, GripVertical, Plus, Trash2, Check, X, Archive, RotateCcw, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { FileText, Folder, GripVertical, Plus, Trash2, Check, X, Archive, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const SCENE_STATUS_DOTS: Record<string, string> = {
@@ -12,30 +13,57 @@ const SCENE_STATUS_DOTS: Record<string, string> = {
 };
 
 export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
-  const { state, dispatch } = useStore();
+  const { 
+    focusMode, 
+    activeWorkId, 
+    chapters: allChapters, 
+    scenes: allScenes, 
+    activeDocumentId,
+    reorderChapters,
+    reorderScenes,
+    moveScene,
+    addChapter: addChapterAction,
+    addScene: addSceneAction,
+    setActiveDocument,
+    toggleChapterArchive,
+    deleteChapter,
+    deleteScene
+  } = useStore(useShallow(state => ({
+    focusMode: state.focusMode,
+    activeWorkId: state.activeWorkId,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    activeDocumentId: state.activeDocumentId,
+    reorderChapters: state.reorderChapters,
+    reorderScenes: state.reorderScenes,
+    moveScene: state.moveScene,
+    addChapter: state.addChapter,
+    addScene: state.addScene,
+    setActiveDocument: state.setActiveDocument,
+    toggleChapterArchive: state.toggleChapterArchive,
+    deleteChapter: state.deleteChapter,
+    deleteScene: state.deleteScene
+  })));
+
   const [viewMode, setViewMode] = useState<'outline' | 'default' | 'scenes'>('default');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  if (state.focusMode) return null;
+  if (focusMode) return null;
 
-  const activeWorkId = state.activeWorkId;
   if (!activeWorkId) return <div className="w-full md:w-64 border-r border-stone-200 bg-stone-50 p-4 text-stone-500 text-sm">Select a work</div>;
 
-  const chapters = state.chapters.filter(c => c.workId === activeWorkId && (showArchived || !c.archived)).sort((a, b) => a.order - b.order);
-  const scenes = state.scenes.filter(s => chapters.some(c => c.id === s.chapterId));
-  const isExpanded = isHovered || !state.activeDocumentId;
+  const chapters = allChapters.filter(c => c.workId === activeWorkId && (showArchived || !c.archived)).sort((a, b) => a.order - b.order);
+  const scenes = allScenes.filter(s => chapters.some(c => c.id === s.chapterId));
+  const isExpanded = isHovered || !activeDocumentId;
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     const { source, destination, type } = result;
 
     if (type === 'chapter' && viewMode === 'outline') {
-      dispatch({
-        type: 'REORDER_CHAPTERS',
-        payload: { workId: activeWorkId, startIndex: source.index, endIndex: destination.index }
-      });
+      reorderChapters(activeWorkId, source.index, destination.index);
     } else if (type === 'scene' && viewMode === 'scenes') {
       const sourceChapterId = source.droppableId.replace('chapter-', '');
       const destChapterId = destination.droppableId.replace('chapter-', '');
@@ -44,25 +72,19 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
       if (!sourceScene) return;
 
       if (sourceChapterId === destChapterId) {
-        dispatch({
-          type: 'REORDER_SCENES',
-          payload: { chapterId: sourceChapterId, startIndex: source.index, endIndex: destination.index }
-        });
+        reorderScenes(sourceChapterId, source.index, destination.index);
       } else {
-        dispatch({
-          type: 'MOVE_SCENE',
-          payload: { sceneId: sourceScene.id, newChapterId: destChapterId, newIndex: destination.index }
-        });
+        moveScene(sourceScene.id, destChapterId, destination.index);
       }
     }
   };
 
   const addChapter = () => {
-    dispatch({ type: 'ADD_CHAPTER', payload: { workId: activeWorkId, title: 'New Chapter' } });
+    addChapterAction(activeWorkId, 'New Chapter');
   };
 
   const addScene = (chapterId: string) => {
-    dispatch({ type: 'ADD_SCENE', payload: { chapterId, title: 'New Scene' } });
+    addSceneAction({ chapterId, title: 'New Scene' });
   };
 
   const renderDeleteButton = (id: string, onDelete: () => void, size = 12, className?: string) => {
@@ -103,7 +125,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
       <div 
         className={cn(
           "absolute left-0 top-0 bottom-0 z-40 flex transition-transform duration-300 ease-in-out",
-          state.activeDocumentId ? "hidden md:flex" : "w-full",
+          activeDocumentId ? "hidden md:flex" : "w-full",
           isExpanded ? "translate-x-0" : "-translate-x-[calc(100%-12px)]"
         )}
         onMouseEnter={() => setIsHovered(true)}
@@ -152,7 +174,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           className={cn(
                             "group flex items-center p-2 rounded-md text-sm transition-colors",
                             snapshot.isDragging ? "bg-white shadow-md" : "hover:bg-stone-100",
-                            state.activeDocumentId === chapter.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-700 border border-transparent"
+                            activeDocumentId === chapter.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-700 border border-transparent"
                           )}
                         >
                           <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
@@ -162,7 +184,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           <span 
                             className={cn("flex-1 cursor-pointer whitespace-normal break-words text-xs md:text-sm", chapter.archived && "text-stone-400 italic")}
                             onClick={() => {
-                              dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: chapter.id });
+                              setActiveDocument(chapter.id);
                               setMobileOpen?.(false);
                             }}
                           >
@@ -172,14 +194,14 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                dispatch({ type: 'TOGGLE_CHAPTER_ARCHIVE', payload: chapter.id });
+                                toggleChapterArchive(chapter.id);
                               }}
                               className="md:opacity-0 md:group-hover:opacity-100 opacity-100 p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
                               title={chapter.archived ? "Unarchive Chapter" : "Archive Chapter"}
                             >
                               {chapter.archived ? <RotateCcw size={14} /> : <Archive size={14} />}
                             </button>
-                            {renderDeleteButton(chapter.id, () => dispatch({ type: 'DELETE_CHAPTER', payload: chapter.id }))}
+                            {renderDeleteButton(chapter.id, () => deleteChapter(chapter.id))}
                           </div>
                         </div>
                       )}
@@ -199,10 +221,10 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                   <div 
                     className={cn(
                       "flex items-center justify-between p-2 rounded-md text-sm font-medium group cursor-pointer transition-colors",
-                      state.activeDocumentId === chapter.id ? "bg-emerald-50 text-emerald-900 shadow-sm border border-emerald-100" : "text-stone-900 hover:bg-stone-100 border border-transparent"
+                      activeDocumentId === chapter.id ? "bg-emerald-50 text-emerald-900 shadow-sm border border-emerald-100" : "text-stone-900 hover:bg-stone-100 border border-transparent"
                     )}
                     onClick={() => {
-                      dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: chapter.id });
+                      setActiveDocument(chapter.id);
                       setMobileOpen?.(false);
                     }}
                   >
@@ -215,7 +237,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          dispatch({ type: 'TOGGLE_CHAPTER_ARCHIVE', payload: chapter.id });
+                          toggleChapterArchive(chapter.id);
                         }}
                         className="md:opacity-0 md:group-hover:opacity-100 opacity-100 p-1 hover:bg-stone-200 rounded text-stone-400 transition-all"
                         title={chapter.archived ? "Unarchive Chapter" : "Archive Chapter"}
@@ -234,20 +256,20 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           <Plus size={14} />
                         </button>
                       )}
-                      {renderDeleteButton(chapter.id, () => dispatch({ type: 'DELETE_CHAPTER', payload: chapter.id }), 14)}
+                      {renderDeleteButton(chapter.id, () => deleteChapter(chapter.id), 14)}
                     </div>
                   </div>
                   <div className="pl-6 space-y-1 border-l border-stone-200 ml-3">
-                    {scenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map(scene => (
+                    {allScenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map(scene => (
                       <div
                         key={scene.id}
                         onClick={() => {
-                          dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: scene.id });
+                          setActiveDocument(scene.id);
                           setMobileOpen?.(false);
                         }}
                         className={cn(
                           "flex items-center justify-between p-1.5 rounded-md text-sm cursor-pointer transition-colors group/scene",
-                          state.activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-600 hover:bg-stone-100 border border-transparent"
+                          activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-600 hover:bg-stone-100 border border-transparent"
                         )}
                       >
                         <div className="flex items-center flex-1 min-w-0">
@@ -257,7 +279,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           )}
                           <span className="whitespace-normal break-words text-xs md:text-sm">{scene.title}</span>
                         </div>
-                        {renderDeleteButton(scene.id, () => dispatch({ type: 'DELETE_SCENE', payload: scene.id }), 12, "md:group-hover/scene:opacity-100")}
+                        {renderDeleteButton(scene.id, () => deleteScene(scene.id), 12, "md:group-hover/scene:opacity-100")}
                       </div>
                     ))}
                   </div>
@@ -290,7 +312,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           snapshot.isDraggingOver ? "bg-stone-100/80 ring-1 ring-stone-200" : ""
                         )}
                       >
-                        {scenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map((scene, index) => {
+                        {allScenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map((scene, index) => {
                           const chapIndexNum = chapter.order + 1;
                           const sceneIndexNum = scene.order + 1;
                           
@@ -304,7 +326,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                   className={cn(
                                     "group flex items-center p-2 rounded-md text-sm transition-colors",
                                     snapshot.isDragging ? "bg-white shadow-md ring-1 ring-stone-200" : "hover:bg-stone-100",
-                                    state.activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-700 border border-transparent"
+                                    activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-700 border border-transparent"
                                   )}
                                 >
                                   <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
@@ -319,13 +341,13 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                   <span 
                                     className="flex-1 cursor-pointer whitespace-normal break-words text-xs md:text-sm"
                                     onClick={() => {
-                                      dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: scene.id });
+                                      setActiveDocument(scene.id);
                                       setMobileOpen?.(false);
                                     }}
                                   >
                                     {scene.title}
                                   </span>
-                                  {renderDeleteButton(scene.id, () => dispatch({ type: 'DELETE_SCENE', payload: scene.id }))}
+                                  {renderDeleteButton(scene.id, () => deleteScene(scene.id))}
                                 </div>
                               )}
                             </Draggable>

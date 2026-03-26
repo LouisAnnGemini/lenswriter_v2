@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Check, Search, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -14,6 +14,7 @@ interface MultiSelectDropdownProps {
   onChange: (ids: string[]) => void;
   placeholder?: string;
   renderOption?: (option: Option) => React.ReactNode;
+  className?: string;
 }
 
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
@@ -21,10 +22,22 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   selectedIds,
   onChange,
   placeholder = 'Select events...',
-  renderOption
+  renderOption,
+  className
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const filteredOptions = useMemo(() => 
     options.filter(opt => (opt.title || '').toLowerCase().includes((search || '').toLowerCase())),
@@ -40,7 +53,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   };
 
   return (
-    <div className="relative w-full">
+    <div className={cn("relative w-full", className)} ref={containerRef}>
       <div 
         className="min-h-[36px] bg-white border border-stone-200 rounded px-2 py-1 flex flex-wrap gap-1 items-center cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
@@ -76,7 +89,11 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
               <div 
                 key={opt.id} 
                 className="px-3 py-2 text-xs hover:bg-stone-50 cursor-pointer flex items-center justify-between"
-                onClick={() => toggleOption(opt.id)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleOption(opt.id);
+                }}
               >
                 {renderOption ? renderOption(opt) : (
                   opt.color ? (

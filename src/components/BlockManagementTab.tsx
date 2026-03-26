@@ -1,20 +1,38 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { AlignLeft, Search, CheckCircle2, Circle, ChevronRight, ChevronDown, Folder, FileText, ExternalLink } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function BlockManagementTab() {
-  const { state, dispatch } = useStore();
+  const { 
+    blocks, 
+    chapters, 
+    scenes, 
+    activeWorkId, 
+    updateBlock, 
+    setActiveTab, 
+    setActiveDocument 
+  } = useStore(useShallow(state => ({
+    blocks: state.blocks,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    activeWorkId: state.activeWorkId,
+    updateBlock: state.updateBlock,
+    setActiveTab: state.setActiveTab,
+    setActiveDocument: state.setActiveDocument
+  })));
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
 
-  if (!state.activeWorkId) return null;
+  if (!activeWorkId) return null;
 
-  const workChapters = state.chapters.filter(c => c.workId === state.activeWorkId).sort((a, b) => a.order - b.order);
-  const workScenes = state.scenes.filter(s => workChapters.some(c => c.id === s.chapterId)).sort((a, b) => a.order - b.order);
+  const workChapters = chapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
+  const workScenes = scenes.filter(s => workChapters.some(c => c.id === s.chapterId)).sort((a, b) => a.order - b.order);
   
-  const allBlocks = state.blocks.filter(b => 
+  const allBlocks = blocks.filter(b => 
     (workChapters.some(c => c.id === b.documentId) || workScenes.some(s => s.id === b.documentId))
   );
 
@@ -137,7 +155,7 @@ export function BlockManagementTab() {
                     {(blocks || []).map(block => (
                       <div key={block.id} className="p-4 flex gap-4 hover:bg-stone-50 transition-colors">
                         <button
-                          onClick={() => dispatch({ type: 'UPDATE_BLOCK', payload: { id: block.id, completed: !block.completed } })}
+                          onClick={() => updateBlock({ id: block.id, completed: !block.completed })}
                           className={cn(
                             "mt-1 shrink-0 transition-colors",
                             block.completed ? "text-emerald-500" : "text-stone-300 hover:text-stone-400"
@@ -148,7 +166,7 @@ export function BlockManagementTab() {
                         <div className="flex-1 space-y-2">
                           <textarea
                             value={block.description || ''}
-                            onChange={(e) => dispatch({ type: 'UPDATE_BLOCK', payload: { id: block.id, description: e.target.value } })}
+                            onChange={(e) => updateBlock({ id: block.id, description: e.target.value })}
                             placeholder="Untitled block"
                             className={cn(
                               "w-full bg-transparent border-none outline-none resize-none text-stone-900 font-medium placeholder:text-stone-400 focus:ring-0 p-0 whitespace-pre-wrap",
@@ -167,8 +185,8 @@ export function BlockManagementTab() {
                             </div>
                             <button
                               onClick={() => {
-                                dispatch({ type: 'SET_ACTIVE_TAB', payload: 'writing' });
-                                dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: block.documentId });
+                                setActiveTab('writing');
+                                setActiveDocument(block.documentId);
                                 setTimeout(() => {
                                   const el = document.getElementById(`block-${block.id}`);
                                   if (el) {

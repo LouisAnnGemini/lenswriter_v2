@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Check, Search, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -25,6 +25,17 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const filteredOptions = useMemo(() => 
     options.filter(opt => (opt.title || '').toLowerCase().includes((search || '').toLowerCase())),
@@ -34,7 +45,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const selectedOption = options.find(o => o.id === value);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" ref={containerRef}>
       <div 
         className="min-h-[36px] bg-stone-50 border border-stone-200 rounded px-2 py-1.5 flex items-center justify-between cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
@@ -67,7 +78,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   "px-3 py-2 text-xs hover:bg-stone-50 cursor-pointer flex items-center justify-between",
                   value === opt.id && "bg-emerald-50"
                 )}
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   onChange(opt.id);
                   setIsOpen(false);
                   setSearch('');

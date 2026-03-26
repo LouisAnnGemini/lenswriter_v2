@@ -1,14 +1,18 @@
 import React from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { LensesTab } from './LensesTab';
 import { TimelineTab } from './TimelineTab';
 import { BlockManagementTab } from './BlockManagementTab';
 import { cn } from '../lib/utils';
 
 export function BoardTab() {
-  const { state, dispatch } = useStore();
+  const { activeWorkId, boardViewMode } = useStore(useShallow(state => ({
+    activeWorkId: state.activeWorkId,
+    boardViewMode: state.boardViewMode
+  })));
 
-  if (!state.activeWorkId) return null;
+  if (!activeWorkId) return null;
 
   return (
     <div className={cn(
@@ -16,9 +20,9 @@ export function BoardTab() {
       "pb-28 md:pb-0" // Space for mobile bottom nav (16) + board switcher (12)
     )}>
       <div className="flex-1 overflow-hidden relative flex flex-col">
-        {state.boardViewMode === 'micro' && <BlockManagementTab />}
-        {state.boardViewMode === 'meso' && <LensesTab isSubTab />}
-        {state.boardViewMode === 'macro' && <TimelineTab isSubTab />}
+        {boardViewMode === 'micro' && <BlockManagementTab />}
+        {boardViewMode === 'meso' && <LensesTab isSubTab />}
+        {boardViewMode === 'macro' && <TimelineTab isSubTab />}
       </div>
     </div>
   );

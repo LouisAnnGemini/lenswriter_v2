@@ -1,23 +1,24 @@
 import React, { useState } from 'react';
-import { useStore, CharacterFieldType } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { CharacterFieldType } from '../store/types';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Users, Plus, GripVertical, User, MapPin, ChevronLeft, Settings, X, Trash2, Type, Hash, List, CheckSquare, Activity, FileText } from 'lucide-react';
+import { Users, Plus, GripVertical, User, MapPin, ChevronLeft, Settings, X, Trash2, Type, Hash, List, CheckSquare, Activity, FileText, Maximize2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 import { EventDetailsModal } from './EventDetailsModal';
 
-function FieldOptionInput({ field, workId, dispatch }: { field: any, workId: string, dispatch: any }) {
+import { useShallow } from 'zustand/react/shallow';
+
+function FieldOptionInput({ field, workId }: { field: any, workId: string }) {
   const [localValue, setLocalValue] = useState(field.options.join(', '));
+  const updateCharacterField = useStore(state => state.updateCharacterField);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalValue(e.target.value);
     const newOptions = e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean);
-    dispatch({
-      type: 'UPDATE_CHARACTER_FIELD',
-      payload: { workId, fieldId: field.id, updates: { options: newOptions } }
-    });
+    updateCharacterField(workId, field.id, { options: newOptions });
   };
 
   return (
@@ -31,48 +32,92 @@ function FieldOptionInput({ field, workId, dispatch }: { field: any, workId: str
 }
 
 export function CharactersTab() {
-  const { state, dispatch } = useStore();
-  const activeWorkId = state.activeWorkId;
-  const activeWork = state.works.find(w => w.id === activeWorkId);
+  const { 
+    activeWorkId,
+    works,
+    characters: allCharacters,
+    scenes,
+    chapters,
+    timelineEvents,
+    selectedEventId,
+    addCharacter, 
+    updateCharacter, 
+    deleteCharacter, 
+    reorderCharacters, 
+    updateCharacterCustomField, 
+    addCharacterField, 
+    updateCharacterField, 
+    deleteCharacterField, 
+    reorderCharacterFields, 
+    addTimelineEvent, 
+    updateTimelineEvent, 
+    updateTimelineEventCharacterAction, 
+    setActiveTab, 
+    setActiveDocument, 
+    setBoardViewMode, 
+    setSelectedEventId 
+  } = useStore(useShallow(state => ({
+    activeWorkId: state.activeWorkId,
+    works: state.works,
+    characters: state.characters,
+    scenes: state.scenes,
+    chapters: state.chapters,
+    timelineEvents: state.timelineEvents,
+    selectedEventId: state.selectedEventId,
+    addCharacter: state.addCharacter, 
+    updateCharacter: state.updateCharacter, 
+    deleteCharacter: state.deleteCharacter, 
+    reorderCharacters: state.reorderCharacters, 
+    updateCharacterCustomField: state.updateCharacterCustomField, 
+    addCharacterField: state.addCharacterField, 
+    updateCharacterField: state.updateCharacterField, 
+    deleteCharacterField: state.deleteCharacterField, 
+    reorderCharacterFields: state.reorderCharacterFields, 
+    addTimelineEvent: state.addTimelineEvent, 
+    updateTimelineEvent: state.updateTimelineEvent, 
+    updateTimelineEventCharacterAction: state.updateTimelineEventCharacterAction, 
+    setActiveTab: state.setActiveTab, 
+    setActiveDocument: state.setActiveDocument, 
+    setBoardViewMode: state.setBoardViewMode, 
+    setSelectedEventId: state.setSelectedEventId 
+  })));
+
+  const activeWork = works.find(w => w.id === activeWorkId);
   const [activeCharId, setActiveCharId] = useState<string | null>(null);
   const [showFieldManager, setShowFieldManager] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   if (!activeWorkId) return <div className="flex-1 flex items-center justify-center text-stone-400">Select a work</div>;
 
-  const characters = state.characters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
+  const characters = allCharacters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   const activeChar = characters.find(c => c.id === activeCharId);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     const { source, destination } = result;
-    dispatch({
-      type: 'REORDER_CHARACTERS',
-      payload: { workId: activeWorkId, startIndex: source.index, endIndex: destination.index }
-    });
+    reorderCharacters(activeWorkId, source.index, destination.index);
   };
 
   const handleAddCharacter = () => {
-    dispatch({ type: 'ADD_CHARACTER', payload: { workId: activeWorkId, name: 'New Character' } });
+    addCharacter(activeWorkId, 'New Character');
   };
 
   const handleUpdateCharacter = (id: string, updates: any) => {
-    dispatch({ type: 'UPDATE_CHARACTER', payload: { id, ...updates } });
+    updateCharacter({ id, ...updates });
   };
 
   const handleMultiSelectToggle = (charId: string, fieldId: string, option: string, currentValues: string[]) => {
     const newValues = currentValues.includes(option)
       ? currentValues.filter(v => v !== option)
       : [...currentValues, option];
-    dispatch({ type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: { characterId: charId, fieldId, value: newValues } });
+    updateCharacterCustomField(charId, fieldId, newValues);
   };
 
   // Calculate appearances
   const getAppearances = (charId: string) => {
     const appearances: { chapterTitle: string; sceneTitle: string; sceneId: string; sceneIndexStr: string }[] = [];
-    state.scenes.forEach(scene => {
+    scenes.forEach(scene => {
       if (scene.characterIds.includes(charId)) {
-        const chapter = state.chapters.find(c => c.id === scene.chapterId);
+        const chapter = chapters.find(c => c.id === scene.chapterId);
         if (chapter && chapter.workId === activeWorkId) {
           appearances.push({
             chapterTitle: chapter.title,
@@ -88,7 +133,7 @@ export function CharactersTab() {
 
   const getTimelineAppearances = (charId: string) => {
     const appearances: { eventTitle: string; eventId: string; timestamp: string; order: number; action: string }[] = [];
-    state.timelineEvents.forEach(event => {
+    timelineEvents.forEach(event => {
       if (event.characterActions && charId in event.characterActions) {
         appearances.push({
           eventTitle: event.title,
@@ -203,7 +248,7 @@ export function CharactersTab() {
                 />
                 <ConfirmDeleteButton
                   onConfirm={() => {
-                    dispatch({ type: 'DELETE_CHARACTER', payload: activeChar.id });
+                    deleteCharacter(activeChar.id);
                     setActiveCharId(null);
                   }}
                   className="ml-4"
@@ -253,10 +298,10 @@ export function CharactersTab() {
                           {field.name}
                         </label>
                         {field.type === 'text' && (
-                          <textarea value={value || ''} onChange={e => dispatch({type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: {characterId: activeChar.id, fieldId: field.id, value: e.target.value}})} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 resize-y min-h-[42px] whitespace-normal break-words transition-all" rows={1} placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
+                          <textarea value={value || ''} onChange={e => updateCharacterCustomField(activeChar.id, field.id, e.target.value)} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 resize-y min-h-[42px] whitespace-normal break-words transition-all" rows={1} placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
                         )}
                         {field.type === 'number' && (
-                          <input type="number" value={value || ''} onChange={e => dispatch({type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: {characterId: activeChar.id, fieldId: field.id, value: e.target.value ? Number(e.target.value) : ''}})} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 transition-all" placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
+                          <input type="number" value={value || ''} onChange={e => updateCharacterCustomField(activeChar.id, field.id, e.target.value ? Number(e.target.value) : '')} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 transition-all" placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
                         )}
                         {field.type === 'select' && (
                           <div className="flex flex-wrap gap-1.5 pt-1">
@@ -268,7 +313,7 @@ export function CharactersTab() {
                                   key={opt}
                                   onClick={() => {
                                     const newValue = isSelected ? '' : opt;
-                                    dispatch({type: 'UPDATE_CHARACTER_CUSTOM_FIELD', payload: {characterId: activeChar.id, fieldId: field.id, value: newValue}});
+                                    updateCharacterCustomField(activeChar.id, field.id, newValue);
                                   }}
                                   className={cn("px-3 py-1.5 text-xs rounded-md border transition-all duration-200", isSelected ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-medium shadow-sm" : "bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-100")}
                                 >
@@ -322,6 +367,23 @@ export function CharactersTab() {
                   <MapPin size={14} className="mr-2" />
                   Appearances Tracker
                 </label>
+                <button 
+                  onClick={() => {
+                    const newEventId = uuidv4();
+                    const newEventTitle = `Event for ${activeChar.name}`;
+                    addTimelineEvent({ 
+                      id: newEventId,
+                      workId: activeWorkId, 
+                      title: newEventTitle, 
+                      timestamp: new Date().toISOString().split('T')[0],
+                      characterActions: { [activeChar.id]: '' }
+                    });
+                    setSelectedEventId(newEventId);
+                  }}
+                  className="text-xs flex items-center text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition-colors"
+                >
+                  <Plus size={12} className="mr-1" /> Add Event
+                </button>
               </div>
               
               <div className="space-y-6">
@@ -344,8 +406,8 @@ export function CharactersTab() {
                               </div>
                               <button 
                                 onClick={() => {
-                                  dispatch({ type: 'SET_ACTIVE_TAB', payload: 'writing' });
-                                  dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: app.sceneId });
+                                  setActiveTab('writing');
+                                  setActiveDocument(app.sceneId);
                                 }}
                                 className="px-3 py-1.5 bg-white border border-stone-200 hover:border-emerald-500 hover:text-emerald-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"
                               >
@@ -373,31 +435,48 @@ export function CharactersTab() {
                           {appearances.map((event) => (
                             <div key={event.eventId} className="p-4 flex flex-col gap-3 hover:bg-white transition-colors">
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <span className="text-xs font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">{event.timestamp}</span>
-                                  <span className="text-sm font-semibold text-stone-900">{event.eventTitle}</span>
+                                <div className="flex items-center space-x-3 flex-1">
+                                  <input
+                                    type="text"
+                                    value={event.timestamp}
+                                    onChange={(e) => {
+                                      updateTimelineEvent({ id: event.eventId, timestamp: e.target.value });
+                                    }}
+                                    className="text-xs font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md w-24 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={event.eventTitle}
+                                    onChange={(e) => {
+                                      updateTimelineEvent({ id: event.eventId, title: e.target.value });
+                                    }}
+                                    className="text-sm font-semibold text-stone-900 bg-transparent border-b border-transparent hover:border-stone-300 focus:border-amber-500 outline-none w-full"
+                                  />
                                 </div>
-                                <button 
-                                  onClick={() => {
-                                    dispatch({ type: 'SET_ACTIVE_TAB', payload: 'timeline' });
-                                    setSelectedEventId(event.eventId);
-                                  }}
-                                  className="px-3 py-1.5 bg-white border border-stone-200 hover:border-amber-500 hover:text-amber-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"
-                                >
-                                  Go to Event
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  <button 
+                                    onClick={() => setSelectedEventId(event.eventId)}
+                                    className="p-1.5 bg-white border border-stone-200 hover:border-amber-500 hover:text-amber-700 rounded-lg text-stone-500 transition-all shadow-sm"
+                                    title="Expand Details"
+                                  >
+                                    <Maximize2 size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      setActiveTab('board');
+                                      setBoardViewMode('macro');
+                                      setSelectedEventId(event.eventId);
+                                    }}
+                                    className="px-3 py-1.5 bg-white border border-stone-200 hover:border-amber-500 hover:text-amber-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"
+                                  >
+                                    Go to Event
+                                  </button>
+                                </div>
                               </div>
                               <textarea
                                 value={event.action || ''}
                                 onChange={(e) => {
-                                  dispatch({
-                                    type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION',
-                                    payload: {
-                                      eventId: event.eventId,
-                                      characterId: activeChar.id,
-                                      action: e.target.value
-                                    }
-                                  });
+                                  updateTimelineEventCharacterAction(event.eventId, activeChar.id, e.target.value);
                                 }}
                                 className="text-sm text-stone-600 bg-white/50 p-3 rounded-lg border border-stone-100 italic leading-relaxed w-full resize-none focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-200 transition-all"
                                 placeholder="Add character action..."
@@ -432,7 +511,7 @@ export function CharactersTab() {
           </div>
         </div>
       )}
-
+      
       {/* Field Manager Modal */}
       {showFieldManager && activeWorkId && (
         <div className="fixed inset-0 bg-stone-900/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -446,10 +525,7 @@ export function CharactersTab() {
               
               <DragDropContext onDragEnd={(result) => {
                 if (!result.destination) return;
-                dispatch({
-                  type: 'REORDER_CHARACTER_FIELDS',
-                  payload: { workId: activeWorkId, startIndex: result.source.index, endIndex: result.destination.index }
-                });
+                reorderCharacterFields(activeWorkId, result.source.index, result.destination.index);
               }}>
                 <Droppable droppableId="character-fields" type="field">
                   {(provided) => (
@@ -472,7 +548,7 @@ export function CharactersTab() {
                                     <label className="block text-xs font-medium text-stone-500 mb-1">Field Name</label>
                                     <input 
                                       value={field.name || ''} 
-                                      onChange={e => dispatch({type: 'UPDATE_CHARACTER_FIELD', payload: {workId: activeWorkId, fieldId: field.id, updates: {name: e.target.value}}})} 
+                                      onChange={e => updateCharacterField(activeWorkId, field.id, {name: e.target.value})} 
                                       className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-emerald-500" 
                                       placeholder="e.g. Age, Gender, Faction" 
                                     />
@@ -481,7 +557,7 @@ export function CharactersTab() {
                                     <label className="block text-xs font-medium text-stone-500 mb-1">Field Type</label>
                                     <select 
                                       value={field.type || ''} 
-                                      onChange={e => dispatch({type: 'UPDATE_CHARACTER_FIELD', payload: {workId: activeWorkId, fieldId: field.id, updates: {type: e.target.value as CharacterFieldType}}})} 
+                                      onChange={e => updateCharacterField(activeWorkId, field.id, {type: e.target.value as CharacterFieldType})} 
                                       className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-emerald-500 bg-white"
                                     >
                                       <option value="text">Text</option>
@@ -494,12 +570,12 @@ export function CharactersTab() {
                                 {(field.type === 'select' || field.type === 'multiselect') && (
                                   <div>
                                     <label className="block text-xs font-medium text-stone-500 mb-1">Options (comma separated)</label>
-                                    <FieldOptionInput field={field} workId={activeWorkId} dispatch={dispatch} />
+                                    <FieldOptionInput field={field} workId={activeWorkId} />
                                   </div>
                                 )}
                               </div>
                               <ConfirmDeleteButton
-                                onConfirm={() => dispatch({type: 'DELETE_CHARACTER_FIELD', payload: {workId: activeWorkId, fieldId: field.id}})}
+                                onConfirm={() => deleteCharacterField(activeWorkId, field.id)}
                                 className="p-2 mt-5"
                                 title="Delete Field"
                                 iconSize={18}
@@ -515,7 +591,7 @@ export function CharactersTab() {
               </DragDropContext>
               
               <button 
-                onClick={() => dispatch({type: 'ADD_CHARACTER_FIELD', payload: {workId: activeWorkId, field: {id: uuidv4(), name: 'New Field', type: 'text', options: []}}})} 
+                onClick={() => addCharacterField(activeWorkId, {id: uuidv4(), name: 'New Field', type: 'text', options: []})} 
                 className="w-full py-3 border-2 border-dashed border-stone-300 rounded-xl text-stone-500 hover:bg-stone-100 hover:text-stone-700 hover:border-stone-400 flex justify-center items-center font-medium transition-colors"
               >
                 <Plus size={18} className="mr-2"/> Add Custom Field

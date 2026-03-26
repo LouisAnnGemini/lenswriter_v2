@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { X, Send, Inbox } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function QuickCapture() {
-  const { dispatch } = useStore();
+  const { addInboxItem } = useStore(useShallow(state => ({
+    addInboxItem: state.addInboxItem
+  })));
   const [isOpen, setIsOpen] = useState(false);
   const [content, setContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -31,7 +34,7 @@ export function QuickCapture() {
 
   const handleSave = () => {
     if (content.trim()) {
-      dispatch({ type: 'ADD_INBOX_ITEM', payload: { content: content.trim() } });
+      addInboxItem({ content: content.trim() });
       setContent('');
       setIsOpen(false);
     }

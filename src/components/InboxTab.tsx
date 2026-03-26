@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Trash2, Edit2, Check, X, Clock, Plus, Inbox } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function InboxTab() {
-  const { state, dispatch } = useStore();
+  const { inbox, addInboxItem, updateInboxItem, deleteInboxItem } = useStore(useShallow(state => ({
+    inbox: state.inbox,
+    addInboxItem: state.addInboxItem,
+    updateInboxItem: state.updateInboxItem,
+    deleteInboxItem: state.deleteInboxItem
+  })));
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [newContent, setNewContent] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const inboxItems = [...(state.inbox || [])].sort((a, b) => b.createdAt - a.createdAt);
+  const inboxItems = [...(inbox || [])].sort((a, b) => b.createdAt - a.createdAt);
 
   const handleEdit = (id: string, content: string) => {
     setEditingId(id);
@@ -20,19 +27,19 @@ export function InboxTab() {
 
   const handleSaveEdit = () => {
     if (editingId && editContent.trim()) {
-      dispatch({ type: 'UPDATE_INBOX_ITEM', payload: { id: editingId, content: editContent.trim() } });
+      updateInboxItem({ id: editingId, content: editContent.trim() });
       setEditingId(null);
     }
   };
 
   const confirmDelete = (id: string) => {
-    dispatch({ type: 'DELETE_INBOX_ITEM', payload: { id } });
+    deleteInboxItem({ id });
     setDeletingId(null);
   };
 
   const handleAdd = () => {
     if (newContent.trim()) {
-      dispatch({ type: 'ADD_INBOX_ITEM', payload: { content: newContent.trim() } });
+      addInboxItem({ content: newContent.trim() });
       setNewContent('');
     }
   };

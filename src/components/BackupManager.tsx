@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useBackup } from '../context/BackupContext';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { supabase, updateSupabaseConfig } from '../lib/supabase';
 import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X, Cloud, Download, Settings, RefreshCw, Smartphone, Monitor } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -18,7 +19,23 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     isSupported
   } = useBackup();
 
-  const { state, dispatch, syncStatus, syncError, saveHistoryVersion } = useStore();
+  const { 
+    supabaseSyncEnabled,
+    lastModified,
+    toggleSupabaseSync, 
+    importData, 
+    syncStatus, 
+    syncError, 
+    saveHistoryVersion 
+  } = useStore(useShallow(state => ({
+    supabaseSyncEnabled: state.supabaseSyncEnabled,
+    lastModified: state.lastModified,
+    toggleSupabaseSync: state.toggleSupabaseSync,
+    importData: state.importData,
+    syncStatus: state.syncStatus,
+    syncError: state.syncError,
+    saveHistoryVersion: state.saveHistoryVersion
+  })));
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [cloudHistory, setCloudHistory] = useState<Array<{id: string, timestamp: number, device?: string}>>([]);
@@ -46,8 +63,8 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   const handleToggleSync = async () => {
-    if (state.supabaseSyncEnabled) {
-      dispatch({ type: 'TOGGLE_SUPABASE_SYNC' });
+    if (supabaseSyncEnabled) {
+      toggleSupabaseSync();
       return;
     }
 
@@ -69,12 +86,12 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
         // Cloud data exists, prompt user
         setSyncPrompt({
           cloudState: data.state,
-          localDate: state.lastModified,
+          localDate: lastModified,
           cloudDate: data.state.lastModified || 0
         });
       } else {
         // No cloud data, just enable
-        dispatch({ type: 'TOGGLE_SUPABASE_SYNC' });
+        toggleSupabaseSync();
       }
     } catch (err) {
       console.error("Error checking cloud state", err);
@@ -88,10 +105,10 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     if (!syncPrompt) return;
 
     if (choice === 'cloud') {
-      dispatch({ type: 'IMPORT_DATA', payload: syncPrompt.cloudState });
+      importData(syncPrompt.cloudState);
     }
     
-    dispatch({ type: 'TOGGLE_SUPABASE_SYNC' });
+    toggleSupabaseSync();
     setSyncPrompt(null);
   };
 
@@ -109,7 +126,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       if (error) throw error;
       
       if (data && data.state) {
-        dispatch({ type: 'IMPORT_DATA', payload: data.state });
+        importData(data.state);
         setPullStatus({ type: 'success', message: 'Successfully loaded data from Supabase.' });
       } else {
         setPullStatus({ type: 'error', message: 'No data found in Supabase.' });
@@ -159,7 +176,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       if (data && data.state) {
         const { _isHistory, _timestamp, ...stateToRestore } = data.state;
         stateToRestore.lastModified = Date.now();
-        dispatch({ type: 'IMPORT_DATA', payload: stateToRestore });
+        importData(stateToRestore);
         setPullStatus({ type: 'success', message: 'Successfully restored historical version.' });
         setConfirmRestoreId(null);
       }
@@ -170,10 +187,10 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   React.useEffect(() => {
-    if (state.supabaseSyncEnabled && supabase) {
+    if (supabaseSyncEnabled && supabase) {
       fetchCloudHistory();
     }
-  }, [state.supabaseSyncEnabled, supabase]);
+  }, [supabaseSyncEnabled, supabase]);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -201,14 +218,14 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     disabled={!supabase || isCheckingCloud}
                     className={cn(
                       "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                      state.supabaseSyncEnabled ? "bg-blue-500" : "bg-stone-200",
+                      supabaseSyncEnabled ? "bg-blue-500" : "bg-stone-200",
                       (!supabase || isCheckingCloud) && "opacity-50 cursor-not-allowed"
                     )}
                   >
                     <span
                       className={cn(
                         "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                        state.supabaseSyncEnabled ? "translate-x-6" : "translate-x-1"
+                        supabaseSyncEnabled ? "translate-x-6" : "translate-x-1"
                       )}
                     />
                   </button>
@@ -301,7 +318,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                       <strong>Important:</strong> To enable real-time cross-device sync, you must enable <strong>Realtime</strong> for the <code>app_state</code> table in your Supabase Database settings (Database &gt; Replication).
                     </div>
                     
-                    {state.supabaseSyncEnabled && (
+                    {supabaseSyncEnabled && (
                       <div className={cn(
                         "text-xs p-3 rounded-lg border",
                         syncStatus === 'syncing' ? "bg-blue-50 border-blue-100 text-blue-700" :
@@ -348,7 +365,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     )}
 
                     {/* Cloud History Section */}
-                    {state.supabaseSyncEnabled && (
+                    {supabaseSyncEnabled && (
                       <div className="pt-4 border-t border-stone-100 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="text-sm font-medium text-stone-700">Cloud History</div>
@@ -356,7 +373,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                             <button
                               onClick={async () => {
                                 if (saveHistoryVersion) {
-                                  await saveHistoryVersion();
+                                  await (saveHistoryVersion as any)();
                                   fetchCloudHistory();
                                 }
                               }}

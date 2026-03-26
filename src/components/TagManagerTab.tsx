@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useStore, Tag } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
+import { Tag } from '../store/types';
 import { Plus, Edit2, Trash2, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -22,8 +24,20 @@ const TAG_COLORS = [
 ];
 
 export function TagManagerTab() {
-  const { state, dispatch } = useStore();
-  const tags = state.tags.filter(t => t.workId === state.activeWorkId);
+  const { 
+    tags: allTags, 
+    activeWorkId, 
+    addTag, 
+    updateTag, 
+    deleteTag 
+  } = useStore(useShallow(state => ({
+    tags: state.tags,
+    activeWorkId: state.activeWorkId,
+    addTag: state.addTag,
+    updateTag: state.updateTag,
+    deleteTag: state.deleteTag
+  })));
+  const tags = allTags.filter(t => t.workId === activeWorkId);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
@@ -33,11 +47,8 @@ export function TagManagerTab() {
 
   const handleAddTag = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTagName.trim() && state.activeWorkId) {
-      dispatch({
-        type: 'ADD_TAG',
-        payload: { workId: state.activeWorkId, name: newTagName.trim(), color: newTagColor }
-      });
+    if (newTagName.trim() && activeWorkId) {
+      addTag({ workId: activeWorkId, name: newTagName.trim(), color: newTagColor });
       setNewTagName('');
     }
   };
@@ -51,16 +62,13 @@ export function TagManagerTab() {
 
   const saveEdit = () => {
     if (editingTagId && editTagName.trim()) {
-      dispatch({
-        type: 'UPDATE_TAG',
-        payload: { id: editingTagId, name: editTagName.trim(), color: editTagColor }
-      });
+      updateTag({ id: editingTagId, name: editTagName.trim(), color: editTagColor });
       setEditingTagId(null);
     }
   };
 
   const handleDelete = (id: string) => {
-    dispatch({ type: 'DELETE_TAG', payload: id });
+    deleteTag(id);
     setDeletingTagId(null);
   };
 

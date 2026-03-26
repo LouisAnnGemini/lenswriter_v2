@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { GripVertical, Link as LinkIcon, Archive, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -19,18 +20,38 @@ interface MontageBoardProps {
 }
 
 export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
-  const { state, dispatch } = useStore();
+  const { 
+    activeWorkId, 
+    timelineEvents: allTimelineEvents, 
+    tags: allTags, 
+    chapters: allChapters, 
+    scenes: allScenes,
+    activeDocumentId,
+    toggleSceneEvent,
+    reorderSceneEvents,
+    setActiveDocument
+  } = useStore(useShallow(state => ({
+    activeWorkId: state.activeWorkId,
+    timelineEvents: state.timelineEvents,
+    tags: state.tags,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    activeDocumentId: state.activeDocumentId,
+    toggleSceneEvent: state.toggleSceneEvent,
+    reorderSceneEvents: state.reorderSceneEvents,
+    setActiveDocument: state.setActiveDocument
+  })));
+
   const [showArchived, setShowArchived] = useState(false);
   const [isEventPoolOpen, setIsEventPoolOpen] = useState(true);
   const [editorWidth, setEditorWidth] = useState(40);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
-  const activeWorkId = state.activeWorkId;
-  const events = state.timelineEvents.filter(e => e.workId === activeWorkId).sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
-  const tags = state.tags.filter(t => t.workId === activeWorkId);
-  const chapters = state.chapters.filter(c => c.workId === activeWorkId && (showArchived || !c.archived)).sort((a, b) => a.order - b.order);
-  const scenes = state.scenes.filter(s => chapters.some(c => c.id === s.chapterId)).sort((a, b) => a.order - b.order);
+  const events = allTimelineEvents.filter(e => e.workId === activeWorkId).sort((a, b) => a.order - b.order);
+  const tags = allTags.filter(t => t.workId === activeWorkId);
+  const chapters = allChapters.filter(c => c.workId === activeWorkId && (showArchived || !c.archived)).sort((a, b) => a.order - b.order);
+  const scenes = allScenes.filter(s => chapters.some(c => c.id === s.chapterId)).sort((a, b) => a.order - b.order);
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
@@ -40,37 +61,31 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
       const sceneId = destination.droppableId.replace('scene-', '');
       const eventId = draggableId;
       
-      const scene = state.scenes.find(s => s.id === sceneId);
+      const scene = allScenes.find(s => s.id === sceneId);
       if (scene && !scene.linkedEventIds?.includes(eventId)) {
-        dispatch({
-          type: 'TOGGLE_SCENE_EVENT',
-          payload: { sceneId, eventId }
-        });
+        toggleSceneEvent(sceneId, eventId);
       }
     } else if (source.droppableId.startsWith('scene-') && destination.droppableId === source.droppableId) {
       const sceneId = source.droppableId.replace('scene-', '');
-      dispatch({
-        type: 'REORDER_SCENE_EVENTS',
-        payload: {
-          sceneId,
-          startIndex: source.index,
-          endIndex: destination.index
-        }
-      });
+      reorderSceneEvents(
+        sceneId,
+        source.index,
+        destination.index
+      );
     } else if (source.droppableId.startsWith('scene-') && destination.droppableId.startsWith('scene-') && source.droppableId !== destination.droppableId) {
       const sourceSceneId = source.droppableId.replace('scene-', '');
       const destSceneId = destination.droppableId.replace('scene-', '');
       // draggableId is `${scene.id}-${eventId}`, so we extract eventId
       const eventId = draggableId.replace(`${sourceSceneId}-`, '');
       
-      const destScene = state.scenes.find(s => s.id === destSceneId);
+      const destScene = allScenes.find(s => s.id === destSceneId);
       
       // Remove from source
-      dispatch({ type: 'TOGGLE_SCENE_EVENT', payload: { sceneId: sourceSceneId, eventId } });
+      toggleSceneEvent(sourceSceneId, eventId);
       
       // Add to destination if not already there
       if (destScene && !destScene.linkedEventIds?.includes(eventId)) {
-        dispatch({ type: 'TOGGLE_SCENE_EVENT', payload: { sceneId: destSceneId, eventId } });
+        toggleSceneEvent(destSceneId, eventId);
       }
     }
   };
@@ -145,7 +160,7 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
                 <div key={chapter.id} className={cn("space-y-4", chapter.archived && "opacity-60")}>
                   <h4 
                     className="font-bold text-stone-700 border-b border-stone-200 pb-2 flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors"
-                    onClick={() => dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: chapter.id })}
+                    onClick={() => setActiveDocument(chapter.id)}
                   >
                     {chapter.title}
                     {chapter.archived && <span className="text-[10px] uppercase bg-stone-200 text-stone-600 px-1.5 py-0.5 rounded font-bold">Archived</span>}
@@ -156,9 +171,9 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
                         key={scene.id} 
                         className={cn(
                           "bg-white rounded-lg shadow-sm border p-4 transition-colors cursor-pointer",
-                          state.activeDocumentId === scene.id ? "border-emerald-400 ring-1 ring-emerald-400" : "border-stone-200 hover:border-stone-300"
+                          activeDocumentId === scene.id ? "border-emerald-400 ring-1 ring-emerald-400" : "border-stone-200 hover:border-stone-300"
                         )}
-                        onClick={() => dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: scene.id })}
+                        onClick={() => setActiveDocument(scene.id)}
                       >
                         <h5 className="font-medium text-stone-800 mb-3">{scene.title}</h5>
                         <Droppable droppableId={`scene-${scene.id}`} direction="horizontal">
@@ -193,7 +208,7 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            dispatch({ type: 'TOGGLE_SCENE_EVENT', payload: { sceneId: scene.id, eventId } });
+                                            toggleSceneEvent(scene.id, eventId);
                                           }}
                                           className="text-stone-400 hover:text-red-500"
                                         >

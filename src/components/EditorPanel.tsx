@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
@@ -9,6 +10,9 @@ import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { LensesPanel } from './LensesPanel';
 import { EventPoolPanel } from './EventPoolPanel';
 import { InboxPanel } from './InboxPanel';
+import { AutoResizeTextarea } from './AutoResizeTextarea';
+import { ChapterScenesList, SCENE_STATUS_COLORS } from './ChapterScenesList';
+import { ChapterCharacterSummary } from './ChapterCharacterSummary';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -20,140 +24,103 @@ const LENS_COLORS = {
   black: 'bg-stone-900 border-stone-700 text-stone-100',
 };
 
-const SCENE_STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
-  none: { bg: 'bg-white', border: 'border-stone-200', text: 'text-stone-900', dot: 'bg-stone-200', label: 'Draft' },
-  yellow: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', dot: 'bg-amber-500', label: 'First Draft' },
-  green: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Finished' },
-  blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Revised' },
-  red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', dot: 'bg-red-500', label: 'Discarded' },
-};
-
-const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, ...props }: any) => {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  
-  const adjustHeight = React.useCallback(() => {
-    if (ref.current) {
-      const scrollContainer = scrollContainerRef?.current;
-      const currentScrollTop = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
-      
-      ref.current.style.height = 'auto';
-      ref.current.style.height = `${ref.current.scrollHeight}px`;
-      
-      if (scrollContainer) {
-        if (scrollContainer.scrollTop !== currentScrollTop) {
-          scrollContainer.scrollTop = currentScrollTop;
-        }
-      } else if (window.scrollY !== currentScrollTop) {
-        window.scrollTo(window.scrollX, currentScrollTop);
-      }
-    }
-  }, [scrollContainerRef]);
-
-  useLayoutEffect(() => {
-    adjustHeight();
-  }, [value, className, style?.letterSpacing, adjustHeight]);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    let previousWidth = element.clientWidth;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      window.requestAnimationFrame(() => {
-        if (!element) return;
-        let widthChanged = false;
-        for (const entry of entries) {
-          if (entry.contentRect.width !== previousWidth) {
-            previousWidth = entry.contentRect.width;
-            widthChanged = true;
-          }
-        }
-        if (widthChanged) {
-          adjustHeight();
-        }
-      });
-    });
-
-    resizeObserver.observe(element);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [adjustHeight]);
-
-  const renderHighlights = () => {
-    if (!searchTerm || !value) return null;
-    
-    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = value.split(regex);
-    
-    return (
-      <div 
-        className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words text-transparent bg-transparent z-0")} 
-        style={style}
-        aria-hidden="true"
-      >
-        {parts.map((part: string, i: number) => {
-          if (i % 2 === 1) {
-            const matchIndex = (i - 1) / 2;
-            return <span key={i} id={blockId ? `highlight-${blockId}-${matchIndex}` : undefined} className="bg-yellow-200/50 text-transparent">{part}</span>;
-          }
-          return <span key={i}>{part}</span>;
-        })}
-      </div>
-    );
-  };
-
-  return (
-    <div className="relative w-full group">
-      {renderHighlights()}
-      <textarea
-        ref={ref}
-        value={value || ''}
-        onChange={onChange}
-        placeholder={placeholder}
-        className={cn("overflow-hidden resize-none relative z-10 bg-transparent w-full", className)}
-        style={style}
-        rows={1}
-        {...props}
-      />
-    </div>
-  );
-};
-
 export function EditorPanel({ compact }: { compact?: boolean }) {
-  const { state, dispatch } = useStore();
+  const {
+    setRightSidebarMode,
+    undo,
+    redo,
+    updateBlock,
+    setActiveDocument,
+    addBlock,
+    removeLens,
+    deleteBlock,
+    mergeBlockUp,
+    toggleSceneCharacter,
+    updateScene,
+    updateChapter,
+    deleteChapter,
+    addScene,
+    moveScene,
+    updateTimelineEventCharacterAction,
+    setLetterSpacing,
+    setEditorMargin,
+    toggleDisguiseMode,
+    showDescriptions,
+    activeDocumentId: activeDocId,
+    activeWorkId,
+    scenes,
+    chapters: allChapters,
+    blocks: allBlocks,
+    characters: allCharacters,
+    timelineEvents,
+    focusMode: isFocusMode,
+    rightSidebarMode,
+    lastInspectorTab,
+    disguiseMode,
+    letterSpacing,
+    editorMargin
+  } = useStore(useShallow(state => ({
+    setRightSidebarMode: state.setRightSidebarMode,
+    undo: state.undo,
+    redo: state.redo,
+    updateBlock: state.updateBlock,
+    setActiveDocument: state.setActiveDocument,
+    addBlock: state.addBlock,
+    removeLens: state.removeLens,
+    deleteBlock: state.deleteBlock,
+    mergeBlockUp: state.mergeBlockUp,
+    toggleSceneCharacter: state.toggleSceneCharacter,
+    updateScene: state.updateScene,
+    updateChapter: state.updateChapter,
+    deleteChapter: state.deleteChapter,
+    addScene: state.addScene,
+    moveScene: state.moveScene,
+    updateTimelineEventCharacterAction: state.updateTimelineEventCharacterAction,
+    setLetterSpacing: state.setLetterSpacing,
+    setEditorMargin: state.setEditorMargin,
+    toggleDisguiseMode: state.toggleDisguiseMode,
+    showDescriptions: state.showDescriptions,
+    activeDocumentId: state.activeDocumentId,
+    activeWorkId: state.activeWorkId,
+    scenes: state.scenes,
+    chapters: state.chapters,
+    blocks: state.blocks,
+    characters: state.characters,
+    timelineEvents: state.timelineEvents,
+    focusMode: state.focusMode,
+    rightSidebarMode: state.rightSidebarMode,
+    lastInspectorTab: state.lastInspectorTab,
+    disguiseMode: state.disguiseMode,
+    letterSpacing: state.letterSpacing,
+    editorMargin: state.editorMargin
+  })));
+
   const [copied, setCopied] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const showDescriptions = state.showDescriptions;
-  const activeDocId = state.activeDocumentId;
-  const activeWorkId = state.activeWorkId;
-  const activeDocument = state.scenes.find(s => s.id === activeDocId) || state.chapters.find(c => c.id === activeDocId);
-  const isScene = state.scenes.some(s => s.id === activeDocId);
+  
+  const activeDocument = scenes.find(s => s.id === activeDocId) || allChapters.find(c => c.id === activeDocId);
+  const isScene = scenes.some(s => s.id === activeDocId);
   const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
-  const chapter = state.chapters.find(c => c.id === chapterId);
+  const chapter = allChapters.find(c => c.id === chapterId);
   const isArchived = chapter?.archived;
-  const blocks = state.blocks.filter(b => b.documentId === activeDocId).sort((a, b) => a.order - b.order);
-  const characters = state.characters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
-  const chapters = state.chapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
-  const isFocusMode = state.focusMode;
-  const rightSidebarMode = state.rightSidebarMode;
-  const lastInspectorTab = state.lastInspectorTab;
+  const blocks = allBlocks.filter(b => b.documentId === activeDocId).sort((a, b) => a.order - b.order);
+  const characters = allCharacters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
+  const chapters = allChapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
+  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (rightSidebarMode !== 'closed') {
       const canShowCurrentTab = isScene || (rightSidebarMode !== 'info' && rightSidebarMode !== 'macro');
       if (!canShowCurrentTab) {
-        dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'micro' });
+        setRightSidebarMode('micro');
       }
     }
-  }, [rightSidebarMode, isScene, dispatch]);
+  }, [rightSidebarMode, isScene, setRightSidebarMode]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -185,22 +152,27 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   // Global Undo/Redo Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      
+      if (isInput) return; // Let native undo/redo handle text inputs
+
       // Undo: Ctrl+Z
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        dispatch({ type: 'UNDO' });
+        undo();
       }
       // Redo: Ctrl+Shift+Z or Ctrl+Y
       if (((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') || 
           ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
         e.preventDefault();
-        dispatch({ type: 'REDO' });
+        redo();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dispatch]);
+  }, [undo, redo]);
 
   if (!activeDocument) {
     return (
@@ -211,20 +183,20 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     );
   }
 
-  const handleBlockChange = (id: string, updates: Partial<typeof state.blocks[0]>) => {
-    dispatch({ type: 'UPDATE_BLOCK', payload: { id, ...updates } });
+  const handleBlockChange = (id: string, updates: Partial<typeof allBlocks[0]>) => {
+    updateBlock({ id, ...updates });
   };
 
   const navigateToBlock = (blockId: string) => {
-    const block = state.blocks.find(b => b.id === blockId);
+    const block = allBlocks.find(b => b.id === blockId);
     if (block) {
       if (block.documentId !== activeDocId) {
-        dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: block.documentId });
+        setActiveDocument(block.documentId);
       }
       
       // Auto-close inspector on mobile when jumping to text
       if (window.innerWidth < 768) {
-        dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' });
+        setRightSidebarMode('closed');
       }
 
       setTimeout(() => {
@@ -238,7 +210,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     }
   };
 
-  const toggleBlockDescription = (block: typeof state.blocks[0]) => {
+  const toggleBlockDescription = (block: typeof allBlocks[0]) => {
     if (block.description === undefined) {
       handleBlockChange(block.id, { description: '' });
     } else if (block.description === '') {
@@ -247,28 +219,28 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   };
 
   const handleAddBlock = (isLens?: boolean, afterBlockId?: string) => {
-    dispatch({ type: 'ADD_BLOCK', payload: { documentId: activeDocId, type: 'text', isLens, lensColor: isLens ? 'red' : undefined, afterBlockId } });
+    addBlock({ documentId: activeDocId, type: 'text', isLens, lensColor: isLens ? 'red' : undefined, afterBlockId });
   };
 
   const handleLensColorChange = (id: string, color: string) => {
-    dispatch({ type: 'UPDATE_BLOCK', payload: { id, lensColor: color } });
+    updateBlock({ id, lensColor: color });
   };
 
   const handleRemoveLens = (id: string) => {
-    dispatch({ type: 'REMOVE_LENS', payload: id });
+    removeLens(id);
   };
 
   const handleDeleteBlock = (id: string) => {
-    dispatch({ type: 'DELETE_BLOCK', payload: id });
+    deleteBlock(id);
   };
 
   const handleMergeUp = (id: string) => {
-    dispatch({ type: 'MERGE_BLOCK_UP', payload: id });
+    mergeBlockUp(id);
   };
 
   const toggleCharacter = (charId: string) => {
     if (isScene) {
-      dispatch({ type: 'TOGGLE_SCENE_CHARACTER', payload: { sceneId: activeDocId, characterId: charId } });
+      toggleSceneCharacter(activeDocId, charId);
     }
   };
 
@@ -286,7 +258,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   // Calculate chapter stats if it's a chapter
   let chapterCharacters: string[] = [];
   if (!isScene) {
-    const chapterScenes = state.scenes.filter(s => s.chapterId === activeDocId);
+    const chapterScenes = scenes.filter(s => s.chapterId === activeDocId);
     const charIds = new Set<string>();
     chapterScenes.forEach(s => s.characterIds.forEach(id => charIds.add(id)));
     chapterCharacters = Array.from(charIds);
@@ -296,10 +268,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   const tocSections: { title: string; documentId: string; entries: { id: string; description: string; content: string; completed: boolean; documentId: string }[] }[] = [];
   if (activeDocument) {
     const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
-    const chapter = state.chapters.find(c => c.id === chapterId);
+    const chapter = allChapters.find(c => c.id === chapterId);
     
     if (chapter) {
-      const chapterBlocks = state.blocks.filter(b => b.documentId === chapterId && b.description !== undefined).sort((a, b) => a.order - b.order);
+      const chapterBlocks = allBlocks.filter(b => b.documentId === chapterId && b.description !== undefined).sort((a, b) => a.order - b.order);
       if (chapterBlocks.length > 0) {
         tocSections.push({
           title: chapter.title || 'Untitled Chapter',
@@ -308,9 +280,9 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         });
       }
       
-      const chapterScenes = state.scenes.filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
+      const chapterScenes = scenes.filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
       for (const scene of chapterScenes) {
-        const sceneBlocks = state.blocks.filter(b => b.documentId === scene.id && b.description !== undefined).sort((a, b) => a.order - b.order);
+        const sceneBlocks = allBlocks.filter(b => b.documentId === scene.id && b.description !== undefined).sort((a, b) => a.order - b.order);
         if (sceneBlocks.length > 0) {
           tocSections.push({
             title: scene.title || 'Untitled Scene',
@@ -372,14 +344,14 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 disabled={isArchived}
                 onChange={(e) => {
                   if (isScene) {
-                    dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, title: e.target.value } });
+                    updateScene({ id: activeDocId, title: e.target.value });
                   } else {
-                    dispatch({ type: 'UPDATE_CHAPTER', payload: { id: activeDocId, title: e.target.value } });
+                    updateChapter({ id: activeDocId, title: e.target.value });
                   }
                 }}
                 className={cn(
                   "w-full outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words",
-                  state.disguiseMode 
+                  disguiseMode 
                     ? "font-mono text-base leading-snug text-black font-normal" 
                     : "text-2xl md:text-3xl font-serif font-semibold text-stone-900"
                 )}
@@ -407,7 +379,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               
               {!isScene && (
                 <ConfirmDeleteButton
-                  onConfirm={() => dispatch({ type: 'DELETE_CHAPTER', payload: activeDocId })}
+                  onConfirm={() => deleteChapter(activeDocId)}
                   className="p-2"
                   title="Delete Chapter"
                   iconSize={20}
@@ -417,113 +389,33 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
           </div>
 
           {/* Chapter Scenes List */}
-          {!isScene && !state.disguiseMode && (
-            <div className="mb-12 space-y-4">
-              <div className="flex items-center justify-between border-b border-stone-100 pb-2">
-                <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider">Scenes in this Chapter</h3>
-                <button
-                  onClick={() => dispatch({ type: 'ADD_SCENE', payload: { chapterId: activeDocId } })}
-                  className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-1 rounded transition-colors"
-                >
-                  <Plus size={14} />
-                  Add Scene
-                </button>
-              </div>
-              {state.scenes.filter(s => s.chapterId === activeDocId).sort((a, b) => a.order - b.order).length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {state.scenes.filter(s => s.chapterId === activeDocId).sort((a, b) => a.order - b.order).map(scene => {
-                    const status = SCENE_STATUS_COLORS[scene.statusColor || 'none'] || SCENE_STATUS_COLORS.none;
-                    return (
-                      <div
-                        key={scene.id}
-                        className={cn(
-                          "group relative flex flex-col rounded-xl border transition-all duration-300 hover:shadow-md",
-                          status.bg,
-                          status.border
-                        )}
-                      >
-                        <button
-                          onClick={() => dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: scene.id })}
-                          className="flex-1 p-4 text-left"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className={cn("w-2 h-2 rounded-full shrink-0", status.dot)} />
-                            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Scene {scene.order + 1}</span>
-                          </div>
-                          <div className={cn("text-sm font-semibold truncate mb-1", status.text)}>
-                            {scene.title || 'Untitled Scene'}
-                          </div>
-                          <div className="text-[10px] text-stone-500 flex items-center opacity-60">
-                            <FileText size={10} className="mr-1" />
-                            {state.blocks.filter(b => b.documentId === scene.id && !b.isLens).reduce((acc, b) => acc + b.content.length, 0)} chars
-                          </div>
-                        </button>
-
-                        {/* Color Picker Overlay */}
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1 bg-white/80 backdrop-blur-sm p-1 rounded-full shadow-sm border border-stone-200">
-                          {Object.keys(SCENE_STATUS_COLORS).map(colorKey => (
-                            <button
-                              key={colorKey}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                dispatch({ type: 'UPDATE_SCENE', payload: { id: scene.id, statusColor: colorKey === 'none' ? undefined : colorKey } });
-                              }}
-                              className={cn(
-                                "w-3 h-3 rounded-full border border-black/5 transition-transform hover:scale-125",
-                                SCENE_STATUS_COLORS[colorKey].dot,
-                                (scene.statusColor || 'none') === colorKey && "ring-1 ring-offset-1 ring-stone-400"
-                              )}
-                              title={SCENE_STATUS_COLORS[colorKey].label}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-sm text-stone-500 italic p-4 bg-stone-50 rounded-lg border border-stone-100 text-center">
-                  No scenes in this chapter yet.
-                </div>
-              )}
-            </div>
-          )}
+          <ChapterScenesList
+            isScene={isScene}
+            disguiseMode={disguiseMode}
+            activeDocId={activeDocId}
+            scenes={scenes}
+            allBlocks={allBlocks}
+            addScene={addScene}
+            setActiveDocument={setActiveDocument}
+            updateScene={updateScene}
+          />
 
           {/* Chapter Character Summary */}
-          {!isScene && chapterCharacters.length > 0 && !state.disguiseMode && (
-            <div className="mb-12 space-y-6">
-              <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 pb-2">Character Appearances</h3>
-              {chapterCharacters.map(charId => {
-                const char = characters.find(c => c.id === charId);
-                if (!char) return null;
-                
-                const scenesWithChar = state.scenes.filter(s => s.chapterId === activeDocId && s.characterIds.includes(charId)).sort((a, b) => a.order - b.order);
-                
-                return (
-                  <div key={charId} className="bg-stone-50 rounded-lg p-4 border border-stone-100">
-                    <div className="font-semibold text-stone-900 mb-3">{char.name} appears in:</div>
-                    <div className="space-y-2 pl-2 border-l-2 border-emerald-200">
-                      {scenesWithChar.map(scene => {
-                        const sceneIndex = `${activeDocument.order + 1}-${scene.order + 1}`;
-                        return (
-                          <div key={scene.id} className="flex items-start space-x-3">
-                            <span className="text-xs font-mono text-stone-500 bg-stone-200 px-1.5 py-0.5 rounded mt-0.5 shrink-0">{sceneIndex}</span>
-                            <span className="text-sm text-stone-700">{scene.title || 'Untitled Scene'}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <ChapterCharacterSummary
+            isScene={isScene}
+            disguiseMode={disguiseMode}
+            chapterCharacters={chapterCharacters}
+            characters={characters}
+            scenes={scenes}
+            activeDocId={activeDocId}
+            activeDocumentOrder={activeDocument.order}
+          />
 
           {/* Blocks */}
-          <div className={cn("space-y-6", state.disguiseMode && "space-y-4")}>
+          <div className={cn("space-y-6", disguiseMode && "space-y-4")}>
             {blocks.map((block, index) => {
               const prevBlock = index > 0 ? blocks[index - 1] : null;
-              const canMergeUp = !block.isLens && prevBlock && !prevBlock.isLens && !state.disguiseMode;
+              const canMergeUp = !block.isLens && prevBlock && !prevBlock.isLens && !disguiseMode;
 
               return (
               <div key={block.id} id={`block-${block.id}`} className="group relative flex flex-col transition-colors duration-500">
@@ -541,19 +433,19 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 )}
 
                 <div className="flex items-start gap-2" style={{
-                  paddingLeft: `${(state.editorMargin || 0)}rem`,
-                  paddingRight: `${(state.editorMargin || 0)}rem`,
+                  paddingLeft: `${(editorMargin || 0)}rem`,
+                  paddingRight: `${(editorMargin || 0)}rem`,
                 }}>
                   <div className="flex-1 min-w-0">
                     {/* Block Content */}
                     <div className={cn(
                       "w-full rounded-lg transition-colors",
-                      block.isLens && !state.disguiseMode 
+                      block.isLens && !disguiseMode 
                         ? cn("p-4 border-2", LENS_COLORS[block.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red) 
                         : "px-4 border-2 border-transparent",
-                      state.disguiseMode && "rounded-none p-0 border-0"
+                      disguiseMode && "rounded-none p-0 border-0"
                     )}>
-                      {block.isLens && !state.disguiseMode && (
+                      {block.isLens && !disguiseMode && (
                         <div className="flex justify-between items-center mb-2">
                           <div className="flex space-x-1">
                             {Object.keys(LENS_COLORS).map(color => (
@@ -588,28 +480,25 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                             e.preventDefault();
-                            dispatch({ 
-                              type: 'UPDATE_BLOCK', 
-                              payload: { 
-                                id: block.id, 
-                                isLens: !block.isLens,
-                                lensColor: !block.isLens ? (block.lensColor || 'red') : undefined
-                              } 
+                            updateBlock({ 
+                              id: block.id, 
+                              isLens: !block.isLens,
+                              lensColor: !block.isLens ? (block.lensColor || 'red') : undefined
                             });
                           }
                         }}
                         placeholder={block.isLens ? (block.lensColor === 'black' ? "Hidden content..." : "Enter lens content...") : "Start writing..."}
                         className={cn(
                           "w-full outline-none bg-transparent p-0",
-                          state.disguiseMode ? "font-mono text-base leading-snug text-black" : (block.isLens ? "text-base md:text-sm font-medium leading-relaxed" : "text-lg leading-loose tracking-wide text-stone-800 font-serif"),
-                          block.isLens && block.lensColor === 'black' && !state.disguiseMode ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : ""
+                          disguiseMode ? "font-mono text-base leading-snug text-black" : (block.isLens ? "text-base md:text-sm font-medium leading-relaxed" : "text-lg leading-loose tracking-wide text-stone-800 font-serif"),
+                          block.isLens && block.lensColor === 'black' && !disguiseMode ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : ""
                         )}
-                        style={{ letterSpacing: `${(state.letterSpacing || 0) * 0.05}em` }}
+                        style={{ letterSpacing: `${(letterSpacing || 0) * 0.05}em` }}
                       />
                     </div>
 
                     {/* Block Actions (Hover) */}
-                    {!state.disguiseMode && !isArchived && (
+                    {!disguiseMode && !isArchived && (
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-2 px-2 absolute top-full left-0 z-10 bg-white shadow-sm rounded-md border border-stone-200 py-0.5 mt-1">
                         <button 
                           onClick={() => handleAddBlock(false, block.id)}
@@ -637,7 +526,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   </div>
 
                   {/* Right Side Actions for Text Blocks */}
-                  {!state.disguiseMode && !isArchived && (
+                  {!disguiseMode && !isArchived && (
                     <div className={cn(
                       "flex flex-col items-center space-y-2 opacity-0 group-hover:opacity-100 transition-opacity pt-2 w-8 shrink-0"
                     )}>
@@ -662,7 +551,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               );
             })}
 
-            {blocks.length === 0 && !state.disguiseMode && (
+            {blocks.length === 0 && !disguiseMode && (
               <div className="flex space-x-4 mt-8">
                 <button 
                   onClick={() => handleAddBlock(false)}
@@ -688,7 +577,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       </div>
       
       {/* Inspector Sidebar */}
-      {rightSidebarMode !== 'closed' && !state.disguiseMode && (
+      {rightSidebarMode !== 'closed' && !disguiseMode && (
         <div className={cn(
           "bg-stone-50 border-l border-stone-200 shrink-0 flex flex-col transition-all duration-300",
           "fixed inset-0 w-full z-[60] md:relative md:w-72 md:inset-auto md:z-20"
@@ -697,41 +586,35 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
             <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
               {isScene && (
                 <button
-                  onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'info' })}
+                  onClick={() => setRightSidebarMode('info')}
                   className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'info' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
                 >
                   Info
                 </button>
               )}
               <button
-                onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'micro' })}
+                onClick={() => setRightSidebarMode('micro')}
                 className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'micro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Directory
               </button>
               <button
-                onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'meso' })}
+                onClick={() => setRightSidebarMode('meso')}
                 className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'meso' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Lenses
               </button>
               {isScene && (
                 <button
-                  onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'macro' })}
+                  onClick={() => setRightSidebarMode('macro')}
                   className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'macro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
                 >
                   Events
                 </button>
               )}
-              <button
-                onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'inbox' })}
-                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'inbox' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
-              >
-                Inbox
-              </button>
             </div>
             <button
-              onClick={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })}
+              onClick={() => setRightSidebarMode('closed')}
               className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors shrink-0 ml-1"
               title="Close Inspector"
             >
@@ -756,7 +639,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                             <div className="flex justify-between items-start">
                               <textarea
                                 value={entry.description || ''}
-                                onChange={(e) => dispatch({ type: 'UPDATE_BLOCK', payload: { id: entry.id, description: e.target.value } })}
+                                onChange={(e) => updateBlock({ id: entry.id, description: e.target.value })}
                                 className={cn(
                                   "w-full bg-transparent border-none outline-none text-sm font-medium focus:ring-0 p-0 resize-none",
                                   entry.completed ? "text-emerald-700" : "text-stone-900",
@@ -781,14 +664,11 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 )}
               </div>
             )}
-            {rightSidebarMode === 'inbox' && (
-              <InboxPanel />
-            )}
             {rightSidebarMode === 'meso' && activeDocId && (
-              <LensesPanel documentId={activeDocId} onClose={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })} onNavigateToBlock={navigateToBlock} />
+              <LensesPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} onNavigateToBlock={navigateToBlock} />
             )}
             {rightSidebarMode === 'macro' && activeDocId && isScene && (
-              <EventPoolPanel documentId={activeDocId} onClose={() => dispatch({ type: 'SET_RIGHT_SIDEBAR_MODE', payload: 'closed' })} />
+              <EventPoolPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} />
             )}
             {rightSidebarMode === 'info' && activeDocId && isScene && (
               <div className="p-4 space-y-6">
@@ -799,10 +679,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                     <select
                       value={(activeDocument as any).chapterId || ''}
                       onChange={(e) => {
-                        dispatch({ 
-                          type: 'MOVE_SCENE', 
-                          payload: { sceneId: activeDocId, newChapterId: e.target.value, newIndex: 0 } 
-                        });
+                        moveScene(activeDocId, e.target.value, 0);
                       }}
                       className="text-xs bg-white border border-stone-200 rounded px-2 h-9 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
                     >
@@ -816,7 +693,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                     <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Status</label>
                     <div className="grid grid-cols-2 gap-1">
                       <button
-                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: undefined } })}
+                        onClick={() => updateScene({ id: activeDocId, statusColor: undefined })}
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.none.bg, SCENE_STATUS_COLORS.none.border, SCENE_STATUS_COLORS.none.text,
@@ -827,7 +704,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         {SCENE_STATUS_COLORS.none.label}
                       </button>
                       <button
-                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'yellow' } })}
+                        onClick={() => updateScene({ id: activeDocId, statusColor: 'yellow' })}
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.yellow.bg, SCENE_STATUS_COLORS.yellow.border, SCENE_STATUS_COLORS.yellow.text,
@@ -838,7 +715,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         {SCENE_STATUS_COLORS.yellow.label}
                       </button>
                       <button
-                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'blue' } })}
+                        onClick={() => updateScene({ id: activeDocId, statusColor: 'blue' })}
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.blue.bg, SCENE_STATUS_COLORS.blue.border, SCENE_STATUS_COLORS.blue.text,
@@ -849,7 +726,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         {SCENE_STATUS_COLORS.blue.label}
                       </button>
                       <button
-                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'red' } })}
+                        onClick={() => updateScene({ id: activeDocId, statusColor: 'red' })}
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.red.bg, SCENE_STATUS_COLORS.red.border, SCENE_STATUS_COLORS.red.text,
@@ -860,7 +737,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         {SCENE_STATUS_COLORS.red.label}
                       </button>
                       <button
-                        onClick={() => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, statusColor: 'green' } })}
+                        onClick={() => updateScene({ id: activeDocId, statusColor: 'green' })}
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-bold border transition-all flex items-center justify-center gap-1.5 col-span-2",
                           SCENE_STATUS_COLORS.green.bg, SCENE_STATUS_COLORS.green.border, SCENE_STATUS_COLORS.green.text,
@@ -888,7 +765,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                           onChange={(e) => {
                             const val = parseInt(e.target.value);
                             if (isScene) {
-                              dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, goalWordCount: val } });
+                              updateScene({ id: activeDocId, goalWordCount: val });
                             }
                           }}
                           className="w-full bg-transparent outline-none text-xs text-stone-600 font-medium h-full"
@@ -915,7 +792,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                       value={(activeDocument as any).deadline || ''} 
                       onChange={(e) => {
                         if (isScene) {
-                          dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, deadline: e.target.value } });
+                          updateScene({ id: activeDocId, deadline: e.target.value });
                         }
                       }}
                       className="w-full h-9 bg-white border border-stone-200 rounded px-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
@@ -937,7 +814,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                             const newIds = isIncluded 
                               ? currentIds.filter((id: string) => id !== char.id)
                               : [...currentIds, char.id];
-                            dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, characterIds: newIds } });
+                            updateScene({ id: activeDocId, characterIds: newIds });
                           }}
                           className={cn(
                             "px-2 py-1 rounded text-xs font-medium border transition-all",
@@ -955,9 +832,9 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 <div className="pt-4 border-t border-stone-200">
                   <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1 block">Linked Events</label>
                   <MultiSelectDropdown
-                    options={state.timelineEvents.filter(e => e.workId === activeWorkId).map(e => ({ id: e.id, title: e.title }))}
+                    options={timelineEvents.filter(e => e.workId === activeWorkId).map(e => ({ id: e.id, title: e.title }))}
                     selectedIds={(activeDocument as any).linkedEventIds || []}
-                    onChange={(ids) => dispatch({ type: 'UPDATE_SCENE', payload: { id: activeDocId, linkedEventIds: ids } })}
+                    onChange={(ids) => updateScene({ id: activeDocId, linkedEventIds: ids })}
                     placeholder="Select events..."
                   />
                 </div>
@@ -968,7 +845,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                     <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Character Actions</label>
                     <div className="space-y-4">
                       {(() => {
-                        const linkedEvents = state.timelineEvents
+                        const linkedEvents = timelineEvents
                           .filter(e => (activeDocument as any).linkedEventIds.includes(e.id))
                           .sort((a, b) => (a.order || 0) - (b.order || 0));
                         
@@ -977,7 +854,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         const allRelevantCharIds = Array.from(new Set([...sceneCharIds, ...eventCharIds]));
                         
                         return allRelevantCharIds.map(charId => {
-                          const char = state.characters.find(c => c.id === charId);
+                          const char = allCharacters.find(c => c.id === charId);
                           if (!char) return null;
                           
                           const isInScene = sceneCharIds.includes(charId);
@@ -1002,14 +879,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                                       value={event.characterActions[charId] || ''}
                                       placeholder="Add action..."
                                       onChange={(e: any) => {
-                                        dispatch({
-                                          type: 'UPDATE_TIMELINE_EVENT_CHARACTER_ACTION',
-                                          payload: {
-                                            eventId: event.id,
-                                            characterId: charId,
-                                            action: e.target.value
-                                          }
-                                        });
+                                        updateTimelineEventCharacterAction(event.id, charId, e.target.value);
                                       }}
                                       className="w-full bg-white border border-stone-200 rounded p-1.5 text-stone-600 focus:ring-1 focus:ring-emerald-500 resize-none overflow-hidden min-h-[2rem] placeholder:text-stone-300 text-xs"
                                       scrollContainerRef={scrollContainerRef}
@@ -1034,7 +904,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       {showBackToTop && (
         <div className={cn(
           "fixed bottom-20 right-6 z-50 transition-all duration-300",
-          state.focusMode ? "opacity-0 hover:opacity-100" : "opacity-100"
+          isFocusMode ? "opacity-0 hover:opacity-100" : "opacity-100"
         )}>
           <button
             onClick={scrollToTop}
@@ -1049,7 +919,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       {/* Floating View Settings Button */}
       <div className={cn(
         "fixed bottom-6 right-6 z-50 transition-opacity duration-300 flex items-end justify-end",
-        state.focusMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100"
+        isFocusMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100"
       )}>
         <button
           onClick={() => setShowSettings(!showSettings)}
@@ -1064,28 +934,28 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-medium text-stone-700">Letter Spacing</label>
-                <span className="text-xs text-stone-500">{state.letterSpacing}</span>
+                <span className="text-xs text-stone-500">{letterSpacing}</span>
               </div>
               <input 
                 type="range" 
                 min="0" 
                 max="10" 
-                value={state.letterSpacing || 0}
-                onChange={(e) => dispatch({ type: 'SET_LETTER_SPACING', payload: parseInt(e.target.value) })}
+                value={letterSpacing || 0}
+                onChange={(e) => setLetterSpacing(parseInt(e.target.value))}
                 className="w-full accent-emerald-600"
               />
             </div>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-medium text-stone-700">Editor Margin</label>
-                <span className="text-xs text-stone-500">{state.editorMargin}</span>
+                <span className="text-xs text-stone-500">{editorMargin}</span>
               </div>
               <input 
                 type="range" 
                 min="0" 
                 max="10" 
-                value={state.editorMargin || 0}
-                onChange={(e) => dispatch({ type: 'SET_EDITOR_MARGIN', payload: parseInt(e.target.value) })}
+                value={editorMargin || 0}
+                onChange={(e) => setEditorMargin(parseInt(e.target.value))}
                 className="w-full accent-emerald-600"
               />
             </div>
@@ -1095,15 +965,15 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 <label className="text-sm font-medium text-stone-700">Disguise Mode</label>
               </div>
               <button
-                onClick={() => dispatch({ type: 'TOGGLE_DISGUISE_MODE' })}
+                onClick={() => toggleDisguiseMode()}
                 className={cn(
                   "w-10 h-5 rounded-full transition-colors relative",
-                  state.disguiseMode ? "bg-emerald-500" : "bg-stone-200"
+                  disguiseMode ? "bg-emerald-500" : "bg-stone-200"
                 )}
               >
                 <div className={cn(
                   "absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform",
-                  state.disguiseMode ? "translate-x-5" : "translate-x-0"
+                  disguiseMode ? "translate-x-5" : "translate-x-0"
                 )} />
               </button>
             </div>

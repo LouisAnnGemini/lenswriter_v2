@@ -1,36 +1,45 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, GripVertical, MapPin, AlignLeft, Type } from 'lucide-react';
+import { Plus, GripVertical, MapPin, AlignLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 
 export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
-  const { state, dispatch } = useStore();
+  const { 
+    activeWorkId, 
+    locations: allLocations, 
+    addLocation, 
+    updateLocation, 
+    deleteLocation, 
+    reorderLocations 
+  } = useStore(useShallow(state => ({
+    activeWorkId: state.activeWorkId,
+    locations: state.locations,
+    addLocation: state.addLocation,
+    updateLocation: state.updateLocation,
+    deleteLocation: state.deleteLocation,
+    reorderLocations: state.reorderLocations
+  })));
+
   const [newLocationName, setNewLocationName] = useState('');
 
-  const activeWorkId = state.activeWorkId;
-  const locations = state.locations.filter(l => l.workId === activeWorkId).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const locations = allLocations.filter(l => l.workId === activeWorkId).sort((a, b) => (a.order || 0) - (b.order || 0));
 
   if (!activeWorkId) return null;
 
   const handleAddLocation = (e: React.FormEvent) => {
     e.preventDefault();
     if (newLocationName.trim()) {
-      dispatch({
-        type: 'ADD_LOCATION',
-        payload: { workId: activeWorkId, name: newLocationName.trim() }
-      });
+      addLocation(activeWorkId, newLocationName.trim());
       setNewLocationName('');
     }
   };
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
-    dispatch({
-      type: 'REORDER_LOCATIONS',
-      payload: { workId: activeWorkId, startIndex: result.source.index, endIndex: result.destination.index }
-    });
+    reorderLocations(activeWorkId, result.source.index, result.destination.index);
   };
 
   return (
@@ -96,13 +105,13 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
                               <input
                                 type="text"
                                 value={location.name || ''}
-                                onChange={(e) => dispatch({ type: 'UPDATE_LOCATION', payload: { id: location.id, name: e.target.value } })}
+                                onChange={(e) => updateLocation({ id: location.id, name: e.target.value })}
                                 className="font-semibold text-stone-800 bg-transparent border-none p-0 focus:ring-0 w-full"
                                 placeholder="Location Name"
                               />
                             </div>
                             <ConfirmDeleteButton
-                              onConfirm={() => dispatch({ type: 'DELETE_LOCATION', payload: location.id })}
+                              onConfirm={() => deleteLocation(location.id)}
                               className="p-1.5 opacity-0 group-hover:opacity-100"
                               title="Delete Location"
                             />
@@ -112,7 +121,7 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
                               <AlignLeft size={14} className="text-stone-400 shrink-0 mt-1.5" />
                               <textarea
                                 value={location.description || ''}
-                                onChange={(e) => dispatch({ type: 'UPDATE_LOCATION', payload: { id: location.id, description: e.target.value } })}
+                                onChange={(e) => updateLocation({ id: location.id, description: e.target.value })}
                                 placeholder="Describe this location..."
                                 rows={4}
                                 className="text-sm bg-stone-50 border border-stone-200/50 rounded-md px-3 py-2 w-full resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Search, ChevronUp, ChevronDown, X, Replace } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -12,7 +13,24 @@ interface Match {
 }
 
 export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => void; onSearchChange: (text: string) => void }) {
-  const { state, dispatch } = useStore();
+  const { 
+    blocks, 
+    chapters, 
+    scenes, 
+    activeWorkId, 
+    activeDocumentId, 
+    setActiveDocument, 
+    bulkUpdateBlocks 
+  } = useStore(useShallow(state => ({
+    blocks: state.blocks,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    activeWorkId: state.activeWorkId,
+    activeDocumentId: state.activeDocumentId,
+    setActiveDocument: state.setActiveDocument,
+    bulkUpdateBlocks: state.bulkUpdateBlocks
+  })));
+
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [searchWholeWork, setSearchWholeWork] = useState(false);
@@ -42,9 +60,9 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
-        const block = state.blocks.find(b => b.id === blockId);
-        if (block && block.documentId !== state.activeDocumentId) {
-            dispatch({ type: 'SET_ACTIVE_DOCUMENT', payload: block.documentId });
+        const block = blocks.find(b => b.id === blockId);
+        if (block && block.documentId !== activeDocumentId) {
+            setActiveDocument(block.documentId);
             setTimeout(() => {
                 const el = document.getElementById(highlightId) || document.getElementById(`block-${blockId}`);
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -66,31 +84,31 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
             return;
         }
 
-        const relevantBlocks = state.blocks.filter(b => {
+        const relevantBlocks = blocks.filter(b => {
             if (searchWholeWork) {
-                const workChapters = state.chapters.filter(c => c.workId === state.activeWorkId).map(c => c.id);
-                const workScenes = state.scenes.filter(s => workChapters.includes(s.chapterId)).map(s => s.id);
+                const workChapters = chapters.filter(c => c.workId === activeWorkId).map(c => c.id);
+                const workScenes = scenes.filter(s => workChapters.includes(s.chapterId)).map(s => s.id);
                 const workDocs = [...workChapters, ...workScenes];
                 return workDocs.includes(b.documentId);
             } else {
-                return b.documentId === state.activeDocumentId;
+                return b.documentId === activeDocumentId;
             }
         });
 
         // Sort blocks
         let sortedBlocks = relevantBlocks;
         if (searchWholeWork) {
-            const workChapters = state.chapters
-                .filter(c => c.workId === state.activeWorkId)
+            const workChapters = chapters
+                .filter(c => c.workId === activeWorkId)
                 .sort((a, b) => a.order - b.order);
             
             const docOrder: string[] = [];
             workChapters.forEach(c => {
                 docOrder.push(c.id);
-                const scenes = state.scenes
+                const workScenes = scenes
                     .filter(s => s.chapterId === c.id)
                     .sort((a, b) => a.order - b.order);
-                scenes.forEach(s => docOrder.push(s.id));
+                workScenes.forEach(s => docOrder.push(s.id));
             });
 
             sortedBlocks = relevantBlocks.sort((a, b) => {
@@ -140,7 +158,7 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
 
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [findText, searchWholeWork, state.blocks, state.chapters, state.scenes, state.activeWorkId, state.activeDocumentId]); // Removed matches from deps
+  }, [findText, searchWholeWork, blocks, chapters, scenes, activeWorkId, activeDocumentId]); // Removed matches from deps
 
   const handleNext = () => {
     if (matches.length === 0) return;
@@ -165,10 +183,7 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
     const after = match.content.substring(match.index + match.length);
     const newContent = before + replaceText + after;
 
-    dispatch({
-      type: 'UPDATE_BLOCK',
-      payload: { id: match.blockId, content: newContent }
-    });
+    bulkUpdateBlocks([{ id: match.blockId, content: newContent }]);
     
     // The useEffect will trigger re-search.
     // But we might want to stay on "next" match relative to current position?
@@ -188,7 +203,7 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
     const bulkUpdates: { id: string; content: string }[] = [];
 
     relevantBlockIds.forEach(blockId => {
-        const block = state.blocks.find(b => b.id === blockId);
+        const block = blocks.find(b => b.id === blockId);
         if (block) {
             const regex = new RegExp(findText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
             const newContent = block.content.replace(regex, replaceText);
@@ -199,7 +214,7 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
     });
 
     if (bulkUpdates.length > 0) {
-        dispatch({ type: 'BULK_UPDATE_BLOCKS', payload: bulkUpdates });
+        bulkUpdateBlocks(bulkUpdates);
     }
   };
 

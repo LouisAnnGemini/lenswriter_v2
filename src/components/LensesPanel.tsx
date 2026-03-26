@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/StoreContext';
+import { useStore } from '../store/stores/useStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Highlighter, Plus, X, Search, ArrowLeft, Link as LinkIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -13,12 +14,13 @@ const LENS_COLORS = {
   black: 'bg-stone-900 border-stone-700 text-stone-100',
 };
 
-function LensNoteTextarea({ lens, dispatch }: { lens: any, dispatch: any }) {
+function LensNoteTextarea({ lens }: { lens: any }) {
+  const updateBlock = useStore(state => state.updateBlock);
   return (
     <textarea
       value={lens.notes || ''}
       onChange={(e) => {
-        dispatch({ type: 'UPDATE_BLOCK', payload: { id: lens.id, notes: e.target.value } });
+        updateBlock({ id: lens.id, notes: e.target.value });
       }}
       placeholder="Add private notes, lore, or ideas here..."
       className="w-full h-24 p-2 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm text-stone-700"
@@ -27,23 +29,38 @@ function LensNoteTextarea({ lens, dispatch }: { lens: any, dispatch: any }) {
 }
 
 export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { documentId: string, onClose: () => void, onNavigateToBlock: (blockId: string) => void }) {
-  const { state, dispatch } = useStore();
+  const { 
+    blocks, 
+    chapters, 
+    scenes, 
+    activeWorkId, 
+    activeLensId, 
+    addBlock, 
+    removeLens 
+  } = useStore(useShallow(state => ({
+    blocks: state.blocks,
+    chapters: state.chapters,
+    scenes: state.scenes,
+    activeWorkId: state.activeWorkId,
+    activeLensId: state.activeLensId,
+    addBlock: state.addBlock,
+    removeLens: state.removeLens
+  })));
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLensId, setExpandedLensId] = useState<string | null>(null);
   const lensRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
   React.useEffect(() => {
-    if (state.activeLensId && lensRefs.current[state.activeLensId]) {
-      lensRefs.current[state.activeLensId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (activeLensId && lensRefs.current[activeLensId]) {
+      lensRefs.current[activeLensId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [state.activeLensId]);
+  }, [activeLensId]);
 
-  const activeWorkId = state.activeWorkId;
-  const workChapters = state.chapters.filter(c => c.workId === activeWorkId);
-  const workScenes = state.scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
+  const workChapters = chapters.filter(c => c.workId === activeWorkId);
+  const workScenes = scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
   const documentIds = [...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
   
-  const allLenses = state.blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
+  const allLenses = blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
   
   const filteredLenses = allLenses.filter(l => {
     if (!searchTerm) return true;
@@ -51,15 +68,11 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
   });
 
   const handleAddLens = (color: string) => {
-    dispatch({
-      type: 'ADD_BLOCK',
-      payload: {
-        documentId,
-        type: 'text',
-        isLens: true,
-        lensColor: color,
-        notes: ''
-      }
+    addBlock({
+      documentId,
+      type: 'text',
+      isLens: true,
+      lensColor: color
     });
   };
 
@@ -107,7 +120,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
               className={cn(
                 "p-3 rounded-lg border text-sm shadow-sm transition-colors",
                 LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.black,
-                state.activeLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-1"
+                activeLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-1"
               )}
             >
               <div className="flex justify-between items-start">
@@ -127,12 +140,12 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
               
               {expandedLensId === lens.id && (
                 <div className="mt-3 pt-3 border-t border-black/10 space-y-3">
-                  <LensNoteTextarea lens={lens} dispatch={dispatch} />
+                  <LensNoteTextarea lens={lens} />
                   
                   {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {lens.linkedLensIds.map((linkedId: string) => {
-                        const linkedLens = state.blocks.find((b: any) => b.id === linkedId);
+                        const linkedLens = blocks.find((b: any) => b.id === linkedId);
                         if (!linkedLens) return null;
                         return (
                           <button
@@ -155,7 +168,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
 
                   <div className="flex justify-end pt-2">
                     <button 
-                      onClick={() => dispatch({ type: 'REMOVE_LENS', payload: lens.id })}
+                      onClick={() => removeLens(lens.id)}
                       className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
                       title="Remove Lens (keep text)"
                     >
