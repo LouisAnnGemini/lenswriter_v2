@@ -16,9 +16,14 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set) =>
   setEditorMargin: (margin) => set({ editorMargin: margin }),
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
   saveHistoryVersion: async (name) => {
+    console.log('saveHistoryVersion called with name:', name);
     const state = get();
     const { supabase } = await import('../../../lib/supabase');
-    if (!supabase) return;
+    console.log('Supabase client:', supabase);
+    if (!supabase) {
+      console.error('Supabase client not initialized');
+      return;
+    }
 
     const stateToSave = {
       ...state,
@@ -27,6 +32,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set) =>
       _device: 'Desktop' // Or detect device
     };
 
+    console.log('Saving state:', stateToSave);
     const { error } = await supabase
       .from('app_state')
       .insert([{ id: crypto.randomUUID(), state: stateToSave }]);
