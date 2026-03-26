@@ -7,12 +7,32 @@ import { BlockManagementTab } from './BlockManagementTab';
 import { cn } from '../lib/utils';
 
 export function BoardTab() {
-  const { activeWorkId, boardViewMode } = useStore(useShallow(state => ({
+  const { activeWorkId, boardViewMode, appMode } = useStore(useShallow(state => ({
     activeWorkId: state.activeWorkId,
-    boardViewMode: state.boardViewMode
+    boardViewMode: state.boardViewMode,
+    appMode: state.appMode
   })));
 
   if (!activeWorkId) return null;
+
+  if (appMode === 'writing') {
+    return (
+      <div className="flex-1 grid grid-cols-3 gap-4 p-4 h-full overflow-hidden">
+        <div className="flex flex-col overflow-hidden border border-stone-200 rounded-lg bg-white shadow-sm">
+          <div className="p-2 border-b border-stone-100 font-medium text-sm text-stone-700 bg-stone-50">Block Description</div>
+          <div className="flex-1 overflow-hidden"><BlockManagementTab /></div>
+        </div>
+        <div className="flex flex-col overflow-hidden border border-stone-200 rounded-lg bg-white shadow-sm">
+          <div className="p-2 border-b border-stone-100 font-medium text-sm text-stone-700 bg-stone-50">Lenses</div>
+          <div className="flex-1 overflow-hidden"><LensesTab isSubTab /></div>
+        </div>
+        <div className="flex flex-col overflow-hidden border border-stone-200 rounded-lg bg-white shadow-sm">
+          <div className="p-2 border-b border-stone-100 font-medium text-sm text-stone-700 bg-stone-50">Timeline Events</div>
+          <div className="flex-1 overflow-hidden"><TimelineTab isSubTab /></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(

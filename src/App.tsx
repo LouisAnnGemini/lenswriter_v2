@@ -6,6 +6,9 @@ import { TopNav } from './components/TopNav';
 import { OutlinePanel } from './components/OutlinePanel';
 import { EditorPanel } from './components/EditorPanel';
 import { BoardTab } from './components/BoardTab';
+import { LensesTab } from './components/LensesTab';
+import { TimelineTab } from './components/TimelineTab';
+import { BlockManagementTab } from './components/BlockManagementTab';
 import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
 import { CompileTab } from './components/CompileTab';
@@ -83,7 +86,9 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
             <EditorPanel />
           </>
         )}
-        {activeTab === 'board' && <BoardTab />}
+        {activeTab === 'blockDescriptions' && <BlockManagementTab />}
+        {activeTab === 'lenses' && <LensesTab />}
+        {activeTab === 'timelineEvents' && <TimelineTab />}
         {activeTab === 'world' && <WorldTab />}
         {activeTab === 'deadline' && (
           <DeadlineTab workId={deadlineViewMode === 'local' ? (activeWorkId || undefined) : undefined} />

@@ -463,7 +463,7 @@ export function CharactersTab() {
                                   </button>
                                   <button 
                                     onClick={() => {
-                                      setActiveTab('board');
+                                      setActiveTab('timelineEvents');
                                       setBoardViewMode('macro');
                                       setSelectedEventId(event.eventId);
                                     }}

@@ -60,7 +60,8 @@ export type InboxItem = {
   inbox: InboxItem[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'writing' | 'board' | 'world' | 'deadline' | 'compile' | 'inbox';
+  activeTab: 'writing' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
+  appMode: 'writing' | 'management';
   deadlineViewMode: 'global' | 'local';
   boardViewMode: 'micro' | 'meso' | 'macro';
   activeLensId: string | null;
@@ -89,7 +90,9 @@ export type StoreState = State & UISlice & BlockSlice & ChapterSlice & Character
 
 export interface UISlice {
   setActiveDocument: (documentId: string | null) => void;
-  setActiveTab: (tab: 'writing' | 'board' | 'world' | 'deadline' | 'compile' | 'inbox') => void;
+  setActiveTab: (tab: 'writing' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents') => void;
+  setAppMode: (mode: 'writing' | 'management') => void;
+  toggleAppMode: () => void;
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
   setBoardViewMode: (mode: 'micro' | 'meso' | 'macro') => void;
   setActiveLens: (lensId: string | null) => void;

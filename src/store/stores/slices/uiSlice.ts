@@ -15,6 +15,17 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setLetterSpacing: (spacing) => set({ letterSpacing: spacing }),
   setEditorMargin: (margin) => set({ editorMargin: margin }),
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
+  setAppMode: (mode) => set({ appMode: mode }),
+  toggleAppMode: () => set((state) => {
+    const newMode = state.appMode === 'writing' ? 'management' : 'writing';
+    let newTab = state.activeTab;
+    if (newMode === 'writing' && ['deadline', 'compile'].includes(state.activeTab)) {
+      newTab = 'writing';
+    } else if (newMode === 'management' && ['board', 'world'].includes(state.activeTab)) {
+      newTab = 'writing';
+    }
+    return { appMode: newMode, activeTab: newTab };
+  }),
   saveHistoryVersion: async (name) => {
     console.log('saveHistoryVersion called with name:', name);
     const state = get();

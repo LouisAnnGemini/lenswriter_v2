@@ -78,7 +78,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
     if (selectedEventId) {
       // If event is in pool, we might need to change view mode or show pool
       // For now, just ensure we are on the timeline tab
-      setActiveTab('board');
+      setActiveTab('timelineEvents');
       
       // If it's a montage event, switch to montage
       const event = timelineEvents.find(e => e.id === selectedEventId);

@@ -37,6 +37,7 @@ export const initialState: State = {
   activeWorkId: initialWorkId,
   activeDocumentId: initialSceneId,
   activeTab: 'writing',
+  appMode: 'writing',
   deadlineViewMode: 'local',
   boardViewMode: 'meso',
   activeLensId: null,

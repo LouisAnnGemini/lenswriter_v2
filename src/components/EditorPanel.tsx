@@ -45,6 +45,8 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     setLetterSpacing,
     setEditorMargin,
     toggleDisguiseMode,
+    appMode,
+    toggleAppMode,
     showDescriptions,
     activeDocumentId: activeDocId,
     activeWorkId,
@@ -91,6 +93,8 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     rightSidebarMode: state.rightSidebarMode,
     lastInspectorTab: state.lastInspectorTab,
     disguiseMode: state.disguiseMode,
+    appMode: state.appMode,
+    toggleAppMode: state.toggleAppMode,
     letterSpacing: state.letterSpacing,
     editorMargin: state.editorMargin
   })));
@@ -931,6 +935,29 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         
         {showSettings && (
           <div className="absolute bottom-full right-0 mb-4 w-64 bg-white rounded-lg shadow-xl border border-stone-200 p-4 z-50 origin-bottom-right animate-in fade-in slide-in-from-bottom-2">
+            <div className="mb-4">
+              <label className="text-sm font-medium text-stone-700 mb-2 block">App Mode</label>
+              <div className="flex bg-stone-100 rounded-lg p-1">
+                <button
+                  onClick={() => toggleAppMode()}
+                  className={cn(
+                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
+                    appMode === 'writing' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                  )}
+                >
+                  Writing
+                </button>
+                <button
+                  onClick={() => toggleAppMode()}
+                  className={cn(
+                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
+                    appMode === 'management' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                  )}
+                >
+                  Management
+                </button>
+              </div>
+            </div>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-medium text-stone-700">Letter Spacing</label>
