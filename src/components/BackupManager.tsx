@@ -105,10 +105,11 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     if (!syncPrompt) return;
 
     if (choice === 'cloud') {
-      importData(syncPrompt.cloudState);
+      importData({ ...syncPrompt.cloudState, supabaseSyncEnabled: true });
+    } else {
+      toggleSupabaseSync();
     }
     
-    toggleSupabaseSync();
     setSyncPrompt(null);
   };
 
@@ -126,7 +127,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       if (error) throw error;
       
       if (data && data.state) {
-        importData(data.state);
+        importData({ ...data.state, supabaseSyncEnabled: true });
         setPullStatus({ type: 'success', message: 'Successfully loaded data from Supabase.' });
       } else {
         setPullStatus({ type: 'error', message: 'No data found in Supabase.' });
@@ -176,6 +177,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       if (data && data.state) {
         const { _isHistory, _timestamp, ...stateToRestore } = data.state;
         stateToRestore.lastModified = Date.now();
+        stateToRestore.supabaseSyncEnabled = true;
         importData(stateToRestore);
         setPullStatus({ type: 'success', message: 'Successfully restored historical version.' });
         setConfirmRestoreId(null);

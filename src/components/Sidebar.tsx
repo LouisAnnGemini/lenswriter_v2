@@ -99,7 +99,9 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
       try {
         const json = JSON.parse(event.target?.result as string);
         if (json && typeof json === 'object' && 'works' in json) {
-          importData(json);
+          // Preserve current sync state when importing a file
+          const currentState = useStore.getState();
+          importData({ ...json, supabaseSyncEnabled: currentState.supabaseSyncEnabled });
         } else {
           alert('Invalid data format');
         }
