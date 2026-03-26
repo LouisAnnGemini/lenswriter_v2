@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { StoreState, UISlice } from '../../types';
 
-export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set) => ({
+export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, get) => ({
   setActiveDocument: (documentId) => set({ activeDocumentId: documentId }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setDeadlineViewMode: (mode) => set({ deadlineViewMode: mode }),
