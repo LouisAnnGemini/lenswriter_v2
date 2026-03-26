@@ -16,6 +16,7 @@ import { InboxTab } from './components/InboxTab';
 import { Minimize2 } from 'lucide-react';
 import { QuickCapture } from './components/QuickCapture';
 import { BackupProvider } from './context/BackupContext';
+import { SyncManager } from './components/SyncManager';
 
 function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMobileOpen: (open: boolean) => void }) {
   const { 
@@ -121,6 +122,7 @@ function Layout() {
       {!disguiseMode && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
       <MainContent mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <QuickCapture />
+      <SyncManager />
     </div>
   );
 }

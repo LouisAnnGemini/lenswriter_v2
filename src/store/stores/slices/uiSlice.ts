@@ -30,7 +30,6 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
     console.log('saveHistoryVersion called with name:', name);
     const state = get();
     const { supabase } = await import('../../../lib/supabase');
-    console.log('Supabase client:', supabase);
     if (!supabase) {
       console.error('Supabase client not initialized');
       return;
@@ -52,6 +51,36 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       console.error('Failed to save history version:', error);
     } else {
       console.log('Saved history version:', name);
+      
+      // Rotate history: keep only the last 20 versions
+      try {
+        const { data: history, error: fetchError } = await supabase
+          .from('app_state')
+          .select('id, state')
+          .neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        if (fetchError) throw fetchError;
+        
+        if (history) {
+          const versions = history
+            .filter(row => row.state?._isHistory)
+            .sort((a, b) => b.state._timestamp - a.state._timestamp);
+          
+          if (versions.length > 20) {
+            const toDelete = versions.slice(20);
+            const idsToDelete = toDelete.map(v => v.id);
+            
+            await supabase
+              .from('app_state')
+              .delete()
+              .in('id', idsToDelete);
+            
+            console.log(`Deleted ${idsToDelete.length} old history version(s).`);
+          }
+        }
+      } catch (rotateError) {
+        console.error('Failed to rotate history versions:', rotateError);
+      }
     }
   },
 });
