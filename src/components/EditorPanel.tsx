@@ -31,6 +31,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     redo,
     updateBlock,
     setActiveDocument,
+    setActiveLens,
     addBlock,
     removeLens,
     deleteBlock,
@@ -67,6 +68,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     redo: state.redo,
     updateBlock: state.updateBlock,
     setActiveDocument: state.setActiveDocument,
+    setActiveLens: state.setActiveLens,
     addBlock: state.addBlock,
     removeLens: state.removeLens,
     deleteBlock: state.deleteBlock,
@@ -471,6 +473,16 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                               />
                             ))}
                           </div>
+                          <button
+                            onClick={() => {
+                              setRightSidebarMode('meso');
+                              setActiveLens(block.id);
+                            }}
+                            className="p-1 hover:bg-black/10 rounded transition-colors text-stone-600"
+                            title="Jump to Lens in Sidebar"
+                          >
+                            <ArrowRight size={14} />
+                          </button>
                         </div>
                       )}
                       

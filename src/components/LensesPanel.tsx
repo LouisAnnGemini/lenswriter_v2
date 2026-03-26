@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Highlighter, Plus, X, Search, ArrowLeft, Link as LinkIcon } from 'lucide-react';
+import { Highlighter, Plus, X, Search, ArrowLeft, Link as LinkIcon, ExternalLink } from 'lucide-react';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { cn } from '../lib/utils';
 
 const LENS_COLORS = {
@@ -36,7 +37,8 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
     activeWorkId, 
     activeLensId, 
     addBlock, 
-    removeLens 
+    removeLens,
+    updateBlock
   } = useStore(useShallow(state => ({
     blocks: state.blocks,
     chapters: state.chapters,
@@ -44,7 +46,8 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
     activeWorkId: state.activeWorkId,
     activeLensId: state.activeLensId,
     addBlock: state.addBlock,
-    removeLens: state.removeLens
+    removeLens: state.removeLens,
+    updateBlock: state.updateBlock
   })));
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedLensId, setExpandedLensId] = useState<string | null>(null);
@@ -64,7 +67,9 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
   
   const filteredLenses = allLenses.filter(l => {
     if (!searchTerm) return true;
-    return l.notes && l.notes.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    return (l.notes && l.notes.toLowerCase().includes(term)) || 
+           (l.content && l.content.toLowerCase().includes(term));
   });
 
   const handleAddLens = (color: string) => {
@@ -127,7 +132,13 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
                 <div className="text-sm font-medium mb-1 flex-1 cursor-pointer line-clamp-2" onClick={() => setExpandedLensId(expandedLensId === lens.id ? null : lens.id)}>
                   {lens.content}
                 </div>
-                <div className="flex items-center ml-2">
+                <div className="flex items-center ml-2 space-x-1">
+                  {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
+                    <div className="flex items-center text-[10px] font-bold bg-black/5 px-1.5 py-0.5 rounded-full text-black/40" title={`${lens.linkedLensIds.length} linked lenses`}>
+                      <LinkIcon size={10} className="mr-1" />
+                      {lens.linkedLensIds.length}
+                    </div>
+                  )}
                   <button
                     onClick={() => onNavigateToBlock(lens.id)}
                     className="p-1 hover:bg-black/5 rounded transition-colors"
@@ -139,32 +150,85 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
               </div>
               
               {expandedLensId === lens.id && (
-                <div className="mt-3 pt-3 border-t border-black/10 space-y-3">
+                <div className="mt-3 pt-3 border-t border-black/10 space-y-4">
                   <LensNoteTextarea lens={lens} />
                   
-                  {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {lens.linkedLensIds.map((linkedId: string) => {
-                        const linkedLens = blocks.find((b: any) => b.id === linkedId);
-                        if (!linkedLens) return null;
-                        return (
-                          <button
-                            key={linkedId}
-                            onClick={() => onNavigateToBlock(linkedId)}
-                            className={cn(
-                              "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
-                              lens.lensColor === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
-                            )}
-                          >
-                            <LinkIcon size={10} className="mr-1 shrink-0" />
-                            <span className="truncate max-w-[200px]">
-                              {linkedLens.lensColor === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                  {/* Outgoing Links */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-black/40 uppercase tracking-wider mb-2 flex items-center">
+                      <LinkIcon size={10} className="mr-1" /> Linked Lenses
+                    </label>
+                    
+                    {/* List of currently linked lenses with navigation */}
+                    {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {lens.linkedLensIds.map((linkedId: string) => {
+                          const linkedLens = allLenses.find(l => l.id === linkedId);
+                          if (!linkedLens) return null;
+                          return (
+                            <button
+                              key={linkedId}
+                              onClick={() => {
+                                setExpandedLensId(linkedId);
+                                setTimeout(() => {
+                                  lensRefs.current[linkedId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }, 100);
+                              }}
+                              className={cn(
+                                "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
+                                lens.lensColor === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                              )}
+                            >
+                              <ExternalLink size={10} className="mr-1 shrink-0" />
+                              <span className="truncate max-w-[150px]">
+                                {linkedLens.lensColor === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <MultiSelectDropdown
+                      options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: l.content.substring(0, 40) + '...' }))}
+                      selectedIds={lens.linkedLensIds || []}
+                      onChange={(ids) => updateBlock({ id: lens.id, linkedLensIds: ids })}
+                      placeholder="+ Link another lens..."
+                    />
+                  </div>
+
+                  {/* Backlinks */}
+                  {(() => {
+                    const backlinks = allLenses.filter(l => l.linkedLensIds && l.linkedLensIds.includes(lens.id));
+                    if (backlinks.length === 0) return null;
+                    return (
+                      <div>
+                        <label className="block text-[10px] font-bold text-black/40 uppercase tracking-wider mb-2">Linked From</label>
+                        <div className="flex flex-wrap gap-2">
+                          {backlinks.map(backlink => (
+                            <button
+                              key={backlink.id}
+                              onClick={() => {
+                                setExpandedLensId(backlink.id);
+                                setTimeout(() => {
+                                  lensRefs.current[backlink.id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }, 100);
+                              }}
+                              className={cn(
+                                "text-xs flex items-center px-2 py-1 rounded transition-colors font-medium",
+                                lens.lensColor === 'black' ? "bg-white/10 hover:bg-white/20 text-stone-300" : "bg-black/5 hover:bg-black/10 text-stone-700"
+                              )}
+                            >
+                              <ExternalLink size={10} className="mr-1 shrink-0" />
+                              <span className="truncate max-w-[200px]">
+                                {backlink.lensColor === 'black' ? 'Hidden Content' : (backlink.content || 'Empty lens')}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex justify-end pt-2">
                     <button 
