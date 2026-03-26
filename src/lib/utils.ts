@@ -20,3 +20,11 @@ export function countWords(text: string): number {
 
   return chineseCount + englishCount;
 }
+
+export function getDeviceType(): 'Desktop' | 'Mobile' {
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  if (/android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase())) {
+    return 'Mobile';
+  }
+  return 'Desktop';
+}

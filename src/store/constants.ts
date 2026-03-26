@@ -52,5 +52,6 @@ export const initialState: State = {
   supabaseSyncEnabled: false,
   syncStatus: 'idle',
   syncError: null,
-  lastModified: Date.now()
+  lastModified: Date.now(),
+  lastDevice: 'Desktop'
 };

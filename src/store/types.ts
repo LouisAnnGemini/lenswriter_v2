@@ -77,6 +77,7 @@ export type InboxItem = {
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
   lastModified: number;
+  lastDevice?: 'Desktop' | 'Mobile';
   past?: State[];
   future?: State[];
 };

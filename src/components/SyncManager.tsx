@@ -3,6 +3,7 @@ import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { supabase } from '../lib/supabase';
 import { initialState } from '../store/constants';
+import { getDeviceType } from '../lib/utils';
 
 export function SyncManager() {
   const { 
@@ -80,9 +81,12 @@ export function SyncManager() {
       try {
         const currentState = useStore.getState();
         const dataKeys = Object.keys(initialState);
-        const stateToSync = Object.fromEntries(
-          Object.entries(currentState).filter(([key]) => dataKeys.includes(key))
-        );
+        const stateToSync = {
+          ...Object.fromEntries(
+            Object.entries(currentState).filter(([key]) => dataKeys.includes(key))
+          ),
+          lastDevice: getDeviceType()
+        };
 
         const { error } = await supabase
           .from('app_state')

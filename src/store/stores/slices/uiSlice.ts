@@ -30,6 +30,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
     console.log('saveHistoryVersion called with name:', name);
     const state = get();
     const { supabase } = await import('../../../lib/supabase');
+    const { getDeviceType } = await import('../../../lib/utils');
     if (!supabase) {
       console.error('Supabase client not initialized');
       return;
@@ -39,7 +40,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       ...state,
       _isHistory: true,
       _timestamp: Date.now(),
-      _device: 'Desktop' // Or detect device
+      _device: getDeviceType()
     };
 
     console.log('Saving state:', stateToSave);

@@ -153,7 +153,11 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       if (data) {
         const history = data
           .filter(row => row.state?._isHistory)
-          .map(row => ({ id: row.id, timestamp: row.state._timestamp, device: row.state._device }))
+          .map(row => ({ 
+            id: row.id, 
+            timestamp: row.state._timestamp, 
+            device: row.state._device || row.state.lastDevice 
+          }))
           .sort((a, b) => b.timestamp - a.timestamp);
         setCloudHistory(history);
       }
@@ -243,10 +247,10 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                       <div>Local last modified: {new Date(syncPrompt.localDate).toLocaleString()}</div>
                       <div className="flex items-center gap-1">
                         Cloud last modified: {new Date(syncPrompt.cloudDate).toLocaleString()}
-                        {syncPrompt.cloudState._device && (
-                          <span className="flex items-center text-[10px] text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded ml-1" title={`Saved from ${syncPrompt.cloudState._device}`}>
-                            {syncPrompt.cloudState._device === 'Mobile' ? <Smartphone size={10} className="mr-1" /> : <Monitor size={10} className="mr-1" />}
-                            {syncPrompt.cloudState._device}
+                        {(syncPrompt.cloudState.lastDevice || syncPrompt.cloudState._device) && (
+                          <span className="flex items-center text-[10px] text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded ml-1" title={`Saved from ${syncPrompt.cloudState.lastDevice || syncPrompt.cloudState._device}`}>
+                            {(syncPrompt.cloudState.lastDevice || syncPrompt.cloudState._device) === 'Mobile' ? <Smartphone size={10} className="mr-1" /> : <Monitor size={10} className="mr-1" />}
+                            {syncPrompt.cloudState.lastDevice || syncPrompt.cloudState._device}
                           </span>
                         )}
                       </div>
