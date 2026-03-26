@@ -375,7 +375,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                             <button
                               onClick={async () => {
                                 if (saveHistoryVersion) {
-                                  await (saveHistoryVersion as any)();
+                                  await saveHistoryVersion('Manual Save');
                                   fetchCloudHistory();
                                 }
                               }}

@@ -15,8 +15,26 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set) =>
   setLetterSpacing: (spacing) => set({ letterSpacing: spacing }),
   setEditorMargin: (margin) => set({ editorMargin: margin }),
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
-  saveHistoryVersion: (name) => {
-    // Placeholder for history versioning
-    console.log('Saving history version:', name);
+  saveHistoryVersion: async (name) => {
+    const state = get();
+    const { supabase } = await import('../../../lib/supabase');
+    if (!supabase) return;
+
+    const stateToSave = {
+      ...state,
+      _isHistory: true,
+      _timestamp: Date.now(),
+      _device: 'Desktop' // Or detect device
+    };
+
+    const { error } = await supabase
+      .from('app_state')
+      .insert([{ id: crypto.randomUUID(), state: stateToSave }]);
+
+    if (error) {
+      console.error('Failed to save history version:', error);
+    } else {
+      console.log('Saved history version:', name);
+    }
   },
 });

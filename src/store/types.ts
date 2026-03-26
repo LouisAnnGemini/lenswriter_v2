@@ -101,7 +101,7 @@ export interface UISlice {
   setLetterSpacing: (spacing: number) => void;
   setEditorMargin: (margin: number) => void;
   toggleSupabaseSync: () => void;
-  saveHistoryVersion: (name: string) => void;
+  saveHistoryVersion: (name: string) => Promise<void>;
 }
 
 export interface BlockSlice {
