@@ -11,6 +11,7 @@ import { createTagSlice, createDeadlineSlice, createInboxSlice } from './slices/
 import { createTimelineSlice } from './slices/timelineSlice';
 import { createUISlice } from './slices/uiSlice';
 import { createLocationSlice } from './slices/locationSlice';
+import { createSnapshotSlice } from './slices/snapshotSlice';
 
 export const useStore = create<StoreState>()(
   persist(
@@ -27,6 +28,7 @@ export const useStore = create<StoreState>()(
       ...createTimelineSlice(set, get, api),
       ...createUISlice(set, get, api),
       ...createLocationSlice(set, get, api),
+      ...createSnapshotSlice(set, get, api),
       importData: (data) => set((state) => ({ ...state, ...data })),
       syncFromCloud: (data) => set((state) => ({ ...state, ...data })),
       undo: () => set((state) => {
@@ -55,6 +57,12 @@ export const useStore = create<StoreState>()(
             newBlocks = newBlocks.map(b => 
               b.id === action.blockId ? { ...b, isLens: true, lensColor: action.originalLensColor } : b
             );
+            break;
+          case 'RESTORE_SNAPSHOT':
+            newBlocks = [
+              ...newBlocks.filter(b => b.documentId !== action.sceneId),
+              ...action.previousBlocks
+            ];
             break;
         }
 
@@ -94,6 +102,12 @@ export const useStore = create<StoreState>()(
             newBlocks = newBlocks.map(b => 
               b.id === action.blockId ? { ...b, isLens: false, lensColor: undefined } : b
             );
+            break;
+          case 'RESTORE_SNAPSHOT':
+            newBlocks = [
+              ...newBlocks.filter(b => b.documentId !== action.sceneId),
+              ...action.restoredBlocks
+            ];
             break;
         }
 

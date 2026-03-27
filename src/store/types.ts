@@ -49,11 +49,20 @@ export type InboxItem = {
   createdAt: number;
 };
 
+export type SceneSnapshot = {
+  id: string;
+  sceneId: string;
+  name: string;
+  createdAt: number;
+  blocks: Block[];
+};
+
 export type HistoryAction = 
   | { type: 'DELETE_BLOCK'; block: Block; index: number }
   | { type: 'ADD_BLOCK'; block: Block; index: number }
   | { type: 'MERGE_BLOCK'; blockId: string; prevBlockId: string; originalPrevContent: string; deletedBlock: Block; index: number }
-  | { type: 'REMOVE_LENS'; blockId: string; originalLensColor?: string };
+  | { type: 'REMOVE_LENS'; blockId: string; originalLensColor?: string }
+  | { type: 'RESTORE_SNAPSHOT'; sceneId: string; previousBlocks: Block[]; restoredBlocks: Block[] };
 
 export type State = {
   works: Work[];
@@ -66,6 +75,7 @@ export type State = {
   blocks: Block[];
   deadlines: Deadline[];
   inbox: InboxItem[];
+  snapshots: SceneSnapshot[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
   activeTab: 'writing' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
@@ -90,7 +100,7 @@ export type State = {
   futureActions?: HistoryAction[];
 };
 
-export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & InboxSlice & TimelineSlice & WorkSlice & LocationSlice & {
+export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & InboxSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & {
   importData: (data: Partial<State>) => void;
   syncFromCloud: (data: Partial<State>) => void;
   undo: () => void;
@@ -169,6 +179,13 @@ export interface InboxSlice {
   addInboxItem: (params: { content: string }) => void;
   updateInboxItem: (params: { id: string; content: string }) => void;
   deleteInboxItem: (params: { id: string }) => void;
+}
+
+export interface SnapshotSlice {
+  addSnapshot: (sceneId: string, name: string) => void;
+  renameSnapshot: (id: string, name: string) => void;
+  deleteSnapshot: (id: string) => void;
+  restoreSnapshot: (id: string) => void;
 }
 
 export interface TimelineSlice {

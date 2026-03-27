@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
@@ -13,6 +13,7 @@ import { InboxPanel } from './InboxPanel';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 import { ChapterScenesList, SCENE_STATUS_COLORS } from './ChapterScenesList';
 import { ChapterCharacterSummary } from './ChapterCharacterSummary';
+import { SnapshotDialog } from './SnapshotDialog';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -46,6 +47,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     setLetterSpacing,
     setEditorMargin,
     toggleDisguiseMode,
+    addSnapshot,
     appMode,
     toggleAppMode,
     showDescriptions,
@@ -83,6 +85,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     setLetterSpacing: state.setLetterSpacing,
     setEditorMargin: state.setEditorMargin,
     toggleDisguiseMode: state.toggleDisguiseMode,
+    addSnapshot: state.addSnapshot,
     showDescriptions: state.showDescriptions,
     activeDocumentId: state.activeDocumentId,
     activeWorkId: state.activeWorkId,
@@ -105,6 +108,9 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const [showFindReplace, setShowFindReplace] = useState(false);
+  const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
+  const [showCreateSnapshotModal, setShowCreateSnapshotModal] = useState(false);
+  const [newSnapshotName, setNewSnapshotName] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -314,6 +320,12 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       "flex-1 flex bg-white overflow-hidden relative transition-all duration-300",
       !activeDocId ? "hidden md:flex" : "flex"
     )}>
+      {showSnapshotDialog && isScene && (
+        <SnapshotDialog
+          sceneId={activeDocId}
+          onClose={() => setShowSnapshotDialog(false)}
+        />
+      )}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {showFindReplace && (
           <div className="border-b border-stone-200 z-20 bg-stone-50">
@@ -948,6 +960,37 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         
         {showSettings && (
           <div className="absolute bottom-full right-0 mb-4 w-64 bg-white rounded-lg shadow-xl border border-stone-200 p-4 z-50 origin-bottom-right animate-in fade-in slide-in-from-bottom-2">
+            {isScene && (
+              <div className="mb-4 pb-4 border-b border-stone-100 space-y-2">
+                <button
+                  onClick={() => {
+                    setNewSnapshotName(new Date().toLocaleString());
+                    setShowCreateSnapshotModal(true);
+                    setShowSettings(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Camera size={16} />
+                    Create Snapshot
+                  </div>
+                  <Plus size={16} />
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSnapshotDialog(true);
+                    setShowSettings(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock size={16} className="text-stone-500" />
+                    History Snapshots
+                  </div>
+                  <ChevronRight size={16} className="text-stone-400" />
+                </button>
+              </div>
+            )}
             <div className="mb-4">
               <label className="text-sm font-medium text-stone-700 mb-2 block">App Mode</label>
               <div className="flex bg-stone-100 rounded-lg p-1">
@@ -1020,6 +1063,55 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
           </div>
         )}
       </div>
+
+      {showCreateSnapshotModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-stone-900 mb-2">Create Snapshot</h3>
+              <p className="text-sm text-stone-500 mb-4">
+                Save a snapshot of the current scene. You can restore it later from History Snapshots.
+              </p>
+              <input
+                type="text"
+                value={newSnapshotName}
+                onChange={(e) => setNewSnapshotName(e.target.value)}
+                placeholder="Snapshot Name (e.g., Draft 1)"
+                className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newSnapshotName.trim()) {
+                    addSnapshot(activeDocId, newSnapshotName.trim());
+                    setShowCreateSnapshotModal(false);
+                  } else if (e.key === 'Escape') {
+                    setShowCreateSnapshotModal(false);
+                  }
+                }}
+              />
+            </div>
+            <div className="px-6 py-4 bg-stone-50 border-t border-stone-100 flex justify-end gap-2">
+              <button
+                onClick={() => setShowCreateSnapshotModal(false)}
+                className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (newSnapshotName.trim()) {
+                    addSnapshot(activeDocId, newSnapshotName.trim());
+                    setShowCreateSnapshotModal(false);
+                  }
+                }}
+                disabled={!newSnapshotName.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save Snapshot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
