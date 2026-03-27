@@ -78,10 +78,21 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       // Force height adjustment after switching to edit mode
       window.requestAnimationFrame(() => {
         adjustHeight();
-        ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        
+        // Scroll the specific paragraph into view
+        if (clickedPIdx !== null && blockId) {
+          const pElement = document.getElementById(`block-${blockId}-p-${clickedPIdx}`);
+          if (pElement) {
+            pElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          } else {
+            ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
+        } else {
+          ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
       });
     }
-  }, [isFocused, adjustHeight, clickedPIdx]);
+  }, [isFocused, adjustHeight, clickedPIdx, blockId]);
 
   useEffect(() => {
     console.log('isFocused changed:', isFocused, 'blockId:', blockId);
@@ -153,7 +164,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           
           if (!searchTerm) {
             return (
-              <div key={pIdx} className={cn(
+              <div key={pIdx} id={blockId ? `block-${blockId}-p-${pIdx}` : undefined} className={cn(
                 "relative min-h-[2em] break-words whitespace-pre-wrap transition-all duration-200 leading-loose", 
                 isActiveP ? "bg-stone-100/50" : ""
               )}>
@@ -166,7 +177,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           const parts = paragraph.split(regex!);
 
           return (
-            <div key={pIdx} className={cn(
+            <div key={pIdx} id={blockId ? `block-${blockId}-p-${pIdx}` : undefined} className={cn(
               "relative min-h-[2em] break-words whitespace-pre-wrap transition-all duration-200 leading-loose", 
               isActiveP ? "bg-stone-100/50" : ""
             )}>
