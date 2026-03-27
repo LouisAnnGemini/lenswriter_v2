@@ -18,6 +18,47 @@ export function SyncManager() {
 
   const historyTimerRef = useRef<NodeJS.Timeout | null>(null);
   const syncTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isSyncingFromCloud = useRef(false);
+
+  // 0. Real-time subscription
+  useEffect(() => {
+    if (!supabase || !supabaseSyncEnabled) return;
+
+    console.log('Setting up real-time subscription...');
+    const channel = supabase
+      .channel('app_state_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'app_state',
+          filter: `id=eq.00000000-0000-0000-0000-000000000000`
+        },
+        (payload) => {
+          const newState = payload.new.state;
+          const currentState = useStore.getState();
+
+          if (newState && newState.lastModified > currentState.lastModified) {
+            console.log('Real-time sync: updating local state from cloud');
+            
+            const dataKeys = Object.keys(initialState);
+            const updates = Object.fromEntries(
+              Object.entries(newState).filter(([key]) => dataKeys.includes(key))
+            );
+            
+            isSyncingFromCloud.current = true;
+            useStore.setState(updates);
+            isSyncingFromCloud.current = false;
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabaseSyncEnabled]);
 
   // 1. Auto-save history every 5 minutes
   useEffect(() => {
@@ -47,6 +88,11 @@ export function SyncManager() {
 
   useEffect(() => {
     const unsubscribe = useStore.subscribe((state) => {
+      if (isSyncingFromCloud.current) {
+        prevStateRef.current = state;
+        return;
+      }
+
       const prevState = prevStateRef.current;
       prevStateRef.current = state;
 
