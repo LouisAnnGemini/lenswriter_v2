@@ -112,4 +112,12 @@ describe('sceneSlice', () => {
     expect(scene?.linkedEventIds?.[0]).toBe('event-2');
     expect(scene?.linkedEventIds?.[1]).toBe('event-1');
   });
+
+  it('should toggle lens pin', () => {
+    const { toggleLensPin } = useTestStore.getState();
+    const initialState = useTestStore.getState();
+    toggleLensPin('scene-1');
+    // Currently a placeholder, so state should remain unchanged
+    expect(useTestStore.getState()).toEqual(initialState);
+  });
 });

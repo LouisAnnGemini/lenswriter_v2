@@ -88,4 +88,57 @@ describe('workSlice', () => {
       expect(newState.activeDocumentId).toBe(firstChapter.id);
     }
   });
+
+  describe('character fields', () => {
+    it('should add a character field', () => {
+      const { addCharacterField, works } = useTestStore.getState();
+      const workId = works[0].id;
+      
+      addCharacterField(workId, { id: 'field-1', name: 'Age', type: 'text' });
+      
+      const state = useTestStore.getState();
+      const work = state.works.find((w: any) => w.id === workId);
+      expect(work?.characterFields?.length).toBe(1);
+      expect(work?.characterFields?.[0].name).toBe('Age');
+    });
+
+    it('should update a character field', () => {
+      const { addCharacterField, updateCharacterField, works } = useTestStore.getState();
+      const workId = works[0].id;
+      
+      addCharacterField(workId, { id: 'field-1', name: 'Age', type: 'text' });
+      updateCharacterField(workId, 'field-1', { name: 'Age (Years)' });
+      
+      const state = useTestStore.getState();
+      const work = state.works.find((w: any) => w.id === workId);
+      expect(work?.characterFields?.[0].name).toBe('Age (Years)');
+    });
+
+    it('should delete a character field', () => {
+      const { addCharacterField, deleteCharacterField, works } = useTestStore.getState();
+      const workId = works[0].id;
+      
+      addCharacterField(workId, { id: 'field-1', name: 'Age', type: 'text' });
+      deleteCharacterField(workId, 'field-1');
+      
+      const state = useTestStore.getState();
+      const work = state.works.find((w: any) => w.id === workId);
+      expect(work?.characterFields?.length).toBe(0);
+    });
+
+    it('should reorder character fields', () => {
+      const { addCharacterField, reorderCharacterFields, works } = useTestStore.getState();
+      const workId = works[0].id;
+      
+      addCharacterField(workId, { id: 'field-1', name: 'Age', type: 'text' });
+      addCharacterField(workId, { id: 'field-2', name: 'Height', type: 'text' });
+      
+      reorderCharacterFields(workId, 0, 1);
+      
+      const state = useTestStore.getState();
+      const work = state.works.find((w: any) => w.id === workId);
+      expect(work?.characterFields?.[0].id).toBe('field-2');
+      expect(work?.characterFields?.[1].id).toBe('field-1');
+    });
+  });
 });

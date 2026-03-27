@@ -113,8 +113,15 @@ export const InlineMultiSelect = ({
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      setDropdownPosition({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
+      setDropdownPosition({ top: rect.bottom, left: rect.left });
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScroll = () => setIsOpen(false);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
   }, [isOpen]);
 
   const filteredOptions = React.useMemo(() => 

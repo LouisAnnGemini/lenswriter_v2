@@ -94,4 +94,82 @@ describe('timelineSlice', () => {
     // Check if references in scenes are cleaned up
     expect(state.scenes.find((s: any) => s.id === 'scene-1')?.linkedEventIds).not.toContain('event-1');
   });
+
+  describe('reorderTimelineEvents', () => {
+    it('should reorder events within the pool', () => {
+      useTestStore.setState({
+        timelineEvents: [
+          { id: 'p1', workId: mockWorkId, status: 'pool', order: 0 },
+          { id: 'p2', workId: mockWorkId, status: 'pool', order: 1 },
+          { id: 'p3', workId: mockWorkId, status: 'pool', order: 2 },
+        ]
+      });
+
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 'p1', 2, 'pool', 'pool');
+      
+      const state = useTestStore.getState();
+      const p1 = state.timelineEvents.find((e: any) => e.id === 'p1');
+      const p2 = state.timelineEvents.find((e: any) => e.id === 'p2');
+      const p3 = state.timelineEvents.find((e: any) => e.id === 'p3');
+      
+      expect(p2.order).toBe(0);
+      expect(p3.order).toBe(1);
+      expect(p1.order).toBe(2);
+    });
+
+    it('should reorder events within the timeline', () => {
+      useTestStore.setState({
+        timelineEvents: [
+          { id: 't1', workId: mockWorkId, status: 'timeline', order: 0 },
+          { id: 't2', workId: mockWorkId, status: 'timeline', order: 1 },
+          { id: 't3', workId: mockWorkId, status: 'timeline', order: 2 },
+        ]
+      });
+
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 't1', 2, 'timeline', 'timeline');
+      
+      const state = useTestStore.getState();
+      const t1 = state.timelineEvents.find((e: any) => e.id === 't1');
+      const t2 = state.timelineEvents.find((e: any) => e.id === 't2');
+      const t3 = state.timelineEvents.find((e: any) => e.id === 't3');
+      
+      expect(t2.order).toBe(0);
+      expect(t3.order).toBe(1);
+      expect(t1.order).toBe(2);
+    });
+
+    it('should move an event from pool to timeline', () => {
+      useTestStore.setState({
+        timelineEvents: [
+          { id: 'p1', workId: mockWorkId, status: 'pool', order: 0 },
+          { id: 't1', workId: mockWorkId, status: 'timeline', order: 0 },
+        ]
+      });
+
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 'p1', 1, 'pool', 'timeline');
+      
+      const state = useTestStore.getState();
+      const p1 = state.timelineEvents.find((e: any) => e.id === 'p1');
+      
+      expect(p1.status).toBe('timeline');
+      expect(p1.order).toBe(1);
+    });
+
+    it('should move an event from timeline to pool', () => {
+      useTestStore.setState({
+        timelineEvents: [
+          { id: 't1', workId: mockWorkId, status: 'timeline', order: 0 },
+          { id: 'p1', workId: mockWorkId, status: 'pool', order: 0 },
+        ]
+      });
+
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 't1', 1, 'timeline', 'pool');
+      
+      const state = useTestStore.getState();
+      const t1 = state.timelineEvents.find((e: any) => e.id === 't1');
+      
+      expect(t1.status).toBe('pool');
+      expect(t1.order).toBe(1);
+    });
+  });
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, Filter, X, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { SearchableSelect } from '../SearchableSelect';
+import { MultiSelectDropdown } from '../MultiSelectDropdown';
 import { Character, Location, Tag } from '../../store/types';
 
 interface TimelineFilterBarProps {
@@ -66,24 +66,24 @@ export const TimelineFilterBar = React.memo(({
             Filters:
           </div>
           
-          <SearchableSelect
-            options={characters.filter(c => c.workId === activeWorkId).map(c => ({ id: c.id, label: c.name }))}
+          <MultiSelectDropdown
+            options={characters.filter(c => c.workId === activeWorkId).map(c => ({ id: c.id, title: c.name }))}
             selectedIds={selectedCharacters}
             onChange={setSelectedCharacters}
             placeholder="Characters"
             className="w-40"
           />
           
-          <SearchableSelect
-            options={locations.filter(l => l.workId === activeWorkId).map(l => ({ id: l.id, label: l.name }))}
+          <MultiSelectDropdown
+            options={locations.filter(l => l.workId === activeWorkId).map(l => ({ id: l.id, title: l.name }))}
             selectedIds={selectedLocations}
             onChange={setSelectedLocations}
             placeholder="Locations"
             className="w-40"
           />
 
-          <SearchableSelect
-            options={tags.map(t => ({ id: t.id, label: t.name, color: t.color }))}
+          <MultiSelectDropdown
+            options={tags.map(t => ({ id: t.id, title: t.name, color: t.color }))}
             selectedIds={selectedTags}
             onChange={setSelectedTags}
             placeholder="Tags"

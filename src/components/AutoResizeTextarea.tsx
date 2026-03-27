@@ -90,6 +90,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
+        console.log('Click outside detected, blurring');
         setIsFocused(false);
         setClickedPIdx(null);
         ref.current.blur();
@@ -100,6 +101,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   }, []);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    console.log('Focusing, blockId:', blockId);
     setIsFocused(true);
     setCursorPosition(e.target.selectionStart);
     props.onFocus?.(e);
@@ -152,7 +154,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           if (!searchTerm) {
             return (
               <div key={pIdx} className={cn(
-                "relative min-h-[1.5em] break-words whitespace-pre-wrap transition-all duration-200", 
+                "relative min-h-[2em] break-words whitespace-pre-wrap transition-all duration-200 leading-loose", 
                 isActiveP ? "bg-stone-100/50" : ""
               )}>
                 {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
@@ -165,7 +167,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
           return (
             <div key={pIdx} className={cn(
-              "relative min-h-[1.5em] break-words whitespace-pre-wrap transition-all duration-200", 
+              "relative min-h-[2em] break-words whitespace-pre-wrap transition-all duration-200 leading-loose", 
               isActiveP ? "bg-stone-100/50" : ""
             )}>
               {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
@@ -224,18 +226,18 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           };
 
           if (!paragraph) {
-            return <div key={pIdx} onClick={handlePClick} className="h-[1em] mb-3 last:mb-0" />;
+            return <div key={pIdx} onClick={handlePClick} className="min-h-[2em] leading-loose" />;
           }
 
           if (!searchTerm) {
-            return <p key={pIdx} onClick={handlePClick} className="mb-3 last:mb-0 min-h-[1.5em] break-words whitespace-pre-wrap">{paragraph}</p>;
+            return <p key={pIdx} onClick={handlePClick} className="break-words whitespace-pre-wrap leading-relaxed mb-4">{paragraph}</p>;
           }
 
           const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
           const parts = paragraph.split(regex);
 
           return (
-            <p key={pIdx} onClick={handlePClick} className="mb-3 last:mb-0 min-h-[1.5em] break-words whitespace-pre-wrap">
+            <p key={pIdx} onClick={handlePClick} className="break-words whitespace-pre-wrap leading-relaxed mb-4">
               {parts.map((part: string, i: number) => {
                 if (i % 2 === 1) {
                   const currentMatchIndex = matchCount++;
@@ -278,7 +280,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
         onClick={handleClick}
         placeholder={placeholder}
         className={cn(
-          "overflow-hidden resize-none relative z-10 bg-transparent w-full",
+          "overflow-hidden resize-none relative z-10 bg-transparent w-full p-0 leading-loose",
           "caret-blue-500",
           isDimmed && "opacity-40",
           isFocused && "text-transparent",

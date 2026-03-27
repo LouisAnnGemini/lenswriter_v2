@@ -508,7 +508,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         enableReadMode={true}
                         isDimmed={focusedBlockId !== null && focusedBlockId !== block.id}
                         onFocus={() => setFocusedBlockId(block.id)}
-                        onBlur={() => setFocusedBlockId(null)}
+                        onBlur={() => {
+                          console.log('EditorPanel onBlur for block:', block.id);
+                          setFocusedBlockId(null);
+                        }}
                         onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
