@@ -492,6 +492,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         searchTerm={searchTerm}
                         blockId={block.id}
                         disabled={isArchived}
+                        enableReadMode={true}
                         onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {

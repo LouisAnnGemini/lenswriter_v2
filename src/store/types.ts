@@ -47,7 +47,15 @@ export type InboxItem = {
   id: string;
   content: string;
   createdAt: number;
-};export type State = {
+};
+
+export type HistoryAction = 
+  | { type: 'DELETE_BLOCK'; block: Block; index: number }
+  | { type: 'ADD_BLOCK'; block: Block; index: number }
+  | { type: 'MERGE_BLOCK'; blockId: string; prevBlockId: string; originalPrevContent: string; deletedBlock: Block; index: number }
+  | { type: 'REMOVE_LENS'; blockId: string; originalLensColor?: string };
+
+export type State = {
   works: Work[];
   characters: Character[];
   locations: Location[];
@@ -78,8 +86,8 @@ export type InboxItem = {
   syncError: string | null;
   lastModified: number;
   lastDevice?: 'Desktop' | 'Mobile';
-  past?: State[];
-  future?: State[];
+  pastActions?: HistoryAction[];
+  futureActions?: HistoryAction[];
 };
 
 export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & InboxSlice & TimelineSlice & WorkSlice & LocationSlice & {

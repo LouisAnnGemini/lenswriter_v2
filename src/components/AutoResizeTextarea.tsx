@@ -1,8 +1,10 @@
 import React, { useRef, useLayoutEffect, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
-export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, ...props }: any) => {
+export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, enableReadMode = false, ...props }: any) => {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const [isFocused, setIsFocused] = React.useState(false);
+  const [clickedPIdx, setClickedPIdx] = React.useState<number | null>(null);
   
   const adjustHeight = React.useCallback(() => {
     if (ref.current) {
@@ -24,7 +26,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
   useLayoutEffect(() => {
     adjustHeight();
-  }, [value, className, style?.letterSpacing, adjustHeight]);
+  }, [value, className, style?.letterSpacing, adjustHeight, isFocused]);
 
   useEffect(() => {
     const element = ref.current;
@@ -55,6 +57,41 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
     };
   }, [adjustHeight]);
 
+  useEffect(() => {
+    if (isFocused && ref.current) {
+      ref.current.focus();
+      
+      let targetPos = ref.current.value.length;
+      if (clickedPIdx !== null) {
+        const paragraphs = ref.current.value.split('\n');
+        let offset = 0;
+        for (let i = 0; i < clickedPIdx; i++) {
+          offset += paragraphs[i].length + 1;
+        }
+        targetPos = offset;
+      }
+      
+      ref.current.setSelectionRange(targetPos, targetPos);
+      
+      // Force height adjustment after switching to edit mode
+      window.requestAnimationFrame(() => {
+        adjustHeight();
+        ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+    }
+  }, [isFocused, adjustHeight, clickedPIdx]);
+
+  const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    setIsFocused(true);
+    props.onFocus?.(e);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    setIsFocused(false);
+    setClickedPIdx(null);
+    props.onBlur?.(e);
+  };
+
   const renderHighlights = () => {
     if (!searchTerm || !value) return null;
     
@@ -78,6 +115,81 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
     );
   };
 
+  const renderReadMode = () => {
+    if (!value) {
+      return (
+        <div 
+          className={cn(className, "cursor-text text-stone-400", props.disabled && "cursor-not-allowed opacity-50")}
+          style={style}
+          onClick={() => {
+            if (!props.disabled) {
+              setClickedPIdx(null);
+              setIsFocused(true);
+            }
+          }}
+        >
+          {placeholder}
+        </div>
+      );
+    }
+
+    const paragraphs = value.split('\n');
+    let matchCount = 0;
+    
+    return (
+      <div 
+        className={cn(className, "cursor-text", props.disabled && "cursor-not-allowed")}
+        style={style}
+        onClick={() => {
+          if (!props.disabled && !isFocused) {
+            if (clickedPIdx === null) setIsFocused(true);
+          }
+        }}
+      >
+        {paragraphs.map((paragraph: string, pIdx: number) => {
+          const handlePClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (!props.disabled) {
+              setClickedPIdx(pIdx);
+              setIsFocused(true);
+            }
+          };
+
+          if (!paragraph) {
+            return <div key={pIdx} onClick={handlePClick} className="h-[1em] mb-3 last:mb-0" />;
+          }
+
+          if (!searchTerm) {
+            return <p key={pIdx} onClick={handlePClick} className="mb-3 last:mb-0 min-h-[1.5em] break-words whitespace-pre-wrap">{paragraph}</p>;
+          }
+
+          const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+          const parts = paragraph.split(regex);
+
+          return (
+            <p key={pIdx} onClick={handlePClick} className="mb-3 last:mb-0 min-h-[1.5em] break-words whitespace-pre-wrap">
+              {parts.map((part: string, i: number) => {
+                if (i % 2 === 1) {
+                  const currentMatchIndex = matchCount++;
+                  return <span key={i} id={blockId ? `highlight-${blockId}-${currentMatchIndex}` : undefined} className="bg-yellow-200/50">{part}</span>;
+                }
+                return <span key={i}>{part}</span>;
+              })}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
+  if (enableReadMode && !isFocused) {
+    return (
+      <div className="relative w-full group">
+        {renderReadMode()}
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full group">
       {renderHighlights()}
@@ -85,6 +197,8 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
         ref={ref}
         value={value || ''}
         onChange={onChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder={placeholder}
         className={cn("overflow-hidden resize-none relative z-10 bg-transparent w-full", className)}
         style={style}
