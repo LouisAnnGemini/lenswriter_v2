@@ -49,13 +49,13 @@ export const createSnapshotSlice: StateCreator<
       const previousBlocks = state.blocks.filter((b) => b.documentId === sceneId);
       
       // Deep copy snapshot blocks to prevent reference issues
-      const restoredBlocks = JSON.parse(JSON.stringify(snapshot.blocks));
+      const restoredBlocks = JSON.parse(JSON.stringify(snapshot.blocks)) as typeof snapshot.blocks;
 
       return {
         blocks: [...otherBlocks, ...restoredBlocks],
         pastActions: [
           ...(state.pastActions || []),
-          { type: 'RESTORE_SNAPSHOT', sceneId, previousBlocks, restoredBlocks }
+          { type: 'RESTORE_SNAPSHOT' as const, sceneId, previousBlocks, restoredBlocks }
         ].slice(-50),
         futureActions: [],
       };

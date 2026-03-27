@@ -76,7 +76,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
     // Get current state from store
     const state = useStore.getState();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { past, future, ...stateToExport } = state;
+    const { pastActions, futureActions, ...stateToExport } = state;
     // Filter out functions from stateToExport
     const dataToExport = Object.fromEntries(
       Object.entries(stateToExport).filter(([_, v]) => typeof v !== 'function')

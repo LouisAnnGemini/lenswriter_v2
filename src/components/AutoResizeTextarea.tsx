@@ -1,9 +1,10 @@
 import React, { useRef, useLayoutEffect, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
-export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, enableReadMode = false, ...props }: any) => {
+export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, enableReadMode = false, isDimmed = false, ...props }: any) => {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = React.useState(false);
+  const [cursorPosition, setCursorPosition] = React.useState(0);
   const [clickedPIdx, setClickedPIdx] = React.useState<number | null>(null);
   
   const adjustHeight = React.useCallback(() => {
@@ -72,6 +73,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       }
       
       ref.current.setSelectionRange(targetPos, targetPos);
+      setCursorPosition(targetPos);
       
       // Force height adjustment after switching to edit mode
       window.requestAnimationFrame(() => {
@@ -81,35 +83,101 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
     }
   }, [isFocused, adjustHeight, clickedPIdx]);
 
+  useEffect(() => {
+    console.log('isFocused changed:', isFocused, 'blockId:', blockId);
+  }, [isFocused, blockId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsFocused(false);
+        setClickedPIdx(null);
+        ref.current.blur();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     setIsFocused(true);
+    setCursorPosition(e.target.selectionStart);
     props.onFocus?.(e);
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+    console.log('Blurring, blockId:', blockId);
     setIsFocused(false);
     setClickedPIdx(null);
     props.onBlur?.(e);
   };
 
+  const handleKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    setCursorPosition(e.currentTarget.selectionStart);
+    props.onKeyUp?.(e);
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    setCursorPosition(e.currentTarget.selectionStart);
+    props.onClick?.(e);
+  };
+
   const renderHighlights = () => {
-    if (!searchTerm || !value) return null;
+    console.log('renderHighlights called, isFocused:', isFocused);
+    if (!value) return null;
+
+    const paragraphs = value.split('\n');
+    let currentPos = 0;
+    let activePIdx = -1;
     
-    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = value.split(regex);
-    
+    for (let i = 0; i < paragraphs.length; i++) {
+        if (cursorPosition >= currentPos && cursorPosition <= currentPos + paragraphs[i].length) {
+            activePIdx = i;
+            break;
+        }
+        currentPos += paragraphs[i].length + 1;
+    }
+
+    const regex = searchTerm ? new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi') : null;
+
     return (
       <div 
-        className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words text-transparent bg-transparent z-0")} 
+        className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words text-stone-800 bg-transparent z-0", isDimmed && "opacity-40")} 
         style={style}
         aria-hidden="true"
       >
-        {parts.map((part: string, i: number) => {
-          if (i % 2 === 1) {
-            const matchIndex = (i - 1) / 2;
-            return <span key={i} id={blockId ? `highlight-${blockId}-${matchIndex}` : undefined} className="bg-yellow-200/50 text-transparent">{part}</span>;
+        {paragraphs.map((paragraph: string, pIdx: number) => {
+          const isActiveP = isFocused && pIdx === activePIdx;
+          
+          if (!searchTerm) {
+            return (
+              <div key={pIdx} className={cn(
+                "relative min-h-[1.5em] break-words whitespace-pre-wrap transition-all duration-200", 
+                isActiveP ? "bg-stone-100/50" : ""
+              )}>
+                {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
+                {paragraph}
+              </div>
+            );
           }
-          return <span key={i}>{part}</span>;
+
+          const parts = paragraph.split(regex!);
+
+          return (
+            <div key={pIdx} className={cn(
+              "relative min-h-[1.5em] break-words whitespace-pre-wrap transition-all duration-200", 
+              isActiveP ? "bg-stone-100/50" : ""
+            )}>
+              {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
+              {parts.map((part: string, i: number) => {
+                if (i % 2 === 1) {
+                  const matchIndex = (i - 1) / 2;
+                  return <span key={i} id={blockId ? `highlight-${blockId}-${matchIndex}` : undefined} className="bg-yellow-200/50">{part}</span>;
+                }
+                return <span key={i}>{part}</span>;
+              })}
+            </div>
+          );
         })}
       </div>
     );
@@ -119,7 +187,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
     if (!value) {
       return (
         <div 
-          className={cn(className, "cursor-text text-stone-400", props.disabled && "cursor-not-allowed opacity-50")}
+          className={cn(className, "cursor-text text-stone-400", props.disabled && "cursor-not-allowed opacity-50", isDimmed && "opacity-40")}
           style={style}
           onClick={() => {
             if (!props.disabled) {
@@ -138,7 +206,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
     
     return (
       <div 
-        className={cn(className, "cursor-text", props.disabled && "cursor-not-allowed")}
+        className={cn(className, "cursor-text", props.disabled && "cursor-not-allowed", isDimmed && "opacity-40")}
         style={style}
         onClick={() => {
           if (!props.disabled && !isFocused) {
@@ -191,7 +259,14 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   }
 
   return (
-    <div className="relative w-full group">
+    <div 
+      className="relative w-full group"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          ref.current?.blur();
+        }
+      }}
+    >
       {renderHighlights()}
       <textarea
         ref={ref}
@@ -199,8 +274,16 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
         onChange={onChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        onKeyUp={handleKeyUp}
+        onClick={handleClick}
         placeholder={placeholder}
-        className={cn("overflow-hidden resize-none relative z-10 bg-transparent w-full", className)}
+        className={cn(
+          "overflow-hidden resize-none relative z-10 bg-transparent w-full",
+          "caret-blue-500",
+          isDimmed && "opacity-40",
+          isFocused && "text-transparent",
+          className
+        )}
         style={style}
         rows={1}
         {...props}

@@ -106,6 +106,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
 
   const [copied, setCopied] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
 
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
@@ -368,7 +369,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   }
                 }}
                 className={cn(
-                  "w-full outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words",
+                  "w-full outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words caret-blue-500",
                   disguiseMode 
                     ? "font-mono text-base leading-snug text-black font-normal" 
                     : "text-2xl md:text-3xl font-serif font-semibold text-stone-900"
@@ -505,6 +506,9 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         blockId={block.id}
                         disabled={isArchived}
                         enableReadMode={true}
+                        isDimmed={focusedBlockId !== null && focusedBlockId !== block.id}
+                        onFocus={() => setFocusedBlockId(block.id)}
+                        onBlur={() => setFocusedBlockId(null)}
                         onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                         onKeyDown={(e: React.KeyboardEvent) => {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
