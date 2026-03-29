@@ -148,7 +148,7 @@ export function SyncManager() {
         console.error('Cloud sync failed:', err);
         useStore.setState({ syncStatus: 'error', syncError: err.message });
       }
-    }, 2000); // 2 second debounce
+    }, 15000); // 15 second debounce to reduce Realtime/PostgREST egress
 
     return () => {
       if (syncTimerRef.current) {

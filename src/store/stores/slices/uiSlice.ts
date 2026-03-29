@@ -55,17 +55,20 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       
       // Rotate history: keep only the last 20 versions
       try {
+        // Use JSONB extraction to avoid downloading the massive state object
         const { data: history, error: fetchError } = await supabase
           .from('app_state')
-          .select('id, state')
+          .select('id, _isHistory:state->>_isHistory, _timestamp:state->>_timestamp')
           .neq('id', '00000000-0000-0000-0000-000000000000');
         
         if (fetchError) throw fetchError;
         
         if (history) {
           const versions = history
-            .filter(row => row.state?._isHistory)
-            .sort((a, b) => b.state._timestamp - a.state._timestamp);
+            // JSONB extraction returns strings, so we check for 'true'
+            .filter(row => row._isHistory === 'true')
+            // Convert string timestamp back to number for sorting
+            .sort((a, b) => Number(b._timestamp) - Number(a._timestamp));
           
           if (versions.length > 20) {
             const toDelete = versions.slice(20);
