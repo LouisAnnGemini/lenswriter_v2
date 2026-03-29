@@ -70,4 +70,43 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
     console.log('Toggling lens pin for scene:', sceneId);
     return state;
   }),
+  splitSceneAtBlock: (sceneId, blockId) => set((state) => {
+    const scene = state.scenes.find(s => s.id === sceneId);
+    if (!scene) return state;
+
+    const sceneBlocks = state.blocks.filter(b => b.documentId === sceneId).sort((a, b) => a.order - b.order);
+    const splitIndex = sceneBlocks.findIndex(b => b.id === blockId);
+    
+    if (splitIndex === -1) return state;
+
+    const blocksToMove = sceneBlocks.slice(splitIndex + 1);
+    const newSceneId = uuidv4();
+    
+    const newScene: Scene = {
+      ...scene,
+      id: newSceneId,
+      title: `${scene.title || 'Untitled'} (Part 2)`,
+      order: scene.order + 1,
+    };
+
+    const updatedScenes = state.scenes.map(s => {
+      if (s.chapterId === scene.chapterId && s.order > scene.order) {
+        return { ...s, order: s.order + 1 };
+      }
+      return s;
+    });
+
+    const blocksToMoveIds = new Set(blocksToMove.map(b => b.id));
+    const updatedBlocks = state.blocks.map(b => {
+      if (blocksToMoveIds.has(b.id)) {
+        return { ...b, documentId: newSceneId };
+      }
+      return b;
+    });
+
+    return {
+      scenes: [...updatedScenes, newScene],
+      blocks: updatedBlocks,
+    };
+  }),
 });

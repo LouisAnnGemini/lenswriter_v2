@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
@@ -44,6 +44,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     addScene,
     moveScene,
     updateTimelineEventCharacterAction,
+    splitSceneAtBlock,
     setLetterSpacing,
     setEditorMargin,
     toggleDisguiseMode,
@@ -82,6 +83,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     addScene: state.addScene,
     moveScene: state.moveScene,
     updateTimelineEventCharacterAction: state.updateTimelineEventCharacterAction,
+    splitSceneAtBlock: state.splitSceneAtBlock,
     setLetterSpacing: state.setLetterSpacing,
     setEditorMargin: state.setEditorMargin,
     toggleDisguiseMode: state.toggleDisguiseMode,
@@ -251,6 +253,12 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     mergeBlockUp(id);
   };
 
+  const handleSplitScene = (blockId: string) => {
+    if (isScene) {
+      splitSceneAtBlock(activeDocId, blockId);
+    }
+  };
+
   const toggleCharacter = (charId: string) => {
     if (isScene) {
       toggleSceneCharacter(activeDocId, charId);
@@ -344,7 +352,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-12 transition-all duration-300",
         isFocusMode 
-          ? "px-4 py-8 md:px-8 md:py-12 lg:px-24 xl:px-48" 
+          ? "px-4 py-8 md:px-8 md:py-12 lg:px-12 xl:px-16" 
           : compact
             ? "px-4 py-6 md:px-6 md:py-8"
             : "px-4 py-8 md:px-8 md:py-12 lg:px-12 xl:px-16"
@@ -352,7 +360,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         <div 
           className={cn(
             "mx-auto transition-all duration-300",
-            isFocusMode ? "max-w-3xl" : "max-w-5xl"
+            isFocusMode ? "max-w-5xl" : "max-w-5xl"
           )}
         >
           <div className="flex items-start justify-between mb-4 gap-4">
@@ -550,6 +558,15 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         >
                           <Highlighter size={12} className="mr-1" /> Add Lens
                         </button>
+                        {isScene && (
+                          <button 
+                            onClick={() => handleSplitScene(block.id)}
+                            className="flex items-center px-2 py-0.5 text-[10px] font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                            title="Split Scene After This Block"
+                          >
+                            <Scissors size={12} className="mr-1" /> Split
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleDeleteBlock(block.id)}
                           className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -1038,7 +1055,16 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-medium text-stone-700">Editor Margin</label>
-                <span className="text-xs text-stone-500">{editorMargin}</span>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setEditorMargin(0)}
+                    className="text-[10px] px-1.5 py-0.5 bg-stone-100 hover:bg-stone-200 text-stone-500 rounded transition-colors"
+                    title="Reset Margin"
+                  >
+                    Reset
+                  </button>
+                  <span className="text-xs text-stone-500 w-4 text-right">{editorMargin}</span>
+                </div>
               </div>
               <input 
                 type="range" 

@@ -161,6 +161,7 @@ export interface SceneSlice {
   toggleSceneEvent: (sceneId: string, eventId: string) => void;
   reorderSceneEvents: (sceneId: string, startIndex: number, endIndex: number) => void;
   toggleLensPin: (sceneId: string) => void;
+  splitSceneAtBlock: (sceneId: string, blockId: string) => void;
 }
 
 export interface TagSlice {
