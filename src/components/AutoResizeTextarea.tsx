@@ -157,7 +157,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
     return (
       <div 
-        className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words text-stone-800 bg-transparent z-0", isDimmed && "opacity-40")} 
+        className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words bg-transparent z-0", isDimmed && "opacity-40")} 
         style={style}
         aria-hidden="true"
       >
@@ -167,11 +167,11 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           if (!searchTerm) {
             return (
               <div key={pIdx} id={blockId ? `block-${blockId}-p-${pIdx}` : undefined} className={cn(
-                "relative min-h-[2em] break-words whitespace-pre-wrap transition-all duration-200 " + leadingClass, 
-                isActiveP ? "bg-stone-100/50" : ""
+                "relative break-words whitespace-pre-wrap transition-all duration-200", leadingClass, 
+                isActiveP ? "bg-black/[0.03]" : ""
               )}>
                 {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
-                {paragraph}
+                {paragraph === '' ? <br /> : paragraph}
               </div>
             );
           }
@@ -180,11 +180,11 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
           return (
             <div key={pIdx} id={blockId ? `block-${blockId}-p-${pIdx}` : undefined} className={cn(
-              `relative min-h-[2em] break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass}`, 
-              isActiveP ? "bg-stone-100/50" : ""
+              "relative break-words whitespace-pre-wrap transition-all duration-200", leadingClass, 
+              isActiveP ? "bg-black/[0.03]" : ""
             )}>
               {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
-              {parts.map((part: string, i: number) => {
+              {paragraph === '' ? <br /> : parts.map((part: string, i: number) => {
                 if (i % 2 === 1) {
                   const matchIndex = (i - 1) / 2;
                   return <span key={i} id={blockId ? `highlight-${blockId}-${matchIndex}` : undefined} className="bg-yellow-200/50">{part}</span>;
@@ -239,18 +239,18 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           };
 
           if (!paragraph) {
-            return <div key={pIdx} onClick={handlePClick} className={`min-h-[2em] ${leadingClass}`} />;
+            return <p key={pIdx} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} mb-4`}><br /></p>;
           }
 
           if (!searchTerm) {
-            return <p key={pIdx} onClick={handlePClick} className={`break-words whitespace-pre-wrap ${leadingClass} mb-4`}>{paragraph}</p>;
+            return <p key={pIdx} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} mb-4`}>{paragraph}</p>;
           }
 
           const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
           const parts = paragraph.split(regex);
 
           return (
-            <p key={pIdx} onClick={handlePClick} className={`break-words whitespace-pre-wrap ${leadingClass} mb-4`}>
+            <p key={pIdx} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} mb-4`}>
               {parts.map((part: string, i: number) => {
                 if (i % 2 === 1) {
                   const currentMatchIndex = matchCount++;

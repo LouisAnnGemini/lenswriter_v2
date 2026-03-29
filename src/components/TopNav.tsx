@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, ChevronDown, PanelRightOpen, PanelRightClose, Inbox } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { MobileInboxDrawer } from './MobileInboxDrawer';
@@ -23,7 +23,9 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     setDeadlineViewMode, 
     toggleFocusMode, 
     setRightSidebarMode,
-    appMode
+    appMode,
+    supabaseSyncEnabled,
+    saveHistoryVersion
   } = useStore(useShallow(state => ({
     focusMode: state.focusMode,
     scenes: state.scenes,
@@ -41,7 +43,9 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     setDeadlineViewMode: state.setDeadlineViewMode,
     toggleFocusMode: state.toggleFocusMode,
     setRightSidebarMode: state.setRightSidebarMode,
-    appMode: state.appMode
+    appMode: state.appMode,
+    supabaseSyncEnabled: state.supabaseSyncEnabled,
+    saveHistoryVersion: state.saveHistoryVersion
   })));
   const [isBoardDropdownOpen, setIsBoardDropdownOpen] = useState(false);
   const [isMobileInboxOpen, setIsMobileInboxOpen] = useState(false);
@@ -126,6 +130,15 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         </div>
 
         <div className="flex items-center space-x-2">
+          {supabaseSyncEnabled && (
+            <button
+              onClick={() => saveHistoryVersion('Manual Save')}
+              className="p-2 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
+              title="Save Version Now"
+            >
+              <Save size={20} />
+            </button>
+          )}
           {activeTab === 'writing' && activeDocumentId && !disguiseMode && (
             <button
               onClick={() => {
