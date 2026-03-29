@@ -60,14 +60,14 @@ export function SyncManager() {
     };
   }, [supabaseSyncEnabled]);
 
-  // 1. Auto-save history every 5 minutes
+  // 1. Auto-save history every 10 minutes
   useEffect(() => {
     if (supabaseSyncEnabled && supabase) {
-      console.log('Starting auto-save history timer (5m)');
+      console.log('Starting auto-save history timer (10m)');
       historyTimerRef.current = setInterval(() => {
         console.log('Auto-saving history version...');
         saveHistoryVersion('Auto-Save');
-      }, 5 * 60 * 1000);
+      }, 10 * 60 * 1000);
     } else {
       if (historyTimerRef.current) {
         clearInterval(historyTimerRef.current);
