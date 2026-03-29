@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FileText, Folder, GripVertical, Plus, Trash2, Check, X, Archive, RotateCcw } from 'lucide-react';
+import { FileText, Folder, GripVertical, Plus, Trash2, Check, X, Archive, RotateCcw, ChevronRight, ChevronDown, AlignLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const SCENE_STATUS_DOTS: Record<string, string> = {
@@ -18,6 +18,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
     activeWorkId, 
     chapters: allChapters, 
     scenes: allScenes, 
+    blocks,
     activeDocumentId,
     reorderChapters,
     reorderScenes,
@@ -33,6 +34,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
     activeWorkId: state.activeWorkId,
     chapters: state.chapters,
     scenes: state.scenes,
+    blocks: state.blocks,
     activeDocumentId: state.activeDocumentId,
     reorderChapters: state.reorderChapters,
     reorderScenes: state.reorderScenes,
@@ -49,6 +51,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [expandedScenes, setExpandedScenes] = useState<Record<string, boolean>>({});
 
   if (focusMode) return null;
 
@@ -85,6 +88,11 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
 
   const addScene = (chapterId: string) => {
     addSceneAction({ chapterId, title: 'New Scene' });
+  };
+
+  const toggleSceneExpand = (e: React.MouseEvent, sceneId: string) => {
+    e.stopPropagation();
+    setExpandedScenes(prev => ({ ...prev, [sceneId]: !prev[sceneId] }));
   };
 
   const renderDeleteButton = (id: string, onDelete: () => void, size = 12, className?: string) => {
@@ -260,28 +268,71 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                     </div>
                   </div>
                   <div className="pl-6 space-y-1 border-l border-stone-200 ml-3">
-                    {allScenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map(scene => (
-                      <div
-                        key={scene.id}
-                        onClick={() => {
-                          setActiveDocument(scene.id);
-                          setMobileOpen?.(false);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between p-1.5 rounded-md text-sm cursor-pointer transition-colors group/scene",
-                          activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-600 hover:bg-stone-100 border border-transparent"
-                        )}
-                      >
-                        <div className="flex items-center flex-1 min-w-0">
-                          <FileText size={12} className="mr-2 text-stone-400 shrink-0" />
-                          {scene.statusColor && (
-                            <div className={cn("w-1.5 h-1.5 rounded-full mr-2 shrink-0", SCENE_STATUS_DOTS[scene.statusColor])} />
+                    {allScenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map(scene => {
+                      const sceneBlocksWithDesc = blocks.filter(b => b.documentId === scene.id && b.description?.trim()).sort((a, b) => a.order - b.order);
+                      const isExpanded = expandedScenes[scene.id];
+
+                      return (
+                        <div key={scene.id} className="space-y-0.5">
+                          <div
+                            onClick={() => {
+                              setActiveDocument(scene.id);
+                              setMobileOpen?.(false);
+                            }}
+                            className={cn(
+                              "flex items-center justify-between p-1.5 rounded-md text-sm cursor-pointer transition-colors group/scene",
+                              activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-600 hover:bg-stone-100 border border-transparent"
+                            )}
+                          >
+                            <div className="flex items-center flex-1 min-w-0">
+                              {sceneBlocksWithDesc.length > 0 ? (
+                                <button
+                                  onClick={(e) => toggleSceneExpand(e, scene.id)}
+                                  className="p-0.5 mr-1 text-stone-400 hover:text-stone-600 rounded"
+                                >
+                                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </button>
+                              ) : (
+                                <div className="w-5 mr-1" /> // Spacer for alignment
+                              )}
+                              <FileText size={12} className="mr-2 text-stone-400 shrink-0" />
+                              {scene.statusColor && (
+                                <div className={cn("w-1.5 h-1.5 rounded-full mr-2 shrink-0", SCENE_STATUS_DOTS[scene.statusColor])} />
+                              )}
+                              <span className="whitespace-normal break-words text-xs md:text-sm">{scene.title}</span>
+                            </div>
+                            {renderDeleteButton(scene.id, () => deleteScene(scene.id), 12, "md:group-hover/scene:opacity-100")}
+                          </div>
+                          
+                          {/* Render Block Descriptions */}
+                          {isExpanded && sceneBlocksWithDesc.length > 0 && (
+                            <div className="pl-8 pr-2 py-1 space-y-1.5">
+                              {sceneBlocksWithDesc.map(block => (
+                                <div 
+                                  key={block.id} 
+                                  className="flex items-start text-xs text-stone-500 group/block cursor-pointer hover:text-stone-700"
+                                  onClick={() => {
+                                    setActiveDocument(scene.id);
+                                    setMobileOpen?.(false);
+                                    setTimeout(() => {
+                                      const el = document.getElementById(`block-${block.id}`);
+                                      if (el) {
+                                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md');
+                                        setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md'), 2000);
+                                      }
+                                    }, 100);
+                                  }}
+                                >
+                                  <AlignLeft size={10} className="mr-1.5 mt-0.5 shrink-0 opacity-50" />
+                                  <span className="line-clamp-2 leading-relaxed">{block.description}</span>
+                                </div>
+                              ))}
+                            </div>
                           )}
-                          <span className="whitespace-normal break-words text-xs md:text-sm">{scene.title}</span>
                         </div>
-                        {renderDeleteButton(scene.id, () => deleteScene(scene.id), 12, "md:group-hover/scene:opacity-100")}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -315,6 +366,8 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                         {allScenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map((scene, index) => {
                           const chapIndexNum = chapter.order + 1;
                           const sceneIndexNum = scene.order + 1;
+                          const sceneBlocksWithDesc = blocks.filter(b => b.documentId === scene.id && b.description?.trim()).sort((a, b) => a.order - b.order);
+                          const isExpanded = expandedScenes[scene.id];
                           
                           return (
                             // @ts-expect-error React 19 key prop issue
@@ -324,30 +377,67 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   className={cn(
-                                    "group flex items-center p-2 rounded-md text-sm transition-colors",
+                                    "group flex flex-col p-2 rounded-md text-sm transition-colors",
                                     snapshot.isDragging ? "bg-white shadow-md ring-1 ring-stone-200" : "hover:bg-stone-100",
                                     activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-700 border border-transparent"
                                   )}
                                 >
-                                  <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
-                                    <GripVertical size={14} />
+                                  <div className="flex items-center">
+                                    <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
+                                      <GripVertical size={14} />
+                                    </div>
+                                    {sceneBlocksWithDesc.length > 0 && (
+                                      <button
+                                        onClick={(e) => toggleSceneExpand(e, scene.id)}
+                                        className="p-0.5 mr-1 text-stone-400 hover:text-stone-600 rounded"
+                                      >
+                                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                      </button>
+                                    )}
+                                    <span className="text-xs font-mono text-stone-400 mr-2 bg-stone-200 px-1.5 py-0.5 rounded">
+                                      {chapIndexNum}-{sceneIndexNum}
+                                    </span>
+                                    {scene.statusColor && (
+                                      <div className={cn("w-1.5 h-1.5 rounded-full mr-2 shrink-0", SCENE_STATUS_DOTS[scene.statusColor])} />
+                                    )}
+                                    <span 
+                                      className="flex-1 cursor-pointer whitespace-normal break-words text-xs md:text-sm"
+                                      onClick={() => {
+                                        setActiveDocument(scene.id);
+                                        setMobileOpen?.(false);
+                                      }}
+                                    >
+                                      {scene.title}
+                                    </span>
+                                    {renderDeleteButton(scene.id, () => deleteScene(scene.id))}
                                   </div>
-                                  <span className="text-xs font-mono text-stone-400 mr-2 bg-stone-200 px-1.5 py-0.5 rounded">
-                                    {chapIndexNum}-{sceneIndexNum}
-                                  </span>
-                                  {scene.statusColor && (
-                                    <div className={cn("w-1.5 h-1.5 rounded-full mr-2 shrink-0", SCENE_STATUS_DOTS[scene.statusColor])} />
+                                  
+                                  {/* Render Block Descriptions in Scenes mode */}
+                                  {isExpanded && sceneBlocksWithDesc.length > 0 && (
+                                    <div className="pl-10 pr-2 pt-2 pb-1 space-y-1.5">
+                                      {sceneBlocksWithDesc.map(block => (
+                                        <div 
+                                          key={block.id} 
+                                          className="flex items-start text-xs text-stone-500 group/block cursor-pointer hover:text-stone-700"
+                                          onClick={() => {
+                                            setActiveDocument(scene.id);
+                                            setMobileOpen?.(false);
+                                            setTimeout(() => {
+                                              const el = document.getElementById(`block-${block.id}`);
+                                              if (el) {
+                                                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md');
+                                                setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md'), 2000);
+                                              }
+                                            }, 100);
+                                          }}
+                                        >
+                                          <AlignLeft size={10} className="mr-1.5 mt-0.5 shrink-0 opacity-50" />
+                                          <span className="line-clamp-2 leading-relaxed">{block.description}</span>
+                                        </div>
+                                      ))}
+                                    </div>
                                   )}
-                                  <span 
-                                    className="flex-1 cursor-pointer whitespace-normal break-words text-xs md:text-sm"
-                                    onClick={() => {
-                                      setActiveDocument(scene.id);
-                                      setMobileOpen?.(false);
-                                    }}
-                                  >
-                                    {scene.title}
-                                  </span>
-                                  {renderDeleteButton(scene.id, () => deleteScene(scene.id))}
                                 </div>
                               )}
                             </Draggable>

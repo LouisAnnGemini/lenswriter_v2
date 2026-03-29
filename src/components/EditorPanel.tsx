@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
@@ -116,7 +116,20 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   const [newSnapshotName, setNewSnapshotName] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [collapsedTocSections, setCollapsedTocSections] = useState<Set<string>>(new Set());
+
+  const toggleTocSection = (documentId: string) => {
+    setCollapsedTocSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(documentId)) {
+        newSet.delete(documentId);
+      } else {
+        newSet.add(documentId);
+      }
+      return newSet;
+    });
+  };
+
   const activeDocument = scenes.find(s => s.id === activeDocId) || allChapters.find(c => c.id === activeDocId);
   const isScene = scenes.some(s => s.id === activeDocId);
   const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
@@ -680,40 +693,52 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 {tocSections.length === 0 ? (
                   <div className="text-center text-xs text-stone-500 py-4">No blocks found.</div>
                 ) : (
-                  tocSections.map((section, idx) => (
+                  tocSections.map((section, idx) => {
+                    const isCollapsed = collapsedTocSections.has(section.documentId);
+                    return (
                     <div key={`${section.documentId}-${idx}`}>
-                      <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">{section.title}</h4>
-                      <div className="space-y-1">
-                        {section.entries.map(entry => (
-                          <div key={entry.id} className={cn(
-                            "p-3 bg-white rounded-lg border shadow-sm transition-colors",
-                            entry.completed ? "border-emerald-200" : "border-stone-200"
-                          )}>
-                            <div className="flex justify-between items-start">
-                              <textarea
-                                value={entry.description || ''}
-                                onChange={(e) => updateBlock({ id: entry.id, description: e.target.value })}
-                                className={cn(
-                                  "w-full bg-transparent border-none outline-none text-sm font-medium focus:ring-0 p-0 resize-none",
-                                  entry.completed ? "text-emerald-700" : "text-stone-900",
-                                  !entry.description ? "text-stone-400 italic" : ""
-                                )}
-                                placeholder="Untitled block"
-                                rows={2}
-                              />
-                              <button
-                                onClick={() => navigateToBlock(entry.id)}
-                                className="p-1 hover:bg-black/5 rounded transition-colors ml-2 shrink-0"
-                                title="Jump to Text"
-                              >
-                                <ArrowLeft size={14} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                      <div 
+                        className="flex items-center cursor-pointer mb-2 group"
+                        onClick={() => toggleTocSection(section.documentId)}
+                      >
+                        <button className="p-0.5 text-stone-400 group-hover:text-stone-600 transition-colors mr-1">
+                          {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                        </button>
+                        <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider group-hover:text-stone-600 transition-colors">{section.title}</h4>
                       </div>
+                      {!isCollapsed && (
+                        <div className="space-y-1">
+                          {section.entries.map(entry => (
+                            <div key={entry.id} className={cn(
+                              "p-3 bg-white rounded-lg border shadow-sm transition-colors",
+                              entry.completed ? "border-emerald-200" : "border-stone-200"
+                            )}>
+                              <div className="flex justify-between items-start">
+                                <textarea
+                                  value={entry.description || ''}
+                                  onChange={(e) => updateBlock({ id: entry.id, description: e.target.value })}
+                                  className={cn(
+                                    "w-full bg-transparent border-none outline-none text-sm font-medium focus:ring-0 p-0 resize-none",
+                                    entry.completed ? "text-emerald-700" : "text-stone-900",
+                                    !entry.description ? "text-stone-400 italic" : ""
+                                  )}
+                                  placeholder="Untitled block"
+                                  rows={2}
+                                />
+                                <button
+                                  onClick={() => navigateToBlock(entry.id)}
+                                  className="p-1 hover:bg-black/5 rounded transition-colors ml-2 shrink-0"
+                                  title="Jump to Text"
+                                >
+                                  <ArrowLeft size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))
+                  )})
                 )}
               </div>
             )}
