@@ -66,7 +66,7 @@ export const TimelineTableView = React.memo(({
                       className={cn(
                         "border-b border-stone-100 hover:bg-stone-50 transition-colors group",
                         idx === 0 && group.events.length > 1 ? "bg-stone-50/30" : "",
-                        highlightedEventId === event.id && "bg-emerald-50",
+                        highlightedEventId === event.id && "bg-stone-50",
                         event.status === 'pool' && "opacity-60"
                       )}
                     >
@@ -169,7 +169,7 @@ export const TimelineTableView = React.memo(({
                       <td className="px-4 py-3 align-top text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => setSelectedEventId(event.id)} className="p-1 text-stone-400 hover:text-stone-600"><Maximize2 size={14} /></button>
-                          <button onClick={() => updateTimelineEvent({ id: event.id, status: event.status === 'pool' ? 'timeline' : 'pool' })} className="p-1 text-stone-400 hover:text-emerald-600" title={event.status === 'pool' ? "Move to Timeline" : "Move to Pool"}><ArrowRightToLine size={14} /></button>
+                          <button onClick={() => updateTimelineEvent({ id: event.id, status: event.status === 'pool' ? 'timeline' : 'pool' })} className="p-1 text-stone-400 hover:text-stone-600" title={event.status === 'pool' ? "Move to Timeline" : "Move to Pool"}><ArrowRightToLine size={14} /></button>
                           <ConfirmDeleteButton onConfirm={() => deleteTimelineEvent(event.id)} className="p-1" />
                         </div>
                       </td>

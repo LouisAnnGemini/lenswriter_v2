@@ -104,7 +104,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     <span className="truncate">{opt.title}</span>
                   )
                 )}
-                {selectedIds.includes(opt.id) && <Check size={12} className="text-emerald-600 shrink-0" />}
+                {selectedIds.includes(opt.id) && <Check size={12} className="text-stone-600 shrink-0" />}
               </div>
             ))}
           </div>

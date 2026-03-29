@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 
 const SCENE_STATUS_DOTS: Record<string, string> = {
   yellow: 'bg-amber-400',
-  green: 'bg-emerald-400',
+  green: 'bg-stone-400',
   blue: 'bg-blue-400',
   red: 'bg-red-400',
 };
@@ -155,7 +155,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
 
       <div className="flex-1 overflow-y-auto p-3">
         <label className="flex items-center text-xs text-stone-500 mb-2 px-2 cursor-pointer hover:text-stone-700">
-          <input type="checkbox" checked={showArchived} onChange={() => setShowArchived(!showArchived)} className="mr-2 accent-emerald-600" />
+          <input type="checkbox" checked={showArchived} onChange={() => setShowArchived(!showArchived)} className="mr-2 accent-stone-600" />
           Show Archived
         </label>
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -174,7 +174,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                           className={cn(
                             "group flex items-center p-2 rounded-md text-sm transition-colors",
                             snapshot.isDragging ? "bg-white shadow-md" : "hover:bg-stone-100",
-                            activeDocumentId === chapter.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-700 border border-transparent"
+                            activeDocumentId === chapter.id ? "bg-stone-200 text-stone-900 font-medium shadow-sm border border-stone-300" : "text-stone-700 border border-transparent"
                           )}
                         >
                           <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
@@ -221,7 +221,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                   <div 
                     className={cn(
                       "flex items-center justify-between p-2 rounded-md text-sm font-medium group cursor-pointer transition-colors",
-                      activeDocumentId === chapter.id ? "bg-emerald-50 text-emerald-900 shadow-sm border border-emerald-100" : "text-stone-900 hover:bg-stone-100 border border-transparent"
+                      activeDocumentId === chapter.id ? "bg-stone-200 text-stone-900 shadow-sm border border-stone-300" : "text-stone-900 hover:bg-stone-100 border border-transparent"
                     )}
                     onClick={() => {
                       setActiveDocument(chapter.id);
@@ -250,7 +250,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                             e.stopPropagation(); 
                             addScene(chapter.id); 
                           }}
-                          className="md:opacity-0 md:group-hover:opacity-100 opacity-100 p-1 hover:bg-emerald-100 hover:text-emerald-700 rounded text-stone-400 transition-all relative z-10"
+                          className="md:opacity-0 md:group-hover:opacity-100 opacity-100 p-1 hover:bg-stone-200 hover:text-stone-800 rounded text-stone-400 transition-all relative z-10"
                           title="Add Scene"
                         >
                           <Plus size={14} />
@@ -269,7 +269,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                         }}
                         className={cn(
                           "flex items-center justify-between p-1.5 rounded-md text-sm cursor-pointer transition-colors group/scene",
-                          activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-600 hover:bg-stone-100 border border-transparent"
+                          activeDocumentId === scene.id ? "bg-stone-200 text-stone-900 font-medium shadow-sm border border-stone-300" : "text-stone-600 hover:bg-stone-100 border border-transparent"
                         )}
                       >
                         <div className="flex items-center flex-1 min-w-0">
@@ -326,7 +326,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                   className={cn(
                                     "group flex items-center p-2 rounded-md text-sm transition-colors",
                                     snapshot.isDragging ? "bg-white shadow-md ring-1 ring-stone-200" : "hover:bg-stone-100",
-                                    activeDocumentId === scene.id ? "bg-emerald-50 text-emerald-900 font-medium shadow-sm border border-emerald-100" : "text-stone-700 border border-transparent"
+                                    activeDocumentId === scene.id ? "bg-stone-200 text-stone-900 font-medium shadow-sm border border-stone-300" : "text-stone-700 border border-transparent"
                                   )}
                                 >
                                   <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
@@ -367,7 +367,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
       <div className="p-4 border-t border-stone-200 bg-white">
         <button 
           onClick={addChapter}
-          className="w-full flex items-center justify-center py-2.5 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-200 shadow-sm"
+          className="w-full flex items-center justify-center py-2.5 text-sm font-medium text-stone-800 bg-stone-200 hover:bg-stone-300 rounded-lg transition-colors border border-stone-300 shadow-sm"
         >
           <Plus size={16} className="mr-2" />
           Add Chapter

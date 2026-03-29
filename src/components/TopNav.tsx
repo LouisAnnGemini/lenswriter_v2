@@ -65,6 +65,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
 
   const allTabs = [
     { id: 'writing', label: 'Writing', icon: Edit3 },
+    { id: 'inbox', label: 'Inbox', icon: Inbox },
     { id: 'blockDescriptions', label: 'Block Descriptions', icon: AlignLeft },
     { id: 'lenses', label: 'Lenses', icon: LayoutGrid },
     { id: 'timelineEvents', label: 'Timeline Events', icon: Clock },
@@ -75,7 +76,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
 
   const tabs = appMode === 'writing' 
     ? allTabs.filter(t => ['writing', 'blockDescriptions', 'lenses', 'timelineEvents', 'world'].includes(t.id))
-    : allTabs.filter(t => ['writing', 'deadline', 'compile'].includes(t.id));
+    : allTabs.filter(t => ['writing', 'inbox', 'deadline', 'compile'].includes(t.id));
   
   const isScene = scenes.some(s => s.id === activeDocumentId);
 

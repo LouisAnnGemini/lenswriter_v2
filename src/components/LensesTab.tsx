@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 const LENS_COLORS = {
   red: 'bg-red-50/80 border-red-200 text-red-900 hover:bg-red-50',
   blue: 'bg-blue-50/80 border-blue-200 text-blue-900 hover:bg-blue-50',
-  green: 'bg-emerald-50/80 border-emerald-200 text-emerald-900 hover:bg-emerald-50',
+  green: 'bg-stone-50/80 border-stone-200 text-stone-900 hover:bg-stone-50',
   yellow: 'bg-amber-50/80 border-amber-200 text-amber-900 hover:bg-amber-50',
   purple: 'bg-purple-50/80 border-purple-200 text-purple-900 hover:bg-purple-50',
   brown: 'bg-orange-200 border-orange-200 text-orange-900 hover:bg-orange-200',
@@ -122,8 +122,8 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
     const el = document.getElementById(`lens-card-${lensId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('ring-4', 'ring-emerald-500', 'ring-offset-2');
-      setTimeout(() => el.classList.remove('ring-4', 'ring-emerald-500', 'ring-offset-2'), 2000);
+      el.classList.add('ring-4', 'ring-stone-500', 'ring-offset-2');
+      setTimeout(() => el.classList.remove('ring-4', 'ring-stone-500', 'ring-offset-2'), 2000);
     }
   };
 
@@ -134,8 +134,8 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
       const el = document.getElementById(`block-${lensId}`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2');
-        setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2'), 2000);
+        el.classList.add('ring-2', 'ring-stone-500', 'ring-offset-2');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-stone-500', 'ring-offset-2'), 2000);
       }
     }, 100);
   };
@@ -160,7 +160,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                   e.target.style.height = 'auto';
                   e.target.style.height = e.target.scrollHeight + 'px';
                 }}
-                className="text-base md:text-sm text-stone-500 mt-1 bg-transparent border-b border-transparent hover:border-stone-300 focus:border-emerald-500 outline-none w-full transition-colors resize-none overflow-hidden block"
+                className="text-base md:text-sm text-stone-500 mt-1 bg-transparent border-b border-transparent hover:border-stone-300 focus:border-stone-500 outline-none w-full transition-colors resize-none overflow-hidden block"
                 placeholder="Enter a description for your lenses..."
                 rows={1}
                 style={{ minHeight: '24px' }}
@@ -169,7 +169,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
 
             <div className="space-y-4">
               {/* Search Line */}
-              <div className="flex items-center space-x-2 bg-white border border-stone-200 rounded-lg px-4 py-2.5 shadow-sm w-full focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
+              <div className="flex items-center space-x-2 bg-white border border-stone-200 rounded-lg px-4 py-2.5 shadow-sm w-full focus-within:border-stone-500 focus-within:ring-1 focus-within:ring-stone-500 transition-all">
                 <Search size={16} className="text-stone-400 shrink-0" />
                 <input
                   type="text"
@@ -216,7 +216,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                         className={cn(
                           "px-3 py-1 text-xs rounded-full border transition-all",
                           isSelected 
-                            ? "bg-emerald-100 border-emerald-500 text-emerald-700 font-bold shadow-sm" 
+                            ? "bg-stone-200 border-stone-500 text-stone-800 font-bold shadow-sm" 
                             : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
                         )}
                       >
@@ -255,7 +255,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                         className={cn(
                           "group flex items-center space-x-2 px-3 py-1 text-xs rounded-full border transition-all",
                           isSelected 
-                            ? "bg-white border-emerald-500 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-500/20" 
+                            ? "bg-white border-stone-500 text-stone-800 font-bold shadow-sm ring-1 ring-stone-500/20" 
                             : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
                         )}
                       >
@@ -283,7 +283,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
           <div className="space-y-10">
             {pinnedLenses.length > 0 && (
               <div className="space-y-4">
-                <div className="flex items-center space-x-2 text-emerald-700">
+                <div className="flex items-center space-x-2 text-stone-800">
                   <Pin size={18} />
                   <h3 className="text-lg font-serif font-semibold">Pinned Lenses</h3>
                 </div>
@@ -295,7 +295,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       className={cn(
                         "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
                         LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
-                        selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
+                        selectedLensId === lens.id && "ring-2 ring-stone-500 ring-offset-2 shadow-md"
                       )}
                       onClick={() => setActiveLens(lens.id)}
                     >
@@ -310,7 +310,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                               e.stopPropagation();
                               toggleLensPin(lens.id);
                             }}
-                            className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                            className={cn("p-1 rounded transition-colors", lens.pinned ? "text-stone-800 bg-stone-200" : "text-stone-400 hover:text-stone-800 hover:bg-black/5")}
                             title={lens.pinned ? "Unpin lens" : "Pin lens"}
                           >
                             <Pin size={14} />
@@ -320,7 +320,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                               e.stopPropagation();
                               handleNavigateToLens(lens.id, lens.documentId);
                             }}
-                            className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                            className="text-stone-500 hover:text-stone-800 p-1 hover:bg-black/5 rounded transition-colors"
                             title="Go to location in text"
                           >
                             <ExternalLink size={14} />
@@ -402,7 +402,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     className={cn(
                       "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
                       LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
-                      selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
+                      selectedLensId === lens.id && "ring-2 ring-stone-500 ring-offset-2 shadow-md"
                     )}
                     onClick={() => setActiveLens(lens.id)}
                   >
@@ -417,7 +417,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                             e.stopPropagation();
                             toggleLensPin(lens.id);
                           }}
-                          className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                          className={cn("p-1 rounded transition-colors", lens.pinned ? "text-stone-800 bg-stone-200" : "text-stone-400 hover:text-stone-800 hover:bg-black/5")}
                           title={lens.pinned ? "Unpin lens" : "Pin lens"}
                         >
                           <Pin size={14} />
@@ -427,7 +427,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                             e.stopPropagation();
                             handleNavigateToLens(lens.id, lens.documentId);
                           }}
-                          className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                          className="text-stone-500 hover:text-stone-800 p-1 hover:bg-black/5 rounded transition-colors"
                           title="Go to location in text"
                         >
                           <ExternalLink size={14} />
@@ -559,7 +559,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       className={cn(
                         "w-full h-48 p-4 rounded-lg border resize-none outline-none text-base md:text-sm font-medium leading-relaxed shadow-inner transition-colors",
                         LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
-                        lens.lensColor === 'black' ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : "focus:ring-2 focus:ring-emerald-500/20"
+                        lens.lensColor === 'black' ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : "focus:ring-2 focus:ring-stone-500/20"
                       )}
                     />
                   </div>
@@ -574,7 +574,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       value={lens.notes || ''}
                       onChange={(e) => handleUpdateLens(lens.id, { notes: e.target.value })}
                       placeholder="Add private notes, lore, or ideas here..."
-                      className="w-full h-32 p-3 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-base md:text-sm text-stone-700"
+                      className="w-full h-32 p-3 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 text-base md:text-sm text-stone-700"
                     />
                   </div>
 

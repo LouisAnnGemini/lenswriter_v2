@@ -170,7 +170,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
                 "relative break-words whitespace-pre-wrap transition-all duration-200", leadingClass, 
                 isActiveP ? "bg-black/[0.03]" : ""
               )}>
-                {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
+                {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-stone-300" />}
                 {paragraph === '' ? <br /> : paragraph}
               </div>
             );
@@ -183,7 +183,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
               "relative break-words whitespace-pre-wrap transition-all duration-200", leadingClass, 
               isActiveP ? "bg-black/[0.03]" : ""
             )}>
-              {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
+              {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-stone-300" />}
               {paragraph === '' ? <br /> : parts.map((part: string, i: number) => {
                 if (i % 2 === 1) {
                   const matchIndex = (i - 1) / 2;
@@ -294,7 +294,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
         placeholder={placeholder}
         className={cn(
           "overflow-hidden resize-none relative z-10 bg-transparent w-full p-0",
-          "caret-blue-500",
+          "caret-stone-800",
           isDimmed && "opacity-40",
           isFocused && "text-transparent",
           className

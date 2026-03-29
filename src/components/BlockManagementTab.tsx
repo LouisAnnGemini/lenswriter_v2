@@ -75,7 +75,7 @@ export function BlockManagementTab() {
           onClick={() => setSelectedDocId(null)}
           className={cn(
             "w-full text-left px-2 py-1.5 rounded-md text-sm font-medium transition-colors",
-            !selectedDocId ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-100"
+            !selectedDocId ? "bg-stone-200 text-stone-800" : "text-stone-600 hover:bg-stone-100"
           )}
         >
           All Blocks
@@ -90,7 +90,7 @@ export function BlockManagementTab() {
                 onClick={() => setSelectedDocId(chapter.id)}
                 className={cn(
                   "flex-1 text-left px-2 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center",
-                  selectedDocId === chapter.id ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-100"
+                  selectedDocId === chapter.id ? "bg-stone-200 text-stone-800" : "text-stone-600 hover:bg-stone-100"
                 )}
               >
                 <Folder size={14} className="mr-2" />
@@ -105,7 +105,7 @@ export function BlockManagementTab() {
                     onClick={() => setSelectedDocId(scene.id)}
                     className={cn(
                       "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center",
-                      selectedDocId === scene.id ? "bg-emerald-50 text-emerald-700" : "text-stone-500 hover:bg-stone-100"
+                      selectedDocId === scene.id ? "bg-stone-200 text-stone-800" : "text-stone-500 hover:bg-stone-100"
                     )}
                   >
                     <FileText size={14} className="mr-2" />
@@ -133,7 +133,7 @@ export function BlockManagementTab() {
               placeholder="Search descriptions or content..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              className="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/20"
             />
           </div>
         </div>
@@ -158,7 +158,7 @@ export function BlockManagementTab() {
                           onClick={() => updateBlock({ id: block.id, completed: !block.completed })}
                           className={cn(
                             "mt-1 shrink-0 transition-colors",
-                            block.completed ? "text-emerald-500" : "text-stone-300 hover:text-stone-400"
+                            block.completed ? "text-stone-600" : "text-stone-300 hover:text-stone-400"
                           )}
                         >
                           {block.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
@@ -191,12 +191,12 @@ export function BlockManagementTab() {
                                   const el = document.getElementById(`block-${block.id}`);
                                   if (el) {
                                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md');
-                                    setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2', 'rounded-md'), 2000);
+                                    el.classList.add('ring-2', 'ring-stone-500', 'ring-offset-2', 'rounded-md');
+                                    setTimeout(() => el.classList.remove('ring-2', 'ring-stone-500', 'ring-offset-2', 'rounded-md'), 2000);
                                   }
                                 }, 100);
                               }}
-                              className="p-1 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors shrink-0 opacity-0 group-hover/block:opacity-100"
+                              className="p-1 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded transition-colors shrink-0 opacity-0 group-hover/block:opacity-100"
                               title="Jump to block in editor"
                             >
                               <ExternalLink size={16} />

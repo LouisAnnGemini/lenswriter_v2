@@ -164,7 +164,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
       <div className="w-1/4 min-w-[280px] border-r border-stone-200 bg-white flex flex-col h-full overflow-y-auto">
         <div className="p-4 border-b border-stone-200">
           <h2 className="text-lg font-serif font-semibold text-stone-800 flex items-center">
-            <Target className="mr-2 text-emerald-600" size={20} />
+            <Target className="mr-2 text-stone-600" size={20} />
             Goals & To-Do
           </h2>
         </div>
@@ -172,8 +172,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
         <div className="p-4 space-y-6">
           {/* To-Do Area */}
           {todoTasks.length > 0 && (
-            <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-              <h3 className="text-sm font-semibold text-emerald-800 mb-2 flex items-center">
+            <div className="bg-stone-100 rounded-lg p-3 border border-stone-200">
+              <h3 className="text-sm font-semibold text-stone-800 mb-2 flex items-center">
                 <CalendarIcon size={14} className="mr-1.5" />
                 Unscheduled Tasks (Drag to Calendar)
               </h3>
@@ -190,7 +190,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                       onDragStart={(e) => {
                         e.dataTransfer.setData('text/plain', JSON.stringify({ id: task.id, type: task.type }));
                       }}
-                      className="bg-white p-2 rounded border border-emerald-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-emerald-400 transition-colors relative group"
+                      className="bg-white p-2 rounded border border-stone-300 shadow-sm cursor-grab active:cursor-grabbing hover:border-stone-400 transition-colors relative group"
                     >
                       <button
                         onClick={() => handleUpdateGoal(task.id, task.type, undefined)}
@@ -204,11 +204,11 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                       <div className="mt-2">
                         <div className="flex justify-between items-center text-xs text-stone-500 mb-1">
                           <span>{currentWords} / {task.goalWordCount} words</span>
-                          <span className="font-medium text-emerald-600">{percentage}%</span>
+                          <span className="font-medium text-stone-600">{percentage}%</span>
                         </div>
                         <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                            className="h-full bg-stone-600 rounded-full transition-all duration-300"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -284,7 +284,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                                     onClick={() => handleToggleComplete(chapter.id, 'chapter', !chapter.completed)}
                                     className={cn(
                                       "mr-2 shrink-0 transition-colors",
-                                      chapter.completed ? "text-emerald-500" : "text-stone-300 hover:text-stone-400"
+                                      chapter.completed ? "text-stone-600" : "text-stone-300 hover:text-stone-400"
                                     )}
                                   >
                                     {chapter.completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
@@ -312,7 +312,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                                     handleUpdateGoal(chapter.id, 'chapter', val);
                                   }}
                                   placeholder="Set word count goal..."
-                                  className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                  className="flex-1 min-w-0 text-xs px-2 py-1 bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-stone-500"
                                   disabled={chapter.completed}
                                 />
                               </div>
@@ -331,7 +331,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                                           onClick={() => handleToggleComplete(scene.id, 'scene', !completed)}
                                           className={cn(
                                             "mr-2 shrink-0 transition-colors",
-                                            completed ? "text-emerald-500" : "text-stone-300 hover:text-stone-400"
+                                            completed ? "text-stone-600" : "text-stone-300 hover:text-stone-400"
                                           )}
                                         >
                                           {completed ? <CheckCircle2 size={14} /> : <Circle size={14} />}
@@ -358,7 +358,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                                           handleUpdateGoal(scene.id, 'scene', val);
                                         }}
                                         placeholder="Set word count goal..."
-                                        className="flex-1 min-w-0 text-[10px] px-1.5 py-0.5 bg-stone-50 border border-stone-100 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        className="flex-1 min-w-0 text-[10px] px-1.5 py-0.5 bg-stone-50 border border-stone-100 rounded focus:outline-none focus:ring-1 focus:ring-stone-500"
                                         disabled={completed}
                                       />
                                     </div>
@@ -451,13 +451,13 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                     className={cn(
                       "border-b border-r border-stone-200 p-1 flex flex-col transition-colors min-h-0",
                       isWeekend ? "bg-stone-50/80" : "bg-white",
-                      isToday && "ring-2 ring-inset ring-emerald-500/50"
+                      isToday && "ring-2 ring-inset ring-stone-500/50"
                     )}
                   >
                     <div className="flex justify-between items-start mb-1">
                       <span className={cn(
                         "text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full",
-                        isToday ? "bg-emerald-500 text-white" : (isWeekend ? "text-stone-400" : "text-stone-700")
+                        isToday ? "bg-stone-800 text-white" : (isWeekend ? "text-stone-400" : "text-stone-700")
                       )}>
                         {day}
                       </span>
@@ -481,7 +481,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                               "text-xs p-1.5 rounded border shadow-sm group relative cursor-grab active:cursor-grabbing",
                               completed 
                                 ? "bg-stone-100 border-stone-200 text-stone-500" 
-                                : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                                : "bg-stone-100 border-stone-300 text-stone-900"
                             )}
                           >
                             <div className="flex items-start justify-between">
@@ -511,12 +511,12 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                               </div>
                               <div className={cn(
                                 "h-1 w-full rounded-full overflow-hidden",
-                                completed ? "bg-stone-200" : "bg-emerald-200/50"
+                                completed ? "bg-stone-200" : "bg-stone-300/50"
                               )}>
                                 <div 
                                   className={cn(
                                     "h-full rounded-full transition-all duration-300",
-                                    completed ? "bg-stone-400" : "bg-emerald-500"
+                                    completed ? "bg-stone-400" : "bg-stone-600"
                                   )}
                                   style={{ width: `${percentage}%` }}
                                 />

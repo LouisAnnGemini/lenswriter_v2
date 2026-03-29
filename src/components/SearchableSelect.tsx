@@ -76,7 +76,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 key={opt.id} 
                 className={cn(
                   "px-3 py-2 text-xs hover:bg-stone-50 cursor-pointer flex items-center justify-between",
-                  value === opt.id && "bg-emerald-50"
+                  value === opt.id && "bg-stone-100"
                 )}
                 onMouseDown={(e) => {
                   e.preventDefault();
@@ -87,7 +87,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 }}
               >
                 {renderOption ? renderOption(opt) : opt.title}
-                {value === opt.id && <Check size={12} className="text-emerald-600" />}
+                {value === opt.id && <Check size={12} className="text-stone-600" />}
               </div>
             ))}
           </div>

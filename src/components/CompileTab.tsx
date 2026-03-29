@@ -297,11 +297,11 @@ export function CompileTab() {
                     >
                       <div className={cn(
                         "mr-2 w-4 h-4 border rounded flex items-center justify-center transition-colors",
-                        isSelected ? "bg-emerald-500 border-emerald-500 text-white" : 
-                        (someScenesSelected && !isSelected) ? "bg-emerald-100 border-emerald-300" : "border-stone-300 bg-white"
+                        isSelected ? "bg-stone-800 border-stone-800 text-white" : 
+                        (someScenesSelected && !isSelected) ? "bg-stone-200 border-stone-400" : "border-stone-300 bg-white"
                       )}>
                         {isSelected && <CheckSquare size={12} />}
-                        {!isSelected && someScenesSelected && <div className="w-2 h-2 bg-emerald-500 rounded-sm" />}
+                        {!isSelected && someScenesSelected && <div className="w-2 h-2 bg-stone-800 rounded-sm" />}
                       </div>
                       <span className="text-sm font-medium text-stone-700 truncate">{chapter.title}</span>
                     </div>
@@ -317,7 +317,7 @@ export function CompileTab() {
                         >
                           <div className={cn(
                             "mr-2 w-3 h-3 border rounded flex items-center justify-center transition-colors",
-                            selectedIds.has(scene.id) ? "bg-emerald-500 border-emerald-500 text-white" : "border-stone-300 bg-white"
+                            selectedIds.has(scene.id) ? "bg-stone-800 border-stone-800 text-white" : "border-stone-300 bg-white"
                           )}>
                             {selectedIds.has(scene.id) && <CheckSquare size={10} />}
                           </div>
@@ -351,7 +351,7 @@ export function CompileTab() {
             <button
               onClick={handleExport}
               disabled={selectedIds.size === 0}
-              className="flex items-center px-3 py-1.5 bg-emerald-600 text-white rounded-md text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center px-3 py-1.5 bg-stone-800 text-white rounded-md text-sm hover:bg-stone-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Upload size={14} className="mr-2" />
               Export .docx

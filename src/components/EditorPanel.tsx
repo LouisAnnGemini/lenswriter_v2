@@ -18,7 +18,7 @@ import { SnapshotDialog } from './SnapshotDialog';
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
   blue: 'bg-blue-50 border-blue-200 text-blue-900',
-  green: 'bg-emerald-50 border-emerald-200 text-emerald-900',
+  green: 'bg-stone-50 border-stone-200 text-stone-900',
   yellow: 'bg-amber-50 border-amber-200 text-amber-900',
   purple: 'bg-purple-50 border-purple-200 text-purple-900',
   brown: 'bg-orange-200 border-orange-200 text-orange-900',
@@ -216,8 +216,8 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         const el = document.getElementById(`block-${blockId}`);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2');
-          setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2'), 2000);
+          el.classList.add('ring-2', 'ring-stone-500', 'ring-offset-2');
+          setTimeout(() => el.classList.remove('ring-2', 'ring-stone-500', 'ring-offset-2'), 2000);
         }
       }, 100);
     }
@@ -369,10 +369,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   }
                 }}
                 className={cn(
-                  "w-full outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words caret-blue-500",
+                  "w-full outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words caret-stone-800",
                   disguiseMode 
                     ? "font-mono text-base leading-snug text-black font-normal" 
-                    : "text-2xl md:text-3xl font-serif font-semibold text-stone-900"
+                    : "text-2xl md:text-3xl font-serif font-semibold text-stone-800"
                 )}
                 placeholder="Untitled..."
               />
@@ -380,7 +380,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
             <div className="flex items-center flex-wrap justify-end gap-1 md:gap-2 relative shrink-0">
               <button
                 onClick={() => setShowFindReplace(!showFindReplace)}
-                className={cn("p-2 rounded-md transition-colors", showFindReplace ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
+                className={cn("p-2 rounded-md transition-colors", showFindReplace ? "text-stone-800 bg-stone-200 hover:bg-stone-300" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
                 title="Find and Replace (Ctrl+F)"
               >
                 <Search size={20} />
@@ -389,7 +389,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               {isScene && (
                 <button
                   onClick={handleCopyScene}
-                  className={cn("p-2 rounded-md transition-colors", copied ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
+                  className={cn("p-2 rounded-md transition-colors", copied ? "text-stone-800 bg-stone-200 hover:bg-stone-300" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
                   title="Copy Scene Text"
                 >
                   {copied ? <Check size={20} /> : <Copy size={20} />}
@@ -475,7 +475,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                                   "w-4 h-4 rounded-full border border-black/10 transition-transform hover:scale-110",
                                   color === 'red' && "bg-red-400",
                                   color === 'blue' && "bg-blue-400",
-                                  color === 'green' && "bg-emerald-400",
+                                  color === 'green' && "bg-stone-400",
                                   color === 'yellow' && "bg-amber-400",
                                   color === 'purple' && "bg-purple-400",
                                   color === 'brown' && "bg-orange-400",
@@ -545,7 +545,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         </button>
                         <button 
                           onClick={() => handleAddBlock(true, block.id)}
-                          className="flex items-center px-2 py-0.5 text-[10px] font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
+                          className="flex items-center px-2 py-0.5 text-[10px] font-medium text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
                           title="Add Color Lens Below"
                         >
                           <Highlighter size={12} className="mr-1" /> Add Lens
@@ -568,14 +568,14 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                     )}>
                       <button 
                         onClick={() => toggleBlockDescription(block)}
-                        className={cn("p-1.5 rounded-md transition-colors", block.description !== undefined ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
+                        className={cn("p-1.5 rounded-md transition-colors", block.description !== undefined ? "text-stone-800 bg-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
                         title="Block Description"
                       >
                         <MessageSquare size={16} />
                       </button>
                       <button 
                         onClick={() => handleBlockChange(block.id, { completed: !block.completed })}
-                        className={cn("p-1.5 rounded-md transition-colors", block.completed ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
+                        className={cn("p-1.5 rounded-md transition-colors", block.completed ? "text-stone-800 bg-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
                         title="Toggle Completion"
                       >
                         <CheckCircle2 size={16} />
@@ -598,7 +598,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 </button>
                 <button 
                   onClick={() => handleAddBlock(true)}
-                  className="flex items-center px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-md transition-colors text-sm font-medium"
+                  className="flex items-center px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-md transition-colors text-sm font-medium"
                 >
                   <Highlighter size={16} className="mr-2" />
                   Add Color Lens
@@ -623,27 +623,27 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               {isScene && (
                 <button
                   onClick={() => setRightSidebarMode('info')}
-                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'info' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'info' ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
                 >
                   Info
                 </button>
               )}
               <button
                 onClick={() => setRightSidebarMode('micro')}
-                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'micro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'micro' ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Directory
               </button>
               <button
                 onClick={() => setRightSidebarMode('meso')}
-                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'meso' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'meso' ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
               >
                 Lenses
               </button>
               {isScene && (
                 <button
                   onClick={() => setRightSidebarMode('macro')}
-                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'macro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'macro' ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
                 >
                   Events
                 </button>
@@ -670,7 +670,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         {section.entries.map(entry => (
                           <div key={entry.id} className={cn(
                             "p-3 bg-white rounded-lg border shadow-sm transition-colors",
-                            entry.completed ? "border-emerald-200" : "border-stone-200"
+                            entry.completed ? "border-stone-300" : "border-stone-200"
                           )}>
                             <div className="flex justify-between items-start">
                               <textarea
@@ -678,7 +678,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                                 onChange={(e) => updateBlock({ id: entry.id, description: e.target.value })}
                                 className={cn(
                                   "w-full bg-transparent border-none outline-none text-sm font-medium focus:ring-0 p-0 resize-none",
-                                  entry.completed ? "text-emerald-700" : "text-stone-900",
+                                  entry.completed ? "text-stone-500" : "text-stone-900",
                                   !entry.description ? "text-stone-400 italic" : ""
                                 )}
                                 placeholder="Untitled block"
@@ -717,7 +717,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                       onChange={(e) => {
                         moveScene(activeDocId, e.target.value, 0);
                       }}
-                      className="text-xs bg-white border border-stone-200 rounded px-2 h-9 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                      className="text-xs bg-white border border-stone-200 rounded px-2 h-9 w-full focus:outline-none focus:ring-2 focus:ring-stone-500/20 text-stone-700"
                     >
                       {chapters.map(chap => (
                         <option key={chap.id} value={chap.id}>{chap.title}</option>
@@ -733,7 +733,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.none.bg, SCENE_STATUS_COLORS.none.border, SCENE_STATUS_COLORS.none.text,
-                          !(activeDocument as any).statusColor ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          !(activeDocument as any).statusColor ? "ring-2 ring-stone-500/50 border-stone-500" : "opacity-70 hover:opacity-100"
                         )}
                       >
                         <Circle size={10} className="text-stone-400" />
@@ -744,7 +744,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.yellow.bg, SCENE_STATUS_COLORS.yellow.border, SCENE_STATUS_COLORS.yellow.text,
-                          (activeDocument as any).statusColor === 'yellow' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          (activeDocument as any).statusColor === 'yellow' ? "ring-2 ring-stone-500/50 border-stone-500" : "opacity-70 hover:opacity-100"
                         )}
                       >
                         <FileText size={10} className="text-amber-500" />
@@ -755,7 +755,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.blue.bg, SCENE_STATUS_COLORS.blue.border, SCENE_STATUS_COLORS.blue.text,
-                          (activeDocument as any).statusColor === 'blue' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          (activeDocument as any).statusColor === 'blue' ? "ring-2 ring-stone-500/50 border-stone-500" : "opacity-70 hover:opacity-100"
                         )}
                       >
                         <RotateCcw size={10} className="text-blue-500" />
@@ -766,7 +766,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
                           SCENE_STATUS_COLORS.red.bg, SCENE_STATUS_COLORS.red.border, SCENE_STATUS_COLORS.red.text,
-                          (activeDocument as any).statusColor === 'red' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          (activeDocument as any).statusColor === 'red' ? "ring-2 ring-stone-500/50 border-stone-500" : "opacity-70 hover:opacity-100"
                         )}
                       >
                         <X size={10} className="text-red-500" />
@@ -777,10 +777,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         className={cn(
                           "px-2 py-1.5 rounded text-[10px] font-bold border transition-all flex items-center justify-center gap-1.5 col-span-2",
                           SCENE_STATUS_COLORS.green.bg, SCENE_STATUS_COLORS.green.border, SCENE_STATUS_COLORS.green.text,
-                          (activeDocument as any).statusColor === 'green' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
+                          (activeDocument as any).statusColor === 'green' ? "ring-2 ring-stone-500/50 border-stone-500" : "opacity-70 hover:opacity-100"
                         )}
                       >
-                        <Check size={14} className="text-emerald-500" />
+                        <Check size={14} className="text-stone-600" />
                         {SCENE_STATUS_COLORS.green.label}
                       </button>
                     </div>
@@ -791,7 +791,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 <div className="space-y-4 pt-4 border-t border-stone-200">
                   <div>
                     <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Progress</label>
-                    <div className="relative h-9 overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                    <div className="relative h-9 overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-stone-500/20 transition-all">
                       <div className="flex items-center gap-2 px-2 h-full">
                         <div className="text-xs font-bold text-stone-900 shrink-0">{totalWords}</div>
                         <div className="text-stone-300 font-light text-xs">/</div>
@@ -811,7 +811,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                       {((activeDocument as any).goalWordCount || 0) > 0 && (
                         <div className="absolute bottom-0 left-0 h-0.5 w-full bg-stone-100">
                           <div 
-                            className="h-full bg-emerald-500 transition-all duration-500"
+                            className="h-full bg-stone-800 transition-all duration-500"
                             style={{ 
                               width: `${Math.min(100, (totalWords / ((activeDocument as any).goalWordCount || 1)) * 100)}%` 
                             }}
@@ -831,7 +831,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                           updateScene({ id: activeDocId, deadline: e.target.value });
                         }
                       }}
-                      className="w-full h-9 bg-white border border-stone-200 rounded px-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
+                      className="w-full h-9 bg-white border border-stone-200 rounded px-2 text-xs focus:outline-none focus:ring-2 focus:ring-stone-500/20 text-stone-700"
                     />
                   </div>
                 </div>
@@ -917,7 +917,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                                       onChange={(e: any) => {
                                         updateTimelineEventCharacterAction(event.id, charId, e.target.value);
                                       }}
-                                      className="w-full bg-white border border-stone-200 rounded p-1.5 text-stone-600 focus:ring-1 focus:ring-emerald-500 resize-none overflow-hidden min-h-[2rem] placeholder:text-stone-300 text-xs"
+                                      className="w-full bg-white border border-stone-200 rounded p-1.5 text-stone-600 focus:ring-1 focus:ring-stone-500 resize-none overflow-hidden min-h-[2rem] placeholder:text-stone-300 text-xs"
                                       scrollContainerRef={scrollContainerRef}
                                     />
                                   </div>
@@ -944,7 +944,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         )}>
           <button
             onClick={scrollToTop}
-            className="p-3 bg-white border border-stone-200 text-stone-500 hover:text-emerald-600 hover:border-emerald-200 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center group"
+            className="p-3 bg-white border border-stone-200 text-stone-500 hover:text-stone-800 hover:border-stone-300 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center group"
             title="Back to Top"
           >
             <ArrowUpToLine size={24} className="group-hover:-translate-y-0.5 transition-transform" />
@@ -975,7 +975,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                     setShowCreateSnapshotModal(true);
                     setShowSettings(false);
                   }}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-stone-800 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <Camera size={16} />
@@ -1005,7 +1005,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   onClick={() => toggleAppMode()}
                   className={cn(
                     "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
-                    appMode === 'writing' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                    appMode === 'writing' ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 hover:text-stone-700"
                   )}
                 >
                   Writing
@@ -1014,7 +1014,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   onClick={() => toggleAppMode()}
                   className={cn(
                     "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
-                    appMode === 'management' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                    appMode === 'management' ? "bg-white text-stone-800 shadow-sm" : "text-stone-500 hover:text-stone-700"
                   )}
                 >
                   Management
@@ -1032,7 +1032,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 max="10" 
                 value={letterSpacing || 0}
                 onChange={(e) => setLetterSpacing(parseInt(e.target.value))}
-                className="w-full accent-emerald-600"
+                className="w-full accent-stone-600"
               />
             </div>
             <div className="mb-4">
@@ -1046,7 +1046,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 max="10" 
                 value={editorMargin || 0}
                 onChange={(e) => setEditorMargin(parseInt(e.target.value))}
-                className="w-full accent-emerald-600"
+                className="w-full accent-stone-600"
               />
             </div>
             <div className="pt-4 mt-4 border-t border-stone-100 flex items-center justify-between">
@@ -1058,7 +1058,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 onClick={() => toggleDisguiseMode()}
                 className={cn(
                   "w-10 h-5 rounded-full transition-colors relative",
-                  disguiseMode ? "bg-emerald-500" : "bg-stone-200"
+                  disguiseMode ? "bg-stone-800" : "bg-stone-200"
                 )}
               >
                 <div className={cn(
@@ -1084,7 +1084,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 value={newSnapshotName}
                 onChange={(e) => setNewSnapshotName(e.target.value)}
                 placeholder="Snapshot Name (e.g., Draft 1)"
-                className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && newSnapshotName.trim()) {
@@ -1111,7 +1111,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   }
                 }}
                 disabled={!newSnapshotName.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-stone-800 hover:bg-stone-900 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save Snapshot
               </button>

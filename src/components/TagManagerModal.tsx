@@ -15,7 +15,7 @@ const TAG_COLORS = [
   'bg-orange-100 text-orange-800 border-orange-200',
   'bg-amber-100 text-amber-800 border-amber-200',
   'bg-green-100 text-green-800 border-green-200',
-  'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'bg-stone-100 text-stone-800 border-stone-200',
   'bg-teal-100 text-teal-800 border-teal-200',
   'bg-cyan-100 text-cyan-800 border-cyan-200',
   'bg-blue-100 text-blue-800 border-blue-200',
@@ -95,7 +95,7 @@ export function TagManagerModal({ onClose }: TagManagerModalProps) {
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
                 placeholder="e.g., Important, Subplot A"
-                className="w-full text-sm bg-stone-50 border border-stone-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full text-sm bg-stone-50 border border-stone-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-stone-500/20"
               />
             </div>
             <div>
@@ -109,7 +109,7 @@ export function TagManagerModal({ onClose }: TagManagerModalProps) {
                     className={cn(
                       "w-6 h-6 rounded-full border flex items-center justify-center",
                       color,
-                      newTagColor === color ? "ring-2 ring-offset-1 ring-emerald-500" : ""
+                      newTagColor === color ? "ring-2 ring-offset-1 ring-stone-500" : ""
                     )}
                   >
                     {newTagColor === color && <Check size={12} className="opacity-75" />}
@@ -139,7 +139,7 @@ export function TagManagerModal({ onClose }: TagManagerModalProps) {
                         type="text"
                         value={editTagName}
                         onChange={(e) => setEditTagName(e.target.value)}
-                        className="w-full text-sm bg-white border border-stone-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        className="w-full text-sm bg-white border border-stone-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-stone-500/20"
                         autoFocus
                       />
                       <div className="flex flex-wrap gap-1">
@@ -150,7 +150,7 @@ export function TagManagerModal({ onClose }: TagManagerModalProps) {
                             className={cn(
                               "w-5 h-5 rounded-full border flex items-center justify-center",
                               color,
-                              editTagColor === color ? "ring-2 ring-offset-1 ring-emerald-500" : ""
+                              editTagColor === color ? "ring-2 ring-offset-1 ring-stone-500" : ""
                             )}
                           >
                             {editTagColor === color && <Check size={10} className="opacity-75" />}
@@ -166,7 +166,7 @@ export function TagManagerModal({ onClose }: TagManagerModalProps) {
                   
                   <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {editingTagId === tag.id ? (
-                      <button onClick={saveEdit} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded">
+                      <button onClick={saveEdit} className="p-1.5 text-stone-600 hover:bg-stone-100 rounded">
                         <Check size={16} />
                       </button>
                     ) : deletingTagId === tag.id ? (

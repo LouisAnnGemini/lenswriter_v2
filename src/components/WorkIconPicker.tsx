@@ -115,7 +115,7 @@ export function WorkIconPicker({ currentIcon, onSelect, children }: WorkIconPick
             value={customEmoji}
             onChange={(e) => setCustomEmoji(e.target.value)}
             placeholder="Paste an emoji..."
-            className="flex-1 text-sm px-2 py-1.5 border border-stone-200 rounded outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            className="flex-1 text-sm px-2 py-1.5 border border-stone-200 rounded outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500"
             maxLength={2} // Allow surrogate pairs
           />
           <button 

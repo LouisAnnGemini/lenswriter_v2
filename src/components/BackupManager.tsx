@@ -203,7 +203,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50 shrink-0">
           <h3 className="font-semibold text-stone-900 flex items-center">
-            <Save size={18} className="mr-2 text-emerald-600" />
+            <Save size={18} className="mr-2 text-stone-600" />
             Data & Backup Settings
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-stone-200 rounded-full transition-colors">
@@ -328,7 +328,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                       <div className={cn(
                         "text-xs p-3 rounded-lg border",
                         syncStatus === 'syncing' ? "bg-blue-50 border-blue-100 text-blue-700" :
-                        syncStatus === 'success' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
+                        syncStatus === 'success' ? "bg-stone-100 border-stone-200 text-stone-800" :
                         syncStatus === 'error' ? "bg-red-50 border-red-100 text-red-700" :
                         "bg-stone-50 border-stone-100 text-stone-500"
                       )}>
@@ -364,7 +364,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     {pullStatus && (
                       <div className={cn(
                         "text-xs p-2 rounded",
-                        pullStatus.type === 'error' ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+                        pullStatus.type === 'error' ? "bg-red-50 text-red-600" : "bg-stone-100 text-stone-600"
                       )}>
                         {pullStatus.message}
                       </div>
@@ -423,7 +423,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                                   {confirmRestoreId !== item.id && (
                                     <button
                                       onClick={() => setConfirmRestoreId(item.id)}
-                                      className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 hover:underline px-2 py-1"
+                                      className="text-[10px] font-medium text-stone-600 hover:text-stone-800 hover:underline px-2 py-1"
                                     >
                                       Restore
                                     </button>
@@ -441,7 +441,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                                       </button>
                                       <button 
                                         onClick={() => restoreHistory(item.id)}
-                                        className="px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                                        className="px-2 py-1 bg-stone-800 text-white rounded hover:bg-stone-900"
                                       >
                                         Yes, Restore
                                       </button>
@@ -498,11 +498,11 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                   </div>
                   
                   {directoryHandle ? (
-                    <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
-                      <div className="text-xs text-emerald-800 font-medium truncate mb-1">
+                    <div className="p-3 bg-stone-100 border border-stone-200 rounded-lg">
+                      <div className="text-xs text-stone-800 font-medium truncate mb-1">
                         {directoryHandle.name}
                       </div>
-                      <div className="text-[10px] text-emerald-600 flex items-center">
+                      <div className="text-[10px] text-stone-600 flex items-center">
                         <CheckCircle2 size={10} className="mr-1" />
                         Ready for backups
                       </div>
@@ -521,8 +521,8 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                       onClick={toggleBackup}
                       disabled={!directoryHandle}
                       className={cn(
-                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2",
-                        isBackupEnabled ? "bg-emerald-500" : "bg-stone-200",
+                        "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2",
+                        isBackupEnabled ? "bg-stone-800" : "bg-stone-200",
                         !directoryHandle && "opacity-50 cursor-not-allowed"
                       )}
                     >
@@ -563,7 +563,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                     <div className={cn(
                       "mt-3 text-xs p-2 rounded",
                       statusType === 'error' ? "bg-red-50 text-red-600" : 
-                      statusType === 'success' ? "bg-emerald-50 text-emerald-600" : 
+                      statusType === 'success' ? "bg-stone-100 text-stone-600" : 
                       "bg-blue-50 text-blue-600"
                     )}>
                       {statusMessage}

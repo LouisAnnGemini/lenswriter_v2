@@ -83,7 +83,7 @@ export const TimelineChronologyView = React.memo(({
                                 className={cn(
                                   "group p-5 rounded-xl border shadow-sm transition-all relative bg-white",
                                   EVENT_COLORS[(event.color as keyof typeof EVENT_COLORS) || 'stone'],
-                                  highlightedEventId === event.id && "ring-2 ring-emerald-500 ring-offset-2"
+                                  highlightedEventId === event.id && "ring-2 ring-stone-500 ring-offset-2"
                                 )}
                               >
                                 <div className="flex justify-between items-start mb-3">
@@ -148,7 +148,7 @@ export const TimelineChronologyView = React.memo(({
                                     </button>
                                     <button
                                       onClick={() => updateTimelineEvent({ id: event.id, status: 'pool' })}
-                                      className="p-1.5 hover:bg-white/50 text-stone-400 hover:text-emerald-600 rounded-md transition-colors"
+                                      className="p-1.5 hover:bg-white/50 text-stone-400 hover:text-stone-600 rounded-md transition-colors"
                                       title="Move to Pool"
                                     >
                                       <ArrowRightToLine size={16} />
@@ -175,7 +175,7 @@ export const TimelineChronologyView = React.memo(({
                                     }}
                                     placeholder={activeCharTabs[event.id] ? "What is this character doing?" : "Event description..."}
                                     rows={2}
-                                    className="text-sm bg-stone-50/30 border border-stone-200/30 rounded-lg px-3 py-2 w-full resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                                    className="text-sm bg-stone-50/30 border border-stone-200/30 rounded-lg px-3 py-2 w-full resize-none focus:outline-none focus:ring-2 focus:ring-stone-500/10 transition-all"
                                   />
                                 </div>
 
@@ -252,7 +252,7 @@ export const TimelineChronologyView = React.memo(({
                           {...provided.dragHandleProps}
                           className={cn(
                             "bg-white p-3 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing group",
-                            snapshot.isDragging ? "border-emerald-500 shadow-md opacity-90 z-50" : "border-stone-200 hover:border-stone-300"
+                            snapshot.isDragging ? "border-stone-500 shadow-md opacity-90 z-50" : "border-stone-200 hover:border-stone-300"
                           )}
                         >
                           <div className="flex items-start justify-between mb-1">
