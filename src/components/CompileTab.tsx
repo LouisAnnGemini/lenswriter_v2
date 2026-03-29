@@ -136,7 +136,7 @@ export function CompileTab() {
             if (block.isLens && block.lensColor?.toLowerCase() === 'black') return;
             
             if (block.content.trim()) {
-              text += block.content + '\n\n';
+              text += block.content + '\n';
             }
           });
 
@@ -191,25 +191,27 @@ export function CompileTab() {
             
             if (block.content.trim()) {
               const lines = block.content.split(/\r?\n/);
-              const runs = lines.map((line, i) => 
-                new TextRun({
-                  text: line,
-                  break: i > 0 ? 1 : 0
-                })
-              );
-
-              docChildren.push(
-                new Paragraph({
-                  children: runs,
-                  spacing: { after: 200 }, // Standard paragraph spacing
-                  alignment: AlignmentType.LEFT,
-                })
-              );
+              lines.forEach(line => {
+                docChildren.push(
+                  new Paragraph({
+                    children: line ? [new TextRun({ text: line })] : [],
+                    spacing: { after: 200 }, // Standard paragraph spacing
+                    alignment: AlignmentType.LEFT,
+                  })
+                );
+              });
             }
           });
           
-          // Scene separator?
-          // If merging, maybe no separator.
+          // Scene separator
+          if (index < selectedScenes.length - 1) {
+            docChildren.push(
+              new Paragraph({
+                children: [],
+                spacing: { after: 200 },
+              })
+            );
+          }
         });
       }
     });
@@ -362,8 +364,15 @@ export function CompileTab() {
         <div className="flex-1 overflow-y-auto p-8 bg-stone-100">
           <div className="max-w-3xl mx-auto bg-white shadow-sm min-h-[800px] p-12">
             {previewText ? (
-              <div className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-stone-900">
-                {previewText}
+              <div className="whitespace-pre-wrap font-serif text-lg leading-loose text-stone-900">
+                {previewText.split('\n').map((paragraph, i, arr) => {
+                  if (!paragraph && i === arr.length - 1) return null;
+                  return (
+                    <p key={i} className="mb-6 min-h-[1.5em]">
+                      {paragraph || <br />}
+                    </p>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-stone-400">
