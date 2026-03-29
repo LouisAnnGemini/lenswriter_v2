@@ -6,7 +6,7 @@ import { Scene, Block } from '../store/types';
 export const SCENE_STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
   none: { bg: 'bg-white', border: 'border-stone-200', text: 'text-stone-900', dot: 'bg-stone-200', label: 'Draft' },
   yellow: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', dot: 'bg-amber-500', label: 'First Draft' },
-  green: { bg: 'bg-stone-100', border: 'border-stone-300', text: 'text-stone-800', dot: 'bg-stone-600', label: 'Finished' },
+  green: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Finished' },
   blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Revised' },
   red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', dot: 'bg-red-500', label: 'Discarded' },
 };
@@ -42,7 +42,7 @@ export function ChapterScenesList({
         <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider">Scenes in this Chapter</h3>
         <button
           onClick={() => addScene({ chapterId: activeDocId })}
-          className="text-xs flex items-center gap-1 text-stone-600 hover:text-stone-800 hover:bg-stone-100 px-2 py-1 rounded transition-colors"
+          className="text-xs flex items-center gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-1 rounded transition-colors"
         >
           <Plus size={14} />
           Add Scene

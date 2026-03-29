@@ -44,7 +44,7 @@ export const TimelineFilterBar = React.memo(({
   return (
     <div className="p-4 md:p-6 pb-0 shrink-0">
       <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm space-y-4 max-w-6xl mx-auto">
-        <div className="flex items-center space-x-2 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2 focus-within:border-stone-500 focus-within:ring-1 focus-within:ring-stone-500 transition-all">
+        <div className="flex items-center space-x-2 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
           <Search size={16} className="text-stone-400 shrink-0" />
           <input
             type="text"
@@ -104,7 +104,7 @@ export const TimelineFilterBar = React.memo(({
                 className={cn(
                   "w-6 h-6 rounded-md border flex items-center justify-center transition-all",
                   colorClass,
-                  selectedColors.includes(colorKey) ? "ring-2 ring-stone-500 ring-offset-1 scale-110" : "opacity-60 hover:opacity-100 hover:scale-105"
+                  selectedColors.includes(colorKey) ? "ring-2 ring-emerald-500 ring-offset-1 scale-110" : "opacity-60 hover:opacity-100 hover:scale-105"
                 )}
                 title={`Filter by ${colorKey}`}
               >

@@ -60,7 +60,7 @@ export function QuickCapture() {
       >
         <div className="flex items-center justify-between p-4 border-b border-stone-100 bg-stone-50/50">
           <div className="flex items-center gap-2 text-stone-700 font-medium">
-            <Inbox size={20} className="text-stone-600" /> Quick Capture
+            <Inbox size={20} className="text-emerald-600" /> Quick Capture
           </div>
           <button 
             onClick={() => setIsOpen(false)}
@@ -86,7 +86,7 @@ export function QuickCapture() {
           <button
             onClick={handleSave}
             disabled={!content.trim()}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-stone-800 text-white text-sm font-medium rounded-md hover:bg-stone-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send size={14} />
             Save to Inbox

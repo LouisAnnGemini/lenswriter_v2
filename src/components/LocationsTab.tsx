@@ -63,7 +63,7 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
                 value={newLocationName}
                 onChange={(e) => setNewLocationName(e.target.value)}
                 placeholder="e.g., The Prancing Pony, Neo-Veridia, Mars Base Alpha"
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-stone-500/20"
+                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
             <button
@@ -90,7 +90,7 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
                           {...provided.draggableProps}
                           className={cn(
                             "group bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden transition-all",
-                            snapshot.isDragging && "shadow-xl scale-[1.02] z-50 ring-2 ring-stone-500 ring-offset-2"
+                            snapshot.isDragging && "shadow-xl scale-[1.02] z-50 ring-2 ring-emerald-500 ring-offset-2"
                           )}
                         >
                           <div className="flex items-center p-3 border-b border-stone-100 bg-stone-50/50">
@@ -101,7 +101,7 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
                               <GripVertical size={16} />
                             </div>
                             <div className="flex-1 flex items-center">
-                              <MapPin size={16} className="text-stone-600 mr-2 shrink-0" />
+                              <MapPin size={16} className="text-emerald-600 mr-2 shrink-0" />
                               <input
                                 type="text"
                                 value={location.name || ''}
@@ -124,7 +124,7 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
                                 onChange={(e) => updateLocation({ id: location.id, description: e.target.value })}
                                 placeholder="Describe this location..."
                                 rows={4}
-                                className="text-sm bg-stone-50 border border-stone-200/50 rounded-md px-3 py-2 w-full resize-none focus:outline-none focus:ring-2 focus:ring-stone-500/20"
+                                className="text-sm bg-stone-50 border border-stone-200/50 rounded-md px-3 py-2 w-full resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                               />
                             </div>
                           </div>

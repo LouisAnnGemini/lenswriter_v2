@@ -38,7 +38,7 @@ export function InboxPanel() {
     <div className="flex flex-col h-full bg-stone-50">
       <div className="p-4 border-b border-stone-200 bg-white shadow-sm z-10 sticky top-0">
         <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-          <Inbox size={18} className="text-stone-600" /> Inbox
+          <Inbox size={18} className="text-emerald-600" /> Inbox
         </h3>
         <p className="text-xs text-stone-500 mt-1">
           Quick ideas captured globally. Press <kbd className="px-1 py-0.5 bg-stone-100 border border-stone-200 rounded font-mono text-[10px]">Cmd/Ctrl + Shift + I</kbd> anywhere to add.
@@ -58,7 +58,7 @@ export function InboxPanel() {
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full text-sm bg-stone-50 border border-stone-200 rounded p-2 outline-none focus:ring-1 focus:ring-stone-500 resize-y min-h-[80px]"
+                    className="w-full text-sm bg-stone-50 border border-stone-200 rounded p-2 outline-none focus:ring-1 focus:ring-emerald-500 resize-y min-h-[80px]"
                     autoFocus
                   />
                   <div className="flex justify-end gap-1">
@@ -70,7 +70,7 @@ export function InboxPanel() {
                     </button>
                     <button
                       onClick={handleSaveEdit}
-                      className="p-1 text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded"
+                      className="p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded"
                     >
                       <Check size={14} />
                     </button>

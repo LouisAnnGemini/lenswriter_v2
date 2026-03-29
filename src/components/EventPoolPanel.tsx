@@ -60,7 +60,7 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
             placeholder="Search events..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-stone-50 border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-stone-500"
+            className="w-full pl-8 pr-3 py-1.5 bg-stone-50 border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
       </div>
@@ -68,7 +68,7 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Linked Events */}
         <div>
-          <h4 className="text-xs font-bold text-stone-600 uppercase tracking-wider mb-3 flex items-center">
+          <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-3 flex items-center">
             <LinkIcon size={12} className="mr-1.5" />
             Linked to Scene ({linkedEvents.length})
           </h4>
@@ -79,7 +79,7 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
               ).filter(Boolean) as Character[];
 
               return (
-                <div key={event.id} className="bg-white border border-stone-300 rounded-lg p-3 shadow-sm relative group">
+                <div key={event.id} className="bg-white border border-emerald-200 rounded-lg p-3 shadow-sm relative group">
                   <div className="font-medium text-sm text-stone-900 mb-1 pr-12">{event.title}</div>
                   <div className="text-xs text-stone-500 line-clamp-2">{event.description}</div>
                   
@@ -96,14 +96,14 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setSelectedEventId(event.id)}
-                      className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+                      className="p-1.5 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
                       title="Edit event"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => toggleEventLink(event.id)}
-                      className="p-1.5 text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+                      className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
                       title="Unlink from scene"
                     >
                       <Unlink size={14} />
@@ -126,20 +126,20 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
           </h4>
           <div className="space-y-2">
             {unlinkedEvents.map(event => (
-              <div key={event.id} className="bg-white border border-stone-200 rounded-lg p-3 shadow-sm relative group hover:border-stone-300 transition-colors">
+              <div key={event.id} className="bg-white border border-stone-200 rounded-lg p-3 shadow-sm relative group hover:border-emerald-200 transition-colors">
                 <div className="font-medium text-sm text-stone-900 mb-1 pr-12">{event.title}</div>
                 <div className="text-xs text-stone-500 line-clamp-2">{event.description}</div>
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => setSelectedEventId(event.id)}
-                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+                    className="p-1.5 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
                     title="Edit event"
                   >
                     <Pencil size={14} />
                   </button>
                   <button
                     onClick={() => toggleEventLink(event.id)}
-                    className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+                    className="p-1.5 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
                     title="Link to scene"
                   >
                     <LinkIcon size={14} />

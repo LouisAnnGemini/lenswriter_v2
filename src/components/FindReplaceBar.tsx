@@ -232,7 +232,7 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
                 onKeyDown={e => {
                     if (e.key === 'Enter') handleNext();
                 }}
-                className="w-full pl-8 pr-2 py-1 text-sm border border-stone-300 rounded-md focus:outline-none focus:ring-1 focus:ring-stone-500"
+                className="w-full pl-8 pr-2 py-1 text-sm border border-stone-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
         </div>
         <div className="flex items-center space-x-1">
@@ -259,7 +259,7 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
                 onKeyDown={e => {
                     if (e.key === 'Enter') handleReplace();
                 }}
-                className="w-full pl-8 pr-2 py-1 text-sm border border-stone-300 rounded-md focus:outline-none focus:ring-1 focus:ring-stone-500"
+                className="w-full pl-8 pr-2 py-1 text-sm border border-stone-300 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
         </div>
         <div className="flex items-center space-x-2">
@@ -286,7 +286,7 @@ export function FindReplaceBar({ onClose, onSearchChange }: { onClose: () => voi
                 type="checkbox" 
                 checked={searchWholeWork} 
                 onChange={e => setSearchWholeWork(e.target.checked)}
-                className="rounded border-stone-300 text-stone-600 focus:ring-stone-500"
+                className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
             />
             <span>Search Whole Work</span>
         </label>

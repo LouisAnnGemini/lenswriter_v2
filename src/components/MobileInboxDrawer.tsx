@@ -77,7 +77,7 @@ export function MobileInboxDrawer({ isOpen, onClose }: { isOpen: boolean; onClos
 
         <div className="px-4 pb-2 flex items-center justify-between border-b border-stone-200">
           <h2 className="text-lg font-bold text-stone-800 flex items-center gap-2">
-            <Inbox size={20} className="text-stone-600" />
+            <Inbox size={20} className="text-emerald-600" />
             Inbox
           </h2>
           <button onClick={onClose} className="p-2 text-stone-500 hover:bg-stone-200 rounded-full">
@@ -99,7 +99,7 @@ export function MobileInboxDrawer({ isOpen, onClose }: { isOpen: boolean; onClos
               <button
                 onClick={handleAdd}
                 disabled={!newContent.trim()}
-                className="px-3 py-1.5 bg-stone-800 text-white rounded-lg hover:bg-stone-900 disabled:opacity-50 text-xs font-medium flex items-center gap-1"
+                className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 text-xs font-medium flex items-center gap-1"
               >
                 <Plus size={14} />
                 Save
@@ -121,7 +121,7 @@ export function MobileInboxDrawer({ isOpen, onClose }: { isOpen: boolean; onClos
                       <textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        className="w-full text-sm bg-stone-50 border border-stone-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 resize-none min-h-[60px]"
+                        className="w-full text-sm bg-stone-50 border border-stone-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none min-h-[60px]"
                         autoFocus
                       />
                       <div className="flex justify-end gap-2">
@@ -133,7 +133,7 @@ export function MobileInboxDrawer({ isOpen, onClose }: { isOpen: boolean; onClos
                         </button>
                         <button
                           onClick={handleSaveEdit}
-                          className="px-2 py-1 text-xs font-medium bg-stone-200 text-stone-800 hover:bg-stone-300 rounded-md flex items-center gap-1"
+                          className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-md flex items-center gap-1"
                         >
                           <Check size={14} />
                           Save

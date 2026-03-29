@@ -124,24 +124,24 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
       )}
 
       <div className={cn(
-        "h-[100dvh] bg-stone-50/95 backdrop-blur-md text-stone-600 flex flex-col transition-all duration-300 border-r border-stone-200/60 z-50",
+        "h-[100dvh] bg-stone-900 text-stone-300 flex flex-col transition-all duration-300 border-r border-stone-800 z-50",
         collapsed ? "md:w-16 w-64" : "w-64",
         "fixed md:relative", // Fixed on mobile, relative on desktop
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0" // Slide in on mobile
       )}>
-        <div className="p-4 flex items-center justify-between border-b border-stone-200/60">
-          {isExpanded && <span className="font-semibold text-stone-800 tracking-wide uppercase text-xs">Works</span>}
+        <div className="p-4 flex items-center justify-between border-b border-stone-800">
+          {isExpanded && <span className="font-semibold text-stone-100 tracking-wide uppercase text-sm">Works</span>}
           <button 
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 hover:bg-stone-200/50 rounded-md text-stone-400 hover:text-stone-700 transition-colors hidden md:block"
+            className="p-1 hover:bg-stone-800 rounded-md text-stone-400 hover:text-stone-100 transition-colors hidden md:block"
           >
-            {!isExpanded ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {!isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <button 
             onClick={() => setMobileOpen?.(false)}
-            className="p-1.5 hover:bg-stone-200/50 rounded-md text-stone-400 hover:text-stone-700 transition-colors md:hidden"
+            className="p-1 hover:bg-stone-800 rounded-md text-stone-400 hover:text-stone-100 transition-colors md:hidden"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
@@ -154,10 +154,10 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
               setMobileOpen?.(false);
             }}
             className={cn(
-              "w-full flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors",
+              "w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
               activeTab === 'deadline'
-                ? "bg-stone-200/50 text-stone-900"
-                : "text-stone-500 hover:bg-stone-200/30 hover:text-stone-800"
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
             )}
           >
             <Calendar size={16} className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")} />
@@ -168,7 +168,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="works" type="work">
             {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-0.5 px-2">
+              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1">
                 {[...works].sort((a, b) => a.order - b.order).map((work, index) => (
                   // @ts-expect-error React 19 key prop issue
                   <Draggable key={work.id} draggableId={work.id} index={index}>
@@ -177,17 +177,17 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         className={cn(
-                          "group relative flex items-center px-2 py-1.5 text-sm transition-colors rounded-lg",
+                          "group relative flex items-center px-4 py-2 text-sm transition-colors",
                           activeWorkId === work.id 
-                            ? "bg-stone-200/60 text-stone-900 font-medium" 
-                            : "hover:bg-stone-200/30 text-stone-600 hover:text-stone-900",
-                          snapshot.isDragging && "bg-white shadow-lg border border-stone-200 z-50"
+                            ? "bg-stone-800 text-stone-100 border-r-2 border-emerald-500" 
+                            : "hover:bg-stone-800/50 hover:text-stone-200",
+                          snapshot.isDragging && "bg-stone-800 shadow-xl z-50"
                         )}
                       >
                         <div 
                           {...provided.dragHandleProps} 
                           className={cn(
-                            "mr-1.5 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab hover:text-stone-600 transition-opacity",
+                            "mr-2 text-stone-600 opacity-0 group-hover:opacity-100 cursor-grab",
                             !isExpanded && "hidden"
                           )}
                         >
@@ -235,20 +235,20 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                                 }}
                                 onBlur={() => handleRenameWork(work.id)}
                                 onClick={e => e.stopPropagation()}
-                                className="flex-1 bg-white text-stone-900 px-2 py-0.5 rounded outline-none ring-1 ring-stone-300 focus:ring-stone-400"
+                                className="flex-1 bg-stone-700 text-stone-100 px-2 py-0.5 rounded outline-none ring-1 ring-emerald-500"
                               />
                             ) : deletingWorkId === work.id ? (
                               <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
-                                <span className="text-red-500 font-bold text-xs uppercase">Delete?</span>
+                                <span className="text-red-400 font-bold text-xs uppercase">Delete?</span>
                                 <button 
                                   onClick={() => confirmDeleteWork(work.id)}
-                                  className="p-1 bg-red-100 text-red-600 hover:bg-red-500 hover:text-white rounded"
+                                  className="p-1 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded"
                                 >
                                   <Check size={12} />
                                 </button>
                                 <button 
                                   onClick={() => setDeletingWorkId(null)}
-                                  className="p-1 bg-stone-200 text-stone-600 hover:bg-stone-300 hover:text-stone-800 rounded"
+                                  className="p-1 bg-stone-700 text-stone-400 hover:bg-stone-600 hover:text-stone-200 rounded"
                                 >
                                   <X size={12} />
                                 </button>
@@ -267,7 +267,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                                 setEditingWorkId(work.id);
                                 setEditTitle(work.title);
                               }}
-                              className="p-1 hover:text-stone-800 hover:bg-stone-200/50 rounded"
+                              className="p-1 hover:text-stone-100 rounded"
                               title="Rename"
                             >
                               <Edit2 size={12} />
@@ -277,7 +277,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
                                 e.stopPropagation();
                                 setDeletingWorkId(work.id);
                               }}
-                              className="p-1 hover:text-red-600 hover:bg-red-50 rounded"
+                              className="p-1 hover:text-red-400 rounded"
                               title="Delete Work"
                             >
                               <Trash2 size={12} />
@@ -295,17 +295,17 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         </DragDropContext>
       </div>
 
-      <div className={cn("p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-stone-200/60 space-y-4", !isExpanded && "p-2")}>
+      <div className={cn("p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-stone-800 space-y-4", !isExpanded && "p-2")}>
         {isExpanded && (
           <div className="relative">
-            <Plus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+            <Plus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
             <input
               type="text"
               placeholder="New Work..."
               value={newWorkTitle}
               onChange={e => setNewWorkTitle(e.target.value)}
               onKeyDown={handleAddWork}
-              className="w-full bg-stone-200/30 text-stone-800 text-sm rounded-lg pl-9 pr-3 py-2 outline-none border border-stone-200/60 focus:border-stone-400 focus:bg-white placeholder:text-stone-400 transition-colors"
+              className="w-full bg-stone-800 text-stone-200 text-sm rounded-md pl-9 pr-3 py-2 outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-stone-500"
             />
           </div>
         )}
@@ -315,13 +315,13 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
             <>
               <button
                 onClick={handleExport}
-                className="flex-1 flex items-center justify-center py-1.5 bg-stone-200/50 hover:bg-stone-200 text-stone-600 hover:text-stone-900 rounded-lg text-xs font-medium transition-colors"
+                className="flex-1 flex items-center justify-center py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors"
                 title="Export Data"
               >
                 <Upload size={12} className="mr-1.5" />
                 Export
               </button>
-              <label className="flex-1 flex items-center justify-center py-1.5 bg-stone-200/50 hover:bg-stone-200 text-stone-600 hover:text-stone-900 rounded-lg text-xs font-medium transition-colors cursor-pointer" title="Import Data">
+              <label className="flex-1 flex items-center justify-center py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors cursor-pointer" title="Import Data">
                 <Download size={12} className="mr-1.5" />
                 Import
                 <input type="file" accept=".json" onChange={handleImport} className="hidden" />
@@ -330,7 +330,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
           )}
           <button
             onClick={() => setShowBackupManager(true)}
-            className={cn("flex items-center justify-center bg-stone-200/50 hover:bg-stone-200 text-stone-600 hover:text-stone-900 rounded-lg text-xs font-medium transition-colors", isExpanded ? "flex-1 py-1.5" : "p-2 w-full")}
+            className={cn("flex items-center justify-center bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors", isExpanded ? "flex-1 py-1.5" : "p-2 w-full")}
             title="Data & Backup Settings"
           >
             <Save size={12} className={cn(isExpanded && "mr-1.5")} />

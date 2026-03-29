@@ -118,7 +118,7 @@ function Layout() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden font-sans text-stone-800 bg-stone-50 selection:bg-stone-200/60 selection:text-stone-900">
+    <div className="flex h-[100dvh] w-full overflow-hidden font-sans text-stone-900 bg-stone-900 selection:bg-emerald-200 selection:text-emerald-900">
       {!disguiseMode && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
       <MainContent mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <QuickCapture />

@@ -194,12 +194,12 @@ export const InlineMultiSelect = ({
                     ) : (
                       <span className="truncate">{opt.title}</span>
                     )}
-                    {selectedIds.includes(opt.id) && <Check size={12} className="text-stone-600 shrink-0" />}
+                    {selectedIds.includes(opt.id) && <Check size={12} className="text-emerald-600 shrink-0" />}
                   </div>
                 ))}
                 {onCreateOption && search.trim() !== '' && !options.some(opt => opt.title.toLowerCase() === search.trim().toLowerCase()) && (
                   <div 
-                    className="px-3 py-1.5 text-xs hover:bg-stone-50 cursor-pointer flex items-center text-stone-600"
+                    className="px-3 py-1.5 text-xs hover:bg-stone-50 cursor-pointer flex items-center text-emerald-600"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -226,7 +226,7 @@ export const TAG_COLORS = [
   'bg-yellow-100 text-yellow-800 border-yellow-200',
   'bg-lime-100 text-lime-800 border-lime-200',
   'bg-green-100 text-green-800 border-green-200',
-  'bg-stone-100 text-stone-800 border-stone-200',
+  'bg-emerald-100 text-emerald-800 border-emerald-200',
   'bg-teal-100 text-teal-800 border-teal-200',
   'bg-cyan-100 text-cyan-800 border-cyan-200',
   'bg-sky-100 text-sky-800 border-sky-200',
@@ -245,7 +245,7 @@ export const EVENT_COLORS = {
   stone: 'bg-stone-100 border-stone-200 text-stone-800',
   red: 'bg-red-50 border-red-200 text-red-900',
   blue: 'bg-blue-50 border-blue-200 text-blue-900',
-  green: 'bg-stone-50 border-stone-200 text-stone-900',
+  green: 'bg-emerald-50 border-emerald-200 text-emerald-900',
   yellow: 'bg-amber-50 border-amber-200 text-amber-900',
   purple: 'bg-purple-50 border-purple-200 text-purple-900',
 };

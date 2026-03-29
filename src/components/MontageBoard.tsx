@@ -10,7 +10,7 @@ const EVENT_COLORS = {
   stone: 'bg-stone-100 border-stone-200 text-stone-800',
   red: 'bg-red-50 border-red-200 text-red-900',
   blue: 'bg-blue-50 border-blue-200 text-blue-900',
-  green: 'bg-stone-50 border-stone-200 text-stone-900',
+  green: 'bg-emerald-50 border-emerald-200 text-emerald-900',
   yellow: 'bg-amber-50 border-amber-200 text-amber-900',
   purple: 'bg-purple-50 border-purple-200 text-purple-900',
 };
@@ -135,7 +135,7 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
         {/* Resizer Handle */}
         <div 
           onMouseDown={handleMouseDown}
-          className="w-1.5 shrink-0 cursor-col-resize bg-stone-200 hover:bg-stone-400 active:bg-stone-500 transition-colors z-10"
+          className="w-1.5 shrink-0 cursor-col-resize bg-stone-200 hover:bg-emerald-400 active:bg-emerald-500 transition-colors z-10"
         />
 
         {/* Main Track (Narrative Flow) */}
@@ -147,7 +147,7 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
                 type="checkbox" 
                 checked={showArchived} 
                 onChange={(e) => setShowArchived(e.target.checked)}
-                className="rounded border-stone-300 text-stone-600 focus:ring-stone-500"
+                className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
               />
               <Archive size={14} />
               Show Archived
@@ -159,7 +159,7 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
               return (
                 <div key={chapter.id} className={cn("space-y-4", chapter.archived && "opacity-60")}>
                   <h4 
-                    className="font-bold text-stone-700 border-b border-stone-200 pb-2 flex items-center gap-2 cursor-pointer hover:text-stone-600 transition-colors"
+                    className="font-bold text-stone-700 border-b border-stone-200 pb-2 flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors"
                     onClick={() => setActiveDocument(chapter.id)}
                   >
                     {chapter.title}
@@ -171,7 +171,7 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
                         key={scene.id} 
                         className={cn(
                           "bg-white rounded-lg shadow-sm border p-4 transition-colors cursor-pointer",
-                          activeDocumentId === scene.id ? "border-stone-400 ring-1 ring-stone-400" : "border-stone-200 hover:border-stone-300"
+                          activeDocumentId === scene.id ? "border-emerald-400 ring-1 ring-emerald-400" : "border-stone-200 hover:border-stone-300"
                         )}
                         onClick={() => setActiveDocument(scene.id)}
                       >
@@ -183,7 +183,7 @@ export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
                               {...provided.droppableProps}
                               className={cn(
                                 "min-h-[60px] rounded-md border-2 border-dashed p-2 flex flex-wrap gap-2 transition-colors",
-                                snapshot.isDraggingOver ? "border-stone-400 bg-stone-100" : "border-stone-200 bg-stone-50"
+                                snapshot.isDraggingOver ? "border-emerald-400 bg-emerald-50" : "border-stone-200 bg-stone-50"
                               )}
                             >
                               {scene.linkedEventIds?.map((eventId, index) => {

@@ -18,7 +18,7 @@ export function WorkIcon({ icon, className = "", size = 16 }: WorkIconProps) {
     switch (color) {
       case 'red': colorClass = 'text-red-500'; break;
       case 'blue': colorClass = 'text-blue-500'; break;
-      case 'green': colorClass = 'text-stone-500'; break;
+      case 'green': colorClass = 'text-emerald-500'; break;
       case 'yellow': colorClass = 'text-amber-500'; break;
       case 'purple': colorClass = 'text-purple-500'; break;
       case 'pink': colorClass = 'text-pink-500'; break;

@@ -34,7 +34,7 @@ export function ChapterCharacterSummary({
         return (
           <div key={charId} className="bg-stone-50 rounded-lg p-4 border border-stone-100">
             <div className="font-semibold text-stone-900 mb-3">{char.name} appears in:</div>
-            <div className="space-y-2 pl-2 border-l-2 border-stone-200">
+            <div className="space-y-2 pl-2 border-l-2 border-emerald-200">
               {scenesWithChar.map(scene => {
                 const sceneIndex = `${activeDocumentOrder + 1}-${scene.order + 1}`;
                 return (

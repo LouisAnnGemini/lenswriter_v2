@@ -109,7 +109,7 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
           {/* Badges Row */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
             {/* Timestamp Badge */}
-            <div className="flex items-center gap-1.5 bg-stone-100/80 hover:bg-stone-100 px-3 py-1.5 rounded-lg border border-stone-200/50 transition-colors focus-within:ring-2 focus-within:ring-stone-500/20">
+            <div className="flex items-center gap-1.5 bg-stone-100/80 hover:bg-stone-100 px-3 py-1.5 rounded-lg border border-stone-200/50 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/20">
               <Clock size={14} className="text-stone-500" />
               <input
                 type="text"
@@ -121,7 +121,7 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
             </div>
 
             {/* Location Badge */}
-            <div className="flex items-center gap-1.5 bg-stone-100/80 hover:bg-stone-100 px-3 py-1.5 rounded-lg border border-stone-200/50 transition-colors focus-within:ring-2 focus-within:ring-stone-500/20">
+            <div className="flex items-center gap-1.5 bg-stone-100/80 hover:bg-stone-100 px-3 py-1.5 rounded-lg border border-stone-200/50 transition-colors focus-within:ring-2 focus-within:ring-emerald-500/20">
               <MapPin size={14} className="text-stone-500" />
               <select
                 value={locationId}
@@ -153,29 +153,29 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
           {/* Tabs Navigation */}
           <div className="flex gap-6 border-b border-stone-200">
             <button 
-              className={cn("pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors", activeTab === 'general' ? "border-stone-800 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300")}
+              className={cn("pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors", activeTab === 'general' ? "border-emerald-500 text-emerald-700" : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300")}
               onClick={() => setActiveTab('general')}
             >
               <FileText size={16} /> Details
             </button>
             <button 
-              className={cn("pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors", activeTab === 'characters' ? "border-stone-800 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300")}
+              className={cn("pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors", activeTab === 'characters' ? "border-emerald-500 text-emerald-700" : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300")}
               onClick={() => setActiveTab('characters')}
             >
               <Users size={16} /> Characters
               {characterCount > 0 && (
-                <span className={cn("py-0.5 px-2 rounded-full text-[10px]", activeTab === 'characters' ? "bg-stone-200 text-stone-800" : "bg-stone-100 text-stone-600")}>
+                <span className={cn("py-0.5 px-2 rounded-full text-[10px]", activeTab === 'characters' ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-600")}>
                   {characterCount}
                 </span>
               )}
             </button>
             <button 
-              className={cn("pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors", activeTab === 'relations' ? "border-stone-800 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300")}
+              className={cn("pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors", activeTab === 'relations' ? "border-emerald-500 text-emerald-700" : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300")}
               onClick={() => setActiveTab('relations')}
             >
               <Network size={16} /> Relations
               {relationCount > 0 && (
-                <span className={cn("py-0.5 px-2 rounded-full text-[10px]", activeTab === 'relations' ? "bg-stone-200 text-stone-800" : "bg-stone-100 text-stone-600")}>
+                <span className={cn("py-0.5 px-2 rounded-full text-[10px]", activeTab === 'relations' ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-600")}>
                   {relationCount}
                 </span>
               )}
@@ -249,7 +249,7 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
                             onChange={(e) => {
                               setCharacterActions(prev => ({ ...prev, [charId]: e.target.value }));
                             }}
-                            className="text-sm bg-stone-50/50 hover:bg-stone-50 focus:bg-white border border-transparent hover:border-stone-200 focus:border-stone-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-stone-500/20 resize-none transition-all"
+                            className="text-sm bg-stone-50/50 hover:bg-stone-50 focus:bg-white border border-transparent hover:border-stone-200 focus:border-stone-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-none transition-all"
                             placeholder={`What is ${character?.name || 'this character'} doing?`}
                             rows={2}
                           />
@@ -267,7 +267,7 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
               {/* Logical Sequence */}
               <div>
                 <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
-                  <Network size={16} className="text-stone-600" /> Logical Sequence
+                  <Network size={16} className="text-emerald-600" /> Logical Sequence
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
@@ -303,7 +303,7 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
               {/* Linked Events */}
               <div>
                 <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
-                  <LinkIcon size={16} className="text-stone-600" /> Linked Events
+                  <LinkIcon size={16} className="text-emerald-600" /> Linked Events
                 </h4>
                 <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
                   <p className="text-xs text-stone-500 mb-4">Link this event to other related events (e.g., cause and effect, thematic connection).</p>

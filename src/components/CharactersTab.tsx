@@ -25,7 +25,7 @@ function FieldOptionInput({ field, workId }: { field: any, workId: string }) {
     <input 
       value={localValue} 
       onChange={handleChange} 
-      className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-stone-500" 
+      className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-emerald-500" 
       placeholder="e.g. Male, Female, Other" 
     />
   );
@@ -185,20 +185,20 @@ export function CharactersTab() {
                           className={cn(
                             "group flex items-center p-2 rounded-md text-sm transition-colors cursor-pointer",
                             snapshot.isDragging ? "bg-white shadow-md" : "hover:bg-stone-100",
-                            activeChar?.id === char.id ? "bg-stone-200 text-stone-900 font-medium" : "text-stone-700"
+                            activeChar?.id === char.id ? "bg-emerald-50 text-emerald-900 font-medium" : "text-stone-700"
                           )}
                           onClick={() => setActiveCharId(char.id)}
                         >
                           <div {...provided.dragHandleProps} className="mr-2 text-stone-400 opacity-0 group-hover:opacity-100 cursor-grab">
                             <GripVertical size={14} />
                           </div>
-                          <User size={14} className={cn("mr-2", activeChar?.id === char.id ? "text-stone-600" : "text-stone-400")} />
+                          <User size={14} className={cn("mr-2", activeChar?.id === char.id ? "text-emerald-500" : "text-stone-400")} />
                           <span className="flex-1 truncate">{char.name}</span>
                           <div className="flex items-center gap-1">
                             {sceneAppearanceCount > 0 && (
                               <span className={cn(
                                 "text-[10px] px-1.5 py-0.5 rounded-full",
-                                activeChar?.id === char.id ? "bg-stone-300 text-stone-800" : "bg-stone-200 text-stone-600"
+                                activeChar?.id === char.id ? "bg-emerald-200/50 text-emerald-700" : "bg-emerald-100 text-emerald-600"
                               )}>
                                 {sceneAppearanceCount}
                               </span>
@@ -255,7 +255,7 @@ export function CharactersTab() {
                   title="Delete Character"
                 />
               </div>
-              <div className="h-1 w-12 bg-stone-500 rounded-full" />
+              <div className="h-1 w-12 bg-emerald-500 rounded-full" />
             </div>
 
             {/* Custom Fields */}
@@ -298,10 +298,10 @@ export function CharactersTab() {
                           {field.name}
                         </label>
                         {field.type === 'text' && (
-                          <textarea value={value || ''} onChange={e => updateCharacterCustomField(activeChar.id, field.id, e.target.value)} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500 bg-stone-50 resize-y min-h-[42px] whitespace-normal break-words transition-all" rows={1} placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
+                          <textarea value={value || ''} onChange={e => updateCharacterCustomField(activeChar.id, field.id, e.target.value)} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 resize-y min-h-[42px] whitespace-normal break-words transition-all" rows={1} placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
                         )}
                         {field.type === 'number' && (
-                          <input type="number" value={value || ''} onChange={e => updateCharacterCustomField(activeChar.id, field.id, e.target.value ? Number(e.target.value) : '')} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500 bg-stone-50 transition-all" placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
+                          <input type="number" value={value || ''} onChange={e => updateCharacterCustomField(activeChar.id, field.id, e.target.value ? Number(e.target.value) : '')} className="w-full text-sm p-2 rounded border border-stone-200 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-stone-50 transition-all" placeholder={`Enter ${(field.name || '').toLowerCase()}...`} />
                         )}
                         {field.type === 'select' && (
                           <div className="flex flex-wrap gap-1.5 pt-1">
@@ -315,7 +315,7 @@ export function CharactersTab() {
                                     const newValue = isSelected ? '' : opt;
                                     updateCharacterCustomField(activeChar.id, field.id, newValue);
                                   }}
-                                  className={cn("px-3 py-1.5 text-xs rounded-md border transition-all duration-200", isSelected ? "bg-stone-200 border-stone-500 text-stone-800 font-medium shadow-sm" : "bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-100")}
+                                  className={cn("px-3 py-1.5 text-xs rounded-md border transition-all duration-200", isSelected ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-medium shadow-sm" : "bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-100")}
                                 >
                                   {opt}
                                 </button>
@@ -331,7 +331,7 @@ export function CharactersTab() {
                                 <button
                                   key={opt}
                                   onClick={() => handleMultiSelectToggle(activeChar.id, field.id, opt, value || [])}
-                                  className={cn("px-3 py-1.5 text-xs rounded-md border transition-all duration-200", isSelected ? "bg-stone-200 border-stone-500 text-stone-800 font-medium shadow-sm" : "bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-100")}
+                                  className={cn("px-3 py-1.5 text-xs rounded-md border transition-all duration-200", isSelected ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-medium shadow-sm" : "bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-100")}
                                 >
                                   {opt}
                                 </button>
@@ -356,7 +356,7 @@ export function CharactersTab() {
                 value={activeChar.description || ''}
                 onChange={(e) => handleUpdateCharacter(activeChar.id, { description: e.target.value })}
                 placeholder="Enter character background, personality, physical traits..."
-                className="w-full h-64 p-4 rounded-xl border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 text-stone-700 leading-relaxed transition-all"
+                className="w-full h-64 p-4 rounded-xl border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-stone-700 leading-relaxed transition-all"
               />
             </div>
 
@@ -380,7 +380,7 @@ export function CharactersTab() {
                     });
                     setSelectedEventId(newEventId);
                   }}
-                  className="text-xs flex items-center text-stone-700 hover:text-stone-900 bg-stone-200 hover:bg-stone-300 px-2 py-1 rounded transition-colors"
+                  className="text-xs flex items-center text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded transition-colors"
                 >
                   <Plus size={12} className="mr-1" /> Add Event
                 </button>
@@ -401,7 +401,7 @@ export function CharactersTab() {
                           {appearances.map((app, i) => (
                             <div key={i} className="p-4 flex items-center justify-between hover:bg-white transition-colors">
                               <div className="flex items-center space-x-3">
-                                <span className="text-xs font-mono text-stone-700 bg-stone-200 border border-stone-300 px-2 py-0.5 rounded-md">{app.sceneIndexStr}</span>
+                                <span className="text-xs font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">{app.sceneIndexStr}</span>
                                 <span className="text-sm font-semibold text-stone-900">{app.sceneTitle}</span>
                               </div>
                               <button 
@@ -409,7 +409,7 @@ export function CharactersTab() {
                                   setActiveTab('writing');
                                   setActiveDocument(app.sceneId);
                                 }}
-                                className="px-3 py-1.5 bg-white border border-stone-200 hover:border-stone-500 hover:text-stone-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"
+                                className="px-3 py-1.5 bg-white border border-stone-200 hover:border-emerald-500 hover:text-emerald-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"
                               >
                                 Go to Scene
                               </button>
@@ -496,8 +496,8 @@ export function CharactersTab() {
       ) : (
         <div className="hidden md:flex flex-1 flex-col items-center justify-center text-stone-400 bg-stone-50/30">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-stone-100 flex flex-col items-center max-w-sm text-center">
-            <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mb-4">
-              <Users size={32} className="text-stone-400" />
+            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
+              <Users size={32} className="text-emerald-500" />
             </div>
             <h3 className="text-lg font-semibold text-stone-900 mb-2">Character Profiles</h3>
             <p className="text-sm text-stone-500 mb-6">Select a character from the sidebar to view their details, or create a new one to start building your cast.</p>
@@ -549,7 +549,7 @@ export function CharactersTab() {
                                     <input 
                                       value={field.name || ''} 
                                       onChange={e => updateCharacterField(activeWorkId, field.id, {name: e.target.value})} 
-                                      className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-stone-500" 
+                                      className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-emerald-500" 
                                       placeholder="e.g. Age, Gender, Faction" 
                                     />
                                   </div>
@@ -558,7 +558,7 @@ export function CharactersTab() {
                                     <select 
                                       value={field.type || ''} 
                                       onChange={e => updateCharacterField(activeWorkId, field.id, {type: e.target.value as CharacterFieldType})} 
-                                      className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-stone-500 bg-white"
+                                      className="w-full border border-stone-200 p-2 rounded-md text-sm outline-none focus:border-emerald-500 bg-white"
                                     >
                                       <option value="text">Text</option>
                                       <option value="number">Number</option>

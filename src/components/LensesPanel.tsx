@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
   blue: 'bg-blue-50 border-blue-200 text-blue-900',
-  green: 'bg-stone-50 border-stone-200 text-stone-900',
+  green: 'bg-emerald-50 border-emerald-200 text-emerald-900',
   yellow: 'bg-amber-50 border-amber-200 text-amber-900',
   purple: 'bg-purple-50 border-purple-200 text-purple-900',
   brown: 'bg-orange-200 border-orange-200 text-orange-900',
@@ -24,7 +24,7 @@ function LensNoteTextarea({ lens }: { lens: any }) {
         updateBlock({ id: lens.id, notes: e.target.value });
       }}
       placeholder="Add private notes, lore, or ideas here..."
-      className="w-full h-24 p-2 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 text-sm text-stone-700"
+      className="w-full h-24 p-2 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-sm text-stone-700"
     />
   );
 }
@@ -109,7 +109,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
             placeholder="Search all lenses..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-stone-50 border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-stone-500"
+            className="w-full pl-8 pr-3 py-1.5 bg-stone-50 border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
       </div>
@@ -125,7 +125,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
               className={cn(
                 "p-3 rounded-lg border text-sm shadow-sm transition-colors",
                 LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.black,
-                activeLensId === lens.id && "ring-2 ring-stone-500 ring-offset-1"
+                activeLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-1"
               )}
             >
               <div className="flex justify-between items-start">
