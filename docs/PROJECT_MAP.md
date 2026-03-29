@@ -9,6 +9,7 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 - **Sidebar (Navigation/Outline):** `src/components/Sidebar.tsx`
 - **Outline Panel:** `src/components/OutlinePanel.tsx`
 - **Find & Replace:** `src/components/FindReplaceBar.tsx`
+- **Chapter Overview:** `src/components/ChapterScenesList.tsx`, `src/components/ChapterCharacterSummary.tsx`
 - **State Management:** `src/store/stores/slices/sceneSlice.ts`, `src/store/stores/slices/chapterSlice.ts`, `src/store/stores/slices/workSlice.ts`
 
 ### 2. 📥 Inbox (收件箱 / 快速记录)
@@ -28,7 +29,11 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 
 ### 5. ⏱️ Timeline & Events (时间线与事件)
 - **Main Tab View:** `src/components/TimelineTab.tsx`
-- **Timeline Sub-components:** `src/components/timeline/` (ChronologyView, TableView, FilterBar, Shared)
+- **Timeline Sub-components:** 
+  - `src/components/timeline/TimelineChronologyView.tsx` (Chronology View)
+  - `src/components/timeline/TimelineTableView.tsx` (Table View)
+  - `src/components/timeline/TimelineFilterBar.tsx` (Filters)
+  - `src/components/timeline/TimelineShared.tsx` (Shared UI)
 - **Event Modals:** `src/components/AddEventModal.tsx`, `src/components/EventDetailsModal.tsx`
 - **Event Pool:** `src/components/EventPoolPanel.tsx`
 - **Utilities:** `src/lib/timelineUtils.ts`
@@ -59,6 +64,12 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 - **State Management:** `src/store/stores/slices/snapshotSlice.ts`
 - **Context:** `src/context/BackupContext.tsx`
 - **Supabase Client:** `src/lib/supabase.ts`
+
+### 11. 🛠️ Common & Utility UI (通用组件)
+- **Work Icons:** `src/components/WorkIcon.tsx`, `src/components/WorkIconPicker.tsx`
+- **Inputs & Selects:** `src/components/AutoResizeTextarea.tsx`, `src/components/MultiSelectDropdown.tsx`, `src/components/SearchableSelect.tsx`
+- **Actions:** `src/components/ConfirmDeleteButton.tsx`
+- **Error Handling:** `src/components/ErrorBoundary.tsx`
 
 ---
 
