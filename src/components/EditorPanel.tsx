@@ -138,6 +138,9 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   const characters = allCharacters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   const chapters = allChapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   
+  const chapterScenes = scenes.filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
+  const currentSceneIndex = chapterScenes.findIndex(s => s.id === activeDocId);
+  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -291,7 +294,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
   // Calculate chapter stats if it's a chapter
   let chapterCharacters: string[] = [];
   if (!isScene) {
-    const chapterScenes = scenes.filter(s => s.chapterId === activeDocId);
     const charIds = new Set<string>();
     chapterScenes.forEach(s => s.characterIds.forEach(id => charIds.add(id)));
     chapterCharacters = Array.from(charIds);
@@ -526,11 +528,12 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         blockId={block.id}
                         disabled={isArchived}
                         enableReadMode={true}
+                        isFocused={focusedBlockId === block.id}
                         isDimmed={focusedBlockId !== null && focusedBlockId !== block.id}
                         onFocus={() => setFocusedBlockId(block.id)}
                         onBlur={() => {
-                          console.log('EditorPanel onBlur for block:', block.id);
-                          setFocusedBlockId(null);
+                          // Only clear if the focused block is still this one
+                          setFocusedBlockId(prev => prev === block.id ? null : prev);
                         }}
                         onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                         onKeyDown={(e: React.KeyboardEvent) => {
@@ -541,6 +544,49 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                               isLens: !block.isLens,
                               lensColor: !block.isLens ? (block.lensColor || 'red') : undefined
                             });
+                          }
+
+                          if (e.key === 'Tab') {
+                            e.preventDefault();
+                            const currentIndex = blocks.findIndex(b => b.id === block.id);
+                            
+                            if (e.shiftKey) {
+                              // Shift + Tab: Previous block
+                              if (currentIndex > 0) {
+                                const prevBlock = blocks[currentIndex - 1];
+                                setFocusedBlockId(prevBlock.id);
+                              } else if (isScene && currentSceneIndex > 0) {
+                                // Move to previous scene in same chapter
+                                const prevScene = chapterScenes[currentSceneIndex - 1];
+                                const prevSceneBlocks = allBlocks
+                                  .filter(b => b.documentId === prevScene.id)
+                                  .sort((a, b) => a.order - b.order);
+                                
+                                if (prevSceneBlocks.length > 0) {
+                                  const lastBlock = prevSceneBlocks[prevSceneBlocks.length - 1];
+                                  setActiveDocument(prevScene.id);
+                                  setFocusedBlockId(lastBlock.id);
+                                }
+                              }
+                            } else {
+                              // Tab: Next block
+                              if (currentIndex < blocks.length - 1) {
+                                const nextBlock = blocks[currentIndex + 1];
+                                setFocusedBlockId(nextBlock.id);
+                              } else if (isScene && currentSceneIndex < chapterScenes.length - 1) {
+                                // Move to next scene in same chapter
+                                const nextScene = chapterScenes[currentSceneIndex + 1];
+                                const nextSceneBlocks = allBlocks
+                                  .filter(b => b.documentId === nextScene.id)
+                                  .sort((a, b) => a.order - b.order);
+                                
+                                if (nextSceneBlocks.length > 0) {
+                                  const firstBlock = nextSceneBlocks[0];
+                                  setActiveDocument(nextScene.id);
+                                  setFocusedBlockId(firstBlock.id);
+                                }
+                              }
+                            }
                           }
                         }}
                         placeholder={block.isLens ? (block.lensColor === 'black' ? "Hidden content..." : "Enter lens content...") : "Start writing..."}

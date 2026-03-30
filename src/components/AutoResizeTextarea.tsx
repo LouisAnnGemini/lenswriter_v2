@@ -1,11 +1,17 @@
 import React, { useRef, useLayoutEffect, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
-export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, enableReadMode = false, isDimmed = false, ...props }: any) => {
+export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, enableReadMode = false, isDimmed = false, isFocused: isFocusedProp, ...props }: any) => {
   const ref = useRef<HTMLTextAreaElement>(null);
-  const [isFocused, setIsFocused] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(isFocusedProp || false);
   const [cursorPosition, setCursorPosition] = React.useState(0);
   const [clickedPIdx, setClickedPIdx] = React.useState<number | null>(null);
+
+  useEffect(() => {
+    if (isFocusedProp !== undefined && isFocusedProp !== isFocused) {
+      setIsFocused(isFocusedProp);
+    }
+  }, [isFocusedProp]);
   
   const leadingClass = className?.split(' ').find((c: string) => c.startsWith('leading-')) || 'leading-normal';
 
