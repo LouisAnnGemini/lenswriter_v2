@@ -5,7 +5,6 @@ import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { OutlinePanel } from './components/OutlinePanel';
 import { EditorPanel } from './components/EditorPanel';
-import { BoardTab } from './components/BoardTab';
 import { LensesTab } from './components/LensesTab';
 import { TimelineTab } from './components/TimelineTab';
 import { BlockManagementTab } from './components/BlockManagementTab';

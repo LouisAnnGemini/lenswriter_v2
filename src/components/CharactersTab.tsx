@@ -54,7 +54,6 @@ export function CharactersTab() {
     updateTimelineEventCharacterAction, 
     setActiveTab, 
     setActiveDocument, 
-    setBoardViewMode, 
     setSelectedEventId 
   } = useStore(useShallow(state => ({
     activeWorkId: state.activeWorkId,
@@ -78,7 +77,6 @@ export function CharactersTab() {
     updateTimelineEventCharacterAction: state.updateTimelineEventCharacterAction, 
     setActiveTab: state.setActiveTab, 
     setActiveDocument: state.setActiveDocument, 
-    setBoardViewMode: state.setBoardViewMode, 
     setSelectedEventId: state.setSelectedEventId 
   })));
 
@@ -464,7 +462,6 @@ export function CharactersTab() {
                                   <button 
                                     onClick={() => {
                                       setActiveTab('timelineEvents');
-                                      setBoardViewMode('macro');
                                       setSelectedEventId(event.eventId);
                                     }}
                                     className="px-3 py-1.5 bg-white border border-stone-200 hover:border-amber-500 hover:text-amber-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"

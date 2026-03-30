@@ -23,8 +23,8 @@ describe('uiSlice', () => {
 
   it('should set active tab', () => {
     const { setActiveTab } = useTestStore.getState();
-    setActiveTab('board');
-    expect(useTestStore.getState().activeTab).toBe('board');
+    setActiveTab('world');
+    expect(useTestStore.getState().activeTab).toBe('world');
   });
 
   it('should toggle focus mode', () => {
@@ -60,12 +60,6 @@ describe('uiSlice', () => {
     const { setDeadlineViewMode } = useTestStore.getState();
     setDeadlineViewMode('local');
     expect(useTestStore.getState().deadlineViewMode).toBe('local');
-  });
-
-  it('should set board view mode', () => {
-    const { setBoardViewMode } = useTestStore.getState();
-    setBoardViewMode('list');
-    expect(useTestStore.getState().boardViewMode).toBe('list');
   });
 
   it('should set active lens', () => {
@@ -115,8 +109,8 @@ describe('uiSlice', () => {
   it('should toggle app mode and adjust active tab', () => {
     const { toggleAppMode } = useTestStore.getState();
     
-    // If switching to management and tab is board, it should switch to writing
-    useTestStore.setState({ appMode: 'writing', activeTab: 'board' });
+    // If switching to management and tab is world, it should switch to writing
+    useTestStore.setState({ appMode: 'writing', activeTab: 'world' });
     toggleAppMode();
     expect(useTestStore.getState().appMode).toBe('management');
     expect(useTestStore.getState().activeTab).toBe('writing');

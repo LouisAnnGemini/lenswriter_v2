@@ -9,7 +9,6 @@ import { MultiSelectDropdown } from './MultiSelectDropdown';
 
 import { LensesPanel } from './LensesPanel';
 import { EventPoolPanel } from './EventPoolPanel';
-import { InboxPanel } from './InboxPanel';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 import { ChapterScenesList, SCENE_STATUS_COLORS } from './ChapterScenesList';
 import { ChapterCharacterSummary } from './ChapterCharacterSummary';

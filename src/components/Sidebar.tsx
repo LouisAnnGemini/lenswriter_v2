@@ -146,25 +146,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         </div>
 
       <div className="flex-1 overflow-y-auto py-4">
-        <div className="mb-4 px-2 space-y-1">
-          <button
-            onClick={() => {
-              setActiveTab('deadline');
-              setDeadlineViewMode('global');
-              setMobileOpen?.(false);
-            }}
-            className={cn(
-              "w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-              activeTab === 'deadline'
-                ? "bg-emerald-500/10 text-emerald-400"
-                : "text-stone-400 hover:bg-stone-800 hover:text-stone-200"
-            )}
-          >
-            <Calendar size={16} className={cn("shrink-0", !isExpanded ? "mx-auto" : "mr-3")} />
-            {isExpanded && <span>Deadline</span>}
-          </button>
-        </div>
-        
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="works" type="work">
             {(provided) => (

@@ -43,10 +43,17 @@ export type Deadline = {
 };
 
 
+export type InboxTag = {
+  id: string;
+  name: string;
+  color?: string;
+};
+
 export type InboxItem = {
   id: string;
   content: string;
   createdAt: number;
+  tagIds?: string[];
 };
 
 export type SceneSnapshot = {
@@ -75,19 +82,19 @@ export type State = {
   blocks: Block[];
   deadlines: Deadline[];
   inbox: InboxItem[];
+  inboxTags: InboxTag[];
   snapshots: SceneSnapshot[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
   activeTab: 'writing' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
   appMode: 'writing' | 'management';
   deadlineViewMode: 'global' | 'local';
-  boardViewMode: 'micro' | 'meso' | 'macro';
   activeLensId: string | null;
   selectedEventId: string | null;
   focusMode: boolean;
   disguiseMode: boolean;
-  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'inbox';
-  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info' | 'inbox';
+  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info';
+  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info';
   showDescriptions: boolean;
   letterSpacing: number;
   editorMargin: number;
@@ -113,12 +120,11 @@ export interface UISlice {
   setAppMode: (mode: 'writing' | 'management') => void;
   toggleAppMode: () => void;
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
-  setBoardViewMode: (mode: 'micro' | 'meso' | 'macro') => void;
   setActiveLens: (lensId: string | null) => void;
   setSelectedEventId: (eventId: string | null) => void;
   toggleFocusMode: () => void;
   toggleDisguiseMode: () => void;
-  setRightSidebarMode: (mode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'inbox') => void;
+  setRightSidebarMode: (mode: 'closed' | 'micro' | 'meso' | 'macro' | 'info') => void;
   toggleShowDescriptions: () => void;
   setLetterSpacing: (spacing: number) => void;
   setEditorMargin: (margin: number) => void;
@@ -177,9 +183,12 @@ export interface DeadlineSlice {
 }
 
 export interface InboxSlice {
-  addInboxItem: (params: { content: string }) => void;
-  updateInboxItem: (params: { id: string; content: string }) => void;
+  addInboxItem: (params: { content: string; tagIds?: string[] }) => void;
+  updateInboxItem: (item: Partial<InboxItem> & { id: string }) => void;
   deleteInboxItem: (params: { id: string }) => void;
+  addInboxTag: (tag: Omit<InboxTag, 'id'>) => string;
+  updateInboxTag: (tag: Partial<InboxTag> & { id: string }) => void;
+  deleteInboxTag: (tagId: string) => void;
 }
 
 export interface SnapshotSlice {

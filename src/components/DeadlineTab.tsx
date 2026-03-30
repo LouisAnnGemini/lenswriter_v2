@@ -18,7 +18,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
     updateDeadline,
     deleteDeadline,
     setActiveWork,
-    setDeadlineViewMode
+    setDeadlineViewMode,
+    deadlineViewMode
   } = useStore(useShallow(state => ({
     works: state.works,
     chapters: state.chapters,
@@ -31,7 +32,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
     updateDeadline: state.updateDeadline,
     deleteDeadline: state.deleteDeadline,
     setActiveWork: state.setActiveWork,
-    setDeadlineViewMode: state.setDeadlineViewMode
+    setDeadlineViewMode: state.setDeadlineViewMode,
+    deadlineViewMode: state.deadlineViewMode
   })));
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -162,11 +164,31 @@ export function DeadlineTab({ workId }: { workId?: string }) {
     )}>
       {/* Left Panel: Projects, Chapters, and To-Do */}
       <div className="w-1/4 min-w-[280px] border-r border-stone-200 bg-white flex flex-col h-full overflow-y-auto">
-        <div className="p-4 border-b border-stone-200">
+        <div className="p-4 border-b border-stone-200 flex items-center justify-between">
           <h2 className="text-lg font-serif font-semibold text-stone-800 flex items-center">
             <Target className="mr-2 text-emerald-600" size={20} />
             Goals & To-Do
           </h2>
+          <div className="flex items-center space-x-1 bg-stone-100 rounded-md p-1">
+            <button
+              onClick={() => setDeadlineViewMode('local')}
+              className={cn(
+                "px-3 py-1 rounded text-xs font-medium transition-colors",
+                deadlineViewMode === 'local' ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+              )}
+            >
+              Current Work
+            </button>
+            <button
+              onClick={() => setDeadlineViewMode('global')}
+              className={cn(
+                "px-3 py-1 rounded text-xs font-medium transition-colors",
+                deadlineViewMode === 'global' ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+              )}
+            >
+              All Works
+            </button>
+          </div>
         </div>
 
         <div className="p-4 space-y-6">

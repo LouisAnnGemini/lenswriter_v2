@@ -16,10 +16,8 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     rightSidebarMode,
     disguiseMode,
     lastInspectorTab,
-    boardViewMode,
     setActiveDocument, 
     setActiveTab, 
-    setBoardViewMode, 
     setDeadlineViewMode, 
     toggleFocusMode, 
     setRightSidebarMode,
@@ -36,10 +34,8 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     rightSidebarMode: state.rightSidebarMode,
     disguiseMode: state.disguiseMode,
     lastInspectorTab: state.lastInspectorTab,
-    boardViewMode: state.boardViewMode,
     setActiveDocument: state.setActiveDocument,
     setActiveTab: state.setActiveTab,
-    setBoardViewMode: state.setBoardViewMode,
     setDeadlineViewMode: state.setDeadlineViewMode,
     toggleFocusMode: state.toggleFocusMode,
     setRightSidebarMode: state.setRightSidebarMode,
@@ -47,19 +43,8 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     supabaseSyncEnabled: state.supabaseSyncEnabled,
     saveHistoryVersion: state.saveHistoryVersion
   })));
-  const [isBoardDropdownOpen, setIsBoardDropdownOpen] = useState(false);
   const [isMobileInboxOpen, setIsMobileInboxOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsBoardDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   if (focusMode) return null;
 

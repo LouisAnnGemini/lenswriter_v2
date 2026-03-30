@@ -5,7 +5,6 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setActiveDocument: (documentId) => set({ activeDocumentId: documentId }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setDeadlineViewMode: (mode) => set({ deadlineViewMode: mode }),
-  setBoardViewMode: (mode) => set({ boardViewMode: mode }),
   setActiveLens: (lensId) => set({ activeLensId: lensId }),
   setSelectedEventId: (eventId) => set({ selectedEventId: eventId }),
   toggleFocusMode: () => set((state) => ({ focusMode: !state.focusMode })),
@@ -21,7 +20,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
     let newTab = state.activeTab;
     if (newMode === 'writing' && ['deadline', 'compile'].includes(state.activeTab)) {
       newTab = 'writing';
-    } else if (newMode === 'management' && ['board', 'world'].includes(state.activeTab)) {
+    } else if (newMode === 'management' && ['world'].includes(state.activeTab)) {
       newTab = 'writing';
     }
     return { appMode: newMode, activeTab: newTab };

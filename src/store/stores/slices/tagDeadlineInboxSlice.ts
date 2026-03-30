@@ -31,13 +31,27 @@ export const createDeadlineSlice: StateCreator<StoreState, [], [], DeadlineSlice
 });
 
 export const createInboxSlice: StateCreator<StoreState, [], [], InboxSlice> = (set) => ({
-  addInboxItem: ({ content }) => set((state) => ({
-    inbox: [...state.inbox, { id: uuidv4(), content, createdAt: Date.now() }]
+  addInboxItem: ({ content, tagIds }) => set((state) => ({
+    inbox: [...state.inbox, { id: uuidv4(), content, createdAt: Date.now(), tagIds }]
   })),
   updateInboxItem: (item) => set((state) => ({
     inbox: state.inbox.map(i => i.id === item.id ? { ...i, ...item } : i)
   })),
   deleteInboxItem: ({ id }) => set((state) => ({
     inbox: state.inbox.filter(i => i.id !== id)
+  })),
+  addInboxTag: (tag) => {
+    const id = uuidv4();
+    set((state) => ({
+      inboxTags: [...state.inboxTags, { id, ...tag }]
+    }));
+    return id;
+  },
+  updateInboxTag: (tag) => set((state) => ({
+    inboxTags: state.inboxTags.map(t => t.id === tag.id ? { ...t, ...tag } : t)
+  })),
+  deleteInboxTag: (tagId) => set((state) => ({
+    inboxTags: state.inboxTags.filter(t => t.id !== tagId),
+    inbox: state.inbox.map(i => ({ ...i, tagIds: i.tagIds?.filter(id => id !== tagId) }))
   })),
 });
