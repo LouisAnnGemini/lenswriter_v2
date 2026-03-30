@@ -24,6 +24,7 @@ export const createSnapshotSlice: StateCreator<
 
       return {
         snapshots: [...(state.snapshots || []), newSnapshot],
+        lastModified: Date.now()
       };
     }),
 
@@ -32,11 +33,13 @@ export const createSnapshotSlice: StateCreator<
       snapshots: (state.snapshots || []).map((s) =>
         s.id === id ? { ...s, name } : s
       ),
+      lastModified: Date.now()
     })),
 
   deleteSnapshot: (id) =>
     set((state) => ({
       snapshots: (state.snapshots || []).filter((s) => s.id !== id),
+      lastModified: Date.now()
     })),
 
   restoreSnapshot: (id) =>
@@ -58,6 +61,7 @@ export const createSnapshotSlice: StateCreator<
           { type: 'RESTORE_SNAPSHOT' as const, sceneId, previousBlocks, restoredBlocks }
         ].slice(-50),
         futureActions: [],
+        lastModified: Date.now()
       };
     }),
 });

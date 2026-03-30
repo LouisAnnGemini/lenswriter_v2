@@ -24,7 +24,8 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
         return { 
           blocks: newBlocks.map((b, i) => ({ ...b, order: i })),
           pastActions: [...(state.pastActions || []), action].slice(-50),
-          futureActions: []
+          futureActions: [],
+          lastModified: Date.now()
         };
       }
     }
@@ -33,11 +34,13 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     return { 
       blocks: [...state.blocks, newBlock],
       pastActions: [...(state.pastActions || []), action].slice(-50),
-      futureActions: []
+      futureActions: [],
+      lastModified: Date.now()
     };
   }),
   updateBlock: (block) => set((state) => ({
-    blocks: state.blocks.map(b => b.id === block.id ? { ...b, ...block } : b)
+    blocks: state.blocks.map(b => b.id === block.id ? { ...b, ...block } : b),
+    lastModified: Date.now()
   })),
   deleteBlock: (blockId) => set((state) => {
     const blockIndex = state.blocks.findIndex(b => b.id === blockId);
@@ -49,7 +52,8 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     return {
       blocks: state.blocks.filter(b => b.id !== blockId),
       pastActions: [...(state.pastActions || []), action].slice(-50),
-      futureActions: []
+      futureActions: [],
+      lastModified: Date.now()
     };
   }),
   removeLens: (blockId) => set((state) => {
@@ -61,7 +65,8 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     return {
       blocks: state.blocks.map(b => b.id === blockId ? { ...b, isLens: false, lensColor: undefined } : b),
       pastActions: [...(state.pastActions || []), action].slice(-50),
-      futureActions: []
+      futureActions: [],
+      lastModified: Date.now()
     };
   }),
   mergeBlockUp: (blockId) => set((state) => {
@@ -88,7 +93,8 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     return { 
       blocks: newBlocks.map((b, i) => ({ ...b, order: i })),
       pastActions: [...(state.pastActions || []), action].slice(-50),
-      futureActions: []
+      futureActions: [],
+      lastModified: Date.now()
     };
   }),
   bulkUpdateBlocks: (updates) => set((state) => {
@@ -99,7 +105,8 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
           return { ...b, content: updateMap.get(b.id)! };
         }
         return b;
-      })
+      }),
+      lastModified: Date.now()
     };
   }),
 });

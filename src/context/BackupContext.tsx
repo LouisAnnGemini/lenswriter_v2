@@ -27,6 +27,12 @@ export const BackupProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastModifiedRef = useRef(store.lastModified);
+
+  // Update ref when store changes
+  useEffect(() => {
+    lastModifiedRef.current = store.lastModified;
+  }, [store.lastModified]);
 
   const isSupported = 'showDirectoryPicker' in window;
 
@@ -126,7 +132,14 @@ export const BackupProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       performBackup();
 
       // Set interval for 10 minutes
-      intervalRef.current = setInterval(performBackup, 10 * 60 * 1000);
+      intervalRef.current = setInterval(() => {
+        const tenMinutes = 10 * 60 * 1000;
+        if (Date.now() - lastModifiedRef.current < tenMinutes) {
+          performBackup();
+        } else {
+          console.log('Skipping backup: No modifications in the last 10 minutes.');
+        }
+      }, 10 * 60 * 1000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

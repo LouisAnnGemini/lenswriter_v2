@@ -4,14 +4,17 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (set) => ({
   addScene: ({ chapterId, title }) => set((state) => ({
-    scenes: [...state.scenes, { id: uuidv4(), chapterId, title: title || '', order: state.scenes.length, characterIds: [] }]
+    scenes: [...state.scenes, { id: uuidv4(), chapterId, title: title || '', order: state.scenes.length, characterIds: [] }],
+    lastModified: Date.now()
   })),
   updateScene: (scene) => set((state) => ({
-    scenes: state.scenes.map(s => s.id === scene.id ? { ...s, ...scene } : s)
+    scenes: state.scenes.map(s => s.id === scene.id ? { ...s, ...scene } : s),
+    lastModified: Date.now()
   })),
   deleteScene: (sceneId) => set((state) => ({
     scenes: state.scenes.filter(s => s.id !== sceneId),
-    blocks: state.blocks.filter(b => b.documentId !== sceneId)
+    blocks: state.blocks.filter(b => b.documentId !== sceneId),
+    lastModified: Date.now()
   })),
   reorderScenes: (chapterId, startIndex, endIndex) => set((state) => {
     const scenes = [...state.scenes].filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
@@ -22,7 +25,8 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
       scenes: [
         ...state.scenes.filter(s => s.chapterId !== chapterId),
         ...updatedScenes
-      ]
+      ],
+      lastModified: Date.now()
     };
   }),
   moveScene: (sceneId, newChapterId, newIndex) => set((state) => {
@@ -35,7 +39,8 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
       scenes: [
         ...state.scenes.filter(s => s.id !== sceneId && s.chapterId !== newChapterId),
         ...updatedScenes
-      ]
+      ],
+      lastModified: Date.now()
     };
   }),
   toggleSceneCharacter: (sceneId, characterId) => set((state) => ({
@@ -45,7 +50,8 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
         ? s.characterIds.filter(id => id !== characterId)
         : [...s.characterIds, characterId];
       return { ...s, characterIds };
-    })
+    }),
+    lastModified: Date.now()
   })),
   toggleSceneEvent: (sceneId, eventId) => set((state) => ({
     scenes: state.scenes.map(s => {
@@ -54,7 +60,8 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
         ? s.linkedEventIds.filter(id => id !== eventId)
         : [...(s.linkedEventIds || []), eventId];
       return { ...s, linkedEventIds };
-    })
+    }),
+    lastModified: Date.now()
   })),
   reorderSceneEvents: (sceneId, startIndex, endIndex) => set((state) => ({
     scenes: state.scenes.map(s => {
@@ -63,7 +70,8 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
       const [removed] = linkedEventIds.splice(startIndex, 1);
       linkedEventIds.splice(endIndex, 0, removed);
       return { ...s, linkedEventIds };
-    })
+    }),
+    lastModified: Date.now()
   })),
   toggleLensPin: (sceneId) => set((state) => {
     // Placeholder logic for lens pinning
@@ -107,6 +115,7 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
     return {
       scenes: [...updatedScenes, newScene],
       blocks: updatedBlocks,
+      lastModified: Date.now()
     };
   }),
 });
