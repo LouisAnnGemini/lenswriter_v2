@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { supabase, updateSupabaseConfig } from '../lib/supabase';
 import { FolderOpen, Save, AlertCircle, CheckCircle2, Clock, RotateCcw, X, Cloud, Download, Settings, RefreshCw, Smartphone, Monitor } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { toast } from 'sonner';
 
 export function BackupManager({ onClose }: { onClose: () => void }) {
   const {
@@ -379,8 +380,13 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                             <button
                               onClick={async () => {
                                 if (saveHistoryVersion) {
-                                  await saveHistoryVersion('Manual Save');
-                                  fetchCloudHistory();
+                                  const success = await saveHistoryVersion('Manual Save');
+                                  if (success) {
+                                    toast.success('Version saved successfully');
+                                    fetchCloudHistory();
+                                  } else {
+                                    toast.error('Failed to save version. Please check your connection.');
+                                  }
                                 }
                               }}
                               className="px-2 py-1 text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded hover:bg-blue-100 transition-colors"

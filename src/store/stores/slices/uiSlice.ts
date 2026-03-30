@@ -32,24 +32,27 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
     const { getDeviceType } = await import('../../../lib/utils');
     if (!supabase) {
       console.error('Supabase client not initialized');
-      return;
+      return false;
     }
 
-    const stateToSave = {
-      ...state,
-      _isHistory: true,
-      _timestamp: Date.now(),
-      _device: getDeviceType()
-    };
+    try {
+      const stateToSave = {
+        ...state,
+        _isHistory: true,
+        _timestamp: Date.now(),
+        _device: getDeviceType()
+      };
 
-    console.log('Saving state:', stateToSave);
-    const { error } = await supabase
-      .from('app_state')
-      .insert([{ id: crypto.randomUUID(), state: stateToSave }]);
+      console.log('Saving state:', stateToSave);
+      const { error } = await supabase
+        .from('app_state')
+        .insert([{ id: crypto.randomUUID(), state: stateToSave }]);
 
-    if (error) {
-      console.error('Failed to save history version:', error);
-    } else {
+      if (error) {
+        console.error('Failed to save history version:', error);
+        return false;
+      }
+      
       console.log('Saved history version:', name);
       
       // Rotate history: keep only the last 20 versions
@@ -84,6 +87,11 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       } catch (rotateError) {
         console.error('Failed to rotate history versions:', rotateError);
       }
+      
+      return true;
+    } catch (err) {
+      console.error('Unexpected error in saveHistoryVersion:', err);
+      return false;
     }
   },
 });

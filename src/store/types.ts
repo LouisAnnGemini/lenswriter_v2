@@ -129,7 +129,7 @@ export interface UISlice {
   setLetterSpacing: (spacing: number) => void;
   setEditorMargin: (margin: number) => void;
   toggleSupabaseSync: () => void;
-  saveHistoryVersion: (name: string) => Promise<void>;
+  saveHistoryVersion: (name: string) => Promise<boolean>;
 }
 
 export interface BlockSlice {

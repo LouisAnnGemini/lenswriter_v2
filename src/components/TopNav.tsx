@@ -119,9 +119,13 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         <div className="flex items-center space-x-2">
           {supabaseSyncEnabled && (
             <button
-              onClick={() => {
-                saveHistoryVersion('Manual Save');
-                toast.success('Version saved successfully');
+              onClick={async () => {
+                const success = await saveHistoryVersion('Manual Save');
+                if (success) {
+                  toast.success('Version saved successfully');
+                } else {
+                  toast.error('Failed to save version. Please check your connection.');
+                }
               }}
               className="p-2 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
               title="Save Version Now"

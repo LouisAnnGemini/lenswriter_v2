@@ -61,12 +61,22 @@ export function SyncManager() {
   }, [supabaseSyncEnabled]);
 
   // 1. Auto-save history every 10 minutes
+  const lastModifiedRef = useRef(lastModified);
+  useEffect(() => {
+    lastModifiedRef.current = lastModified;
+  }, [lastModified]);
+
   useEffect(() => {
     if (supabaseSyncEnabled && supabase) {
       console.log('Starting auto-save history timer (10m)');
       historyTimerRef.current = setInterval(() => {
-        console.log('Auto-saving history version...');
-        saveHistoryVersion('Auto-Save');
+        const tenMinutes = 10 * 60 * 1000;
+        if (Date.now() - lastModifiedRef.current < tenMinutes) {
+          console.log('Auto-saving history version...');
+          saveHistoryVersion('Auto-Save');
+        } else {
+          console.log('Skipping auto-save: No modifications in the last 10 minutes.');
+        }
       }, 10 * 60 * 1000);
     } else {
       if (historyTimerRef.current) {
