@@ -4,6 +4,7 @@ import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, Al
 import { cn } from '../lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { MobileInboxDrawer } from './MobileInboxDrawer';
+import { toast } from 'sonner';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
   const { 
@@ -118,7 +119,10 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         <div className="flex items-center space-x-2">
           {supabaseSyncEnabled && (
             <button
-              onClick={() => saveHistoryVersion('Manual Save')}
+              onClick={() => {
+                saveHistoryVersion('Manual Save');
+                toast.success('Version saved successfully');
+              }}
               className="p-2 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
               title="Save Version Now"
             >

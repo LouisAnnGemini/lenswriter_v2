@@ -16,6 +16,7 @@ import { Minimize2 } from 'lucide-react';
 import { QuickCapture } from './components/QuickCapture';
 import { BackupProvider } from './context/BackupContext';
 import { SyncManager } from './components/SyncManager';
+import { Toaster } from 'sonner';
 
 function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMobileOpen: (open: boolean) => void }) {
   const { 
@@ -118,6 +119,7 @@ function Layout() {
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden font-sans text-stone-900 bg-stone-900 selection:bg-emerald-200 selection:text-emerald-900">
+      <Toaster position="top-right" richColors />
       {!disguiseMode && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
       <MainContent mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <QuickCapture />
