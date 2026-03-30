@@ -16,7 +16,7 @@ import { Minimize2 } from 'lucide-react';
 import { QuickCapture } from './components/QuickCapture';
 import { BackupProvider } from './context/BackupContext';
 import { SyncManager } from './components/SyncManager';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 
 function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMobileOpen: (open: boolean) => void }) {
   const { 
@@ -31,7 +31,9 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
     deadlineViewMode,
     toggleDisguiseMode,
     toggleFocusMode,
-    setRightSidebarMode
+    setRightSidebarMode,
+    supabaseSyncEnabled,
+    saveHistoryVersion
   } = useStore(useShallow(state => ({
     disguiseMode: state.disguiseMode,
     focusMode: state.focusMode,
@@ -44,7 +46,9 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
     deadlineViewMode: state.deadlineViewMode,
     toggleDisguiseMode: state.toggleDisguiseMode,
     toggleFocusMode: state.toggleFocusMode,
-    setRightSidebarMode: state.setRightSidebarMode
+    setRightSidebarMode: state.setRightSidebarMode,
+    supabaseSyncEnabled: state.supabaseSyncEnabled,
+    saveHistoryVersion: state.saveHistoryVersion
   })));
 
   React.useEffect(() => {
@@ -56,6 +60,20 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         } else if (focusMode) {
           e.preventDefault();
           toggleFocusMode();
+        }
+      }
+
+      // Ctrl+S Manual Save
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        if (supabaseSyncEnabled) {
+          e.preventDefault();
+          saveHistoryVersion('Manual Save (Shortcut)').then(success => {
+            if (success) {
+              toast.success('Version saved successfully');
+            } else {
+              toast.error('Failed to save version. Please check your connection.');
+            }
+          });
         }
       }
 
@@ -75,7 +93,7 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [disguiseMode, focusMode, activeTab, activeDocumentId, rightSidebarMode, lastInspectorTab, scenes, toggleDisguiseMode, toggleFocusMode, setRightSidebarMode]);
+  }, [disguiseMode, focusMode, activeTab, activeDocumentId, rightSidebarMode, lastInspectorTab, scenes, toggleDisguiseMode, toggleFocusMode, setRightSidebarMode, supabaseSyncEnabled, saveHistoryVersion]);
 
   return (
     <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden bg-white relative">
