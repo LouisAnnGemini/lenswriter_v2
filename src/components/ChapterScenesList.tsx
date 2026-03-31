@@ -2,14 +2,7 @@ import React from 'react';
 import { Plus, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Scene, Block } from '../store/types';
-
-export const SCENE_STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
-  none: { bg: 'bg-white', border: 'border-stone-200', text: 'text-stone-900', dot: 'bg-stone-200', label: 'Draft' },
-  yellow: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', dot: 'bg-amber-500', label: 'First Draft' },
-  green: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Finished' },
-  blue: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Revised' },
-  red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', dot: 'bg-red-500', label: 'Discarded' },
-};
+import { SCENE_STATUS_COLORS } from '../store/constants';
 
 interface ChapterScenesListProps {
   isScene: boolean;
@@ -65,11 +58,11 @@ export function ChapterScenesList({
                   onClick={() => setActiveDocument(scene.id)}
                   className="flex-1 p-4 text-left"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={cn("w-2 h-2 rounded-full shrink-0", status.dot)} />
+                  <div className="flex items-center justify-end mb-2">
                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Scene {scene.order + 1}</span>
                   </div>
-                  <div className={cn("text-sm font-semibold truncate mb-1", status.text)}>
+                  <div className={cn("text-sm font-semibold truncate mb-1 flex items-center", status.text)}>
+                    <div className={cn("w-2 h-2 rounded-full mr-2 shrink-0", status.dot)} />
                     {scene.title || 'Untitled Scene'}
                   </div>
                   <div className="text-[10px] text-stone-500 flex items-center opacity-60">

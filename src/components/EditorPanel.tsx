@@ -11,7 +11,8 @@ import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { LensesPanel } from './LensesPanel';
 import { EventPoolPanel } from './EventPoolPanel';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
-import { ChapterScenesList, SCENE_STATUS_COLORS } from './ChapterScenesList';
+import { ChapterScenesList } from './ChapterScenesList';
+import { SCENE_STATUS_COLORS } from '../store/constants';
 import { ChapterCharacterSummary } from './ChapterCharacterSummary';
 import { SnapshotDialog } from './SnapshotDialog';
 
@@ -774,28 +775,56 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
           </div>
           <div className="flex-1 overflow-y-auto">
             {rightSidebarMode === 'micro' && (
-              <div className="p-4 space-y-6">
+              <div className="p-2 space-y-2">
+                {tocSections.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">Table of Contents</h3>
+                    <button
+                      onClick={() => {
+                        const allCollapsed = tocSections.every(s => collapsedTocSections.has(s.documentId));
+                        if (allCollapsed) {
+                          setCollapsedTocSections(new Set());
+                        } else {
+                          setCollapsedTocSections(new Set(tocSections.map(s => s.documentId)));
+                        }
+                      }}
+                      className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                    >
+                      {tocSections.every(s => collapsedTocSections.has(s.documentId)) ? 'Expand All' : 'Collapse All'}
+                    </button>
+                  </div>
+                )}
                 {tocSections.length === 0 ? (
                   <div className="text-center text-xs text-stone-500 py-4">No blocks found.</div>
                 ) : (
                   tocSections.map((section, idx) => {
                     const isCollapsed = collapsedTocSections.has(section.documentId);
+                    const scene = scenes.find(s => s.id === section.documentId);
+                    const statusColor = scene && scene.statusColor ? SCENE_STATUS_COLORS[scene.statusColor as keyof typeof SCENE_STATUS_COLORS] : null;
+                    const isActive = section.documentId === activeDocId;
                     return (
-                    <div key={`${section.documentId}-${idx}`}>
+                    <div key={`${section.documentId}-${idx}`} className={cn(
+                      "rounded-lg border transition-colors",
+                      isActive ? "border-emerald-500 bg-emerald-50/50" : "border-transparent"
+                    )}>
                       <div 
-                        className="flex items-center cursor-pointer mb-2 group"
+                        className="flex items-center cursor-pointer mb-0 group p-1"
                         onClick={() => toggleTocSection(section.documentId)}
                       >
                         <button className="p-0.5 text-stone-400 group-hover:text-stone-600 transition-colors mr-1">
                           {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                         </button>
-                        <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider group-hover:text-stone-600 transition-colors">{section.title}</h4>
+                        {statusColor && <div className={cn("w-2 h-2 rounded-full mr-2", statusColor.dot)} />}
+                        <h4 className={cn(
+                          "text-xs font-bold uppercase tracking-wider group-hover:text-stone-600 transition-colors",
+                          isActive ? "text-emerald-800" : "text-stone-400"
+                        )}>{section.title}</h4>
                       </div>
                       {!isCollapsed && (
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                           {section.entries.map(entry => (
                             <div key={entry.id} className={cn(
-                              "p-3 bg-white rounded-lg border shadow-sm transition-colors",
+                              "p-2 bg-white rounded-lg border shadow-sm transition-colors",
                               entry.completed ? "border-emerald-200" : "border-stone-200"
                             )}>
                               <div className="flex justify-between items-start">
