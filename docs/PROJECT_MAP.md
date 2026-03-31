@@ -4,7 +4,7 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 
 ## 🗺️ Core Features & Modules
 
-### 1. 📝 Writing & Editor (写作与编辑器)
+### 1. 🎨 Design & Editor (设计与编辑器)
 - **Main Editor:** `src/components/EditorPanel.tsx`
 - **Sidebar (Navigation/Outline):** `src/components/Sidebar.tsx`
 - **Outline Panel:** `src/components/OutlinePanel.tsx`
@@ -31,8 +31,7 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 - **Main Tab View:** `src/components/TimelineTab.tsx`
 - **Timeline Sub-components:** 
   - `src/components/timeline/TimelineChronologyView.tsx` (Chronology View)
-  - `src/components/timeline/TimelineTableView.tsx` (Table View)
-  - `src/components/timeline/TimelineFilterBar.tsx` (Filters)
+  - `src/components/timeline/TimelineTableView.tsx` (Table View with Column Management, Overscrolling & Filters)
   - `src/components/timeline/TimelineShared.tsx` (Shared UI)
 - **Event Modals:** `src/components/AddEventModal.tsx`, `src/components/EventDetailsModal.tsx`
 - **Event Pool:** `src/components/EventPoolPanel.tsx`
@@ -76,7 +75,7 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 ## 🏗️ Architecture & State Management
 
 - **Global State (Zustand):** The main store is combined in `src/store/stores/useStore.ts`. It is split into multiple slices located in `src/store/stores/slices/`.
-- **Top Navigation:** `src/components/TopNav.tsx` (Controls which tab/mode is currently active, e.g., Writing, Inbox, Timeline).
+- **Top Navigation:** `src/components/TopNav.tsx` (Controls which tab/mode is currently active, e.g., Writing (Design mode), Inbox, Timeline).
 - **UI State:** Managed via `src/store/stores/slices/uiSlice.ts`.
 - **Types & Constants:** `src/store/types.ts`, `src/store/constants.ts`.
 - **Styling:** Tailwind CSS (`src/index.css`) with utility functions in `src/lib/utils.ts`.

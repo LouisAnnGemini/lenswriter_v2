@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Check, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -7,19 +8,40 @@ export const EditableInput = ({
   onSave, 
   className, 
   type = "text",
-  placeholder
+  placeholder,
+  validate,
+  onValidationChange
 }: { 
   value: string | number, 
   onSave: (val: any) => void, 
   className?: string,
   type?: string,
-  placeholder?: string
+  placeholder?: string,
+  validate?: (val: string | number) => boolean,
+  onValidationChange?: (isValid: boolean) => void
 }) => {
   const [localValue, setLocalValue] = useState(value?.toString() || '');
+  const [isValid, setIsValid] = useState(true);
 
   useEffect(() => {
     setLocalValue(value?.toString() || '');
   }, [value]);
+
+  useEffect(() => {
+    let valid = true;
+    if (validate) {
+      const val = type === 'number' ? (parseInt(localValue) || 0) : localValue;
+      valid = validate(val);
+    }
+    
+    // Only update state and call callback if the validation result actually changed
+    if (valid !== isValid) {
+      setIsValid(valid);
+      if (onValidationChange) {
+        onValidationChange(valid);
+      }
+    }
+  }, [localValue, validate, type, onValidationChange, isValid]);
 
   return (
     <input
@@ -38,7 +60,7 @@ export const EditableInput = ({
         }
       }}
       onDoubleClick={(e) => e.stopPropagation()}
-      className={className}
+      className={cn(className, !isValid && "text-red-600 border-red-500")}
       placeholder={placeholder}
     />
   );
@@ -99,10 +121,16 @@ export const InlineMultiSelect = ({
   const [search, setSearch] = useState('');
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        (!dropdownRef.current || !dropdownRef.current.contains(target))
+      ) {
         setIsOpen(false);
       }
     };
@@ -112,16 +140,56 @@ export const InlineMultiSelect = ({
 
   useEffect(() => {
     if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setDropdownPosition({ top: rect.bottom, left: rect.left });
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // 默认向下
+      let top = containerRect.bottom;
+      
+      // 如果下拉菜单存在，测量实际高度
+      if (dropdownRef.current) {
+        const dropdownHeight = dropdownRef.current.offsetHeight;
+        if (containerRect.bottom + dropdownHeight > viewportHeight) {
+          top = containerRect.top - dropdownHeight;
+        }
+      } else {
+        // 如果还没渲染出来，先预估，等渲染后再更新
+        const estimatedHeight = 200;
+        if (containerRect.bottom + estimatedHeight > viewportHeight) {
+          top = containerRect.top - estimatedHeight;
+        }
+      }
+      
+      setDropdownPosition({ top, left: containerRect.left });
     }
-  }, [isOpen]);
+  }, [isOpen, search]);
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleScroll = () => setIsOpen(false);
+    let isJustOpened = true;
+    const timer = setTimeout(() => { isJustOpened = false; }, 100);
+
+    const handleScroll = (e: Event) => {
+      const target = e.target;
+      if (!(target instanceof Node)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+      
+      if (isJustOpened) {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          setDropdownPosition({ top: rect.bottom, left: rect.left });
+        }
+        return;
+      }
+      setIsOpen(false);
+    };
     window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll, true);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll, true);
+    };
   }, [isOpen]);
 
   const filteredOptions = React.useMemo(() => 
@@ -157,9 +225,10 @@ export const InlineMultiSelect = ({
         })}
       </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div 
-          className="fixed z-[100] w-48 mt-1 bg-white border border-stone-200 rounded-md shadow-lg"
+          ref={dropdownRef}
+          className="fixed z-[9999] w-48 mt-1 bg-white border border-stone-200 rounded-md shadow-lg"
           style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -170,6 +239,18 @@ export const InlineMultiSelect = ({
                 type="text" 
                 value={search} 
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (filteredOptions.length > 0) {
+                      toggleOption(filteredOptions[0].id);
+                      setSearch('');
+                    } else if (onCreateOption && search.trim() !== '') {
+                      onCreateOption(search.trim());
+                      setSearch('');
+                    }
+                  }
+                }}
                 className="bg-transparent text-xs w-full focus:outline-none"
                 placeholder="Search..."
                 autoFocus
@@ -213,7 +294,8 @@ export const InlineMultiSelect = ({
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

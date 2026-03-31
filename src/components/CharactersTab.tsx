@@ -404,7 +404,7 @@ export function CharactersTab() {
                               </div>
                               <button 
                                 onClick={() => {
-                                  setActiveTab('writing');
+                                  setActiveTab('design');
                                   setActiveDocument(app.sceneId);
                                 }}
                                 className="px-3 py-1.5 bg-white border border-stone-200 hover:border-emerald-500 hover:text-emerald-700 rounded-lg text-xs font-medium text-stone-600 transition-all shadow-sm"

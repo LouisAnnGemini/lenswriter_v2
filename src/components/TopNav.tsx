@@ -50,7 +50,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
   if (focusMode) return null;
 
   const allTabs = [
-    { id: 'writing', label: 'Writing', icon: Edit3 },
+    { id: 'design', label: 'Writing', icon: Edit3 },
     { id: 'inbox', label: 'Inbox', icon: Inbox },
     { id: 'blockDescriptions', label: 'Block Descriptions', icon: AlignLeft },
     { id: 'lenses', label: 'Lenses', icon: LayoutGrid },
@@ -60,9 +60,9 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     { id: 'compile', label: 'Compile', icon: FileText },
   ] as const;
 
-  const tabs = appMode === 'writing' 
-    ? allTabs.filter(t => ['writing', 'blockDescriptions', 'lenses', 'timelineEvents', 'world'].includes(t.id))
-    : allTabs.filter(t => ['writing', 'inbox', 'deadline', 'compile'].includes(t.id));
+  const tabs = appMode === 'design' 
+    ? allTabs.filter(t => ['design', 'blockDescriptions', 'lenses', 'timelineEvents', 'world'].includes(t.id))
+    : allTabs.filter(t => ['design', 'inbox', 'deadline', 'compile'].includes(t.id));
   
   const isScene = scenes.some(s => s.id === activeDocumentId);
 
@@ -71,7 +71,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
       {/* Desktop Top Nav */}
       <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-4 md:px-6 shrink-0">
         <div className="flex items-center">
-          {activeTab === 'writing' && activeDocumentId ? (
+          {activeTab === 'design' && activeDocumentId ? (
             <button 
               className="md:hidden mr-4 p-2 -ml-2 text-stone-500 hover:bg-stone-100 rounded-md"
               onClick={() => setActiveDocument(null)}
@@ -133,7 +133,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
               <Save size={20} />
             </button>
           )}
-          {activeTab === 'writing' && activeDocumentId && !disguiseMode && (
+          {activeTab === 'design' && activeDocumentId && !disguiseMode && (
             <button
               onClick={() => {
                 if (rightSidebarMode === 'closed') {

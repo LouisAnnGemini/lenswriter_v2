@@ -1,10 +1,12 @@
 import { StateCreator } from 'zustand';
 import { StoreState, TimelineEvent, TimelineSlice } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import { validateEventUpdate } from '../../../lib/timelineUtils';
+import { toast } from 'sonner';
 
-export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice> = (set) => ({
+export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice> = (set, get) => ({
   addTimelineEvent: (event) => set((state) => {
-    const events = state.timelineEvents.filter(e => e.workId === event.workId && e.status === 'pool');
+    const events = state.timelineEvents.filter(e => e.workId === event.workId && e.startTime === undefined);
     const newEvent: TimelineEvent = {
         id: event.id || uuidv4(),
         workId: event.workId,
@@ -15,44 +17,33 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
         characterActions: event.characterActions || {},
         tagIds: event.tagIds || [],
         linkedEventIds: event.linkedEventIds || [],
-        order: events.length,
-        status: 'pool',
-        beforeIds: [],
-        afterIds: [],
-        simultaneousIds: []
+        duration: event.duration || 1,
+        importance: event.importance || 3,
+        horizontalIds: event.horizontalIds || [],
+        verticalIds: event.verticalIds || [],
+        order: events.length
     };
     return { timelineEvents: [...state.timelineEvents, newEvent] };
   }),
-  updateTimelineEvent: (event) => set((state) => ({
-    timelineEvents: state.timelineEvents.map(e => e.id === event.id ? { ...e, ...event } : e)
-  })),
-  updateTimelineEventRelations: (eventId, beforeIds, afterIds, simultaneousIds) => set((state) => ({
-    timelineEvents: state.timelineEvents.map(e => {
-        if (e.id === eventId) {
-            return { ...e, beforeIds, afterIds, simultaneousIds };
+  updateTimelineEvent: (event) => {
+    const state = get();
+    const validation = validateEventUpdate(event, state.timelineEvents);
+    
+    if (!validation.isValid) {
+      toast.error(validation.error || 'Invalid event update');
+      return { success: false, error: validation.error };
+    }
+
+    set((state) => ({
+      timelineEvents: state.timelineEvents.map(e => {
+        if (e.id === event.id) {
+          return { ...e, ...event };
         }
-        
-        let newBefore = e.beforeIds ? [...e.beforeIds] : [];
-        let newAfter = e.afterIds ? [...e.afterIds] : [];
-        let newSim = e.simultaneousIds ? [...e.simultaneousIds] : [];
-        
-        newBefore = newBefore.filter(id => id !== eventId);
-        newAfter = newAfter.filter(id => id !== eventId);
-        newSim = newSim.filter(id => id !== eventId);
-        
-        if (beforeIds.includes(e.id)) {
-            if (!newAfter.includes(eventId)) newAfter.push(eventId);
-        }
-        if (afterIds.includes(e.id)) {
-            if (!newBefore.includes(eventId)) newBefore.push(eventId);
-        }
-        if (simultaneousIds.includes(e.id)) {
-            if (!newSim.includes(eventId)) newSim.push(eventId);
-        }
-        
-        return { ...e, beforeIds: newBefore, afterIds: newAfter, simultaneousIds: newSim };
-    })
-  })),
+        return e;
+      })
+    }));
+    return { success: true };
+  },
   updateTimelineEventCharacterAction: (eventId, characterId, action) => set((state) => ({
     timelineEvents: state.timelineEvents.map(e => {
         if (e.id === eventId) {
@@ -67,7 +58,7 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
         return e;
     })
   })),
-  toggleTimelineEventLink: (eventId, targetEventId) => set((state) => {
+  toggleTimelineEventLink: (eventId: string, targetEventId: string) => set((state) => {
     const eventA = state.timelineEvents.find(e => e.id === eventId);
     if (!eventA) return state;
     
@@ -97,15 +88,74 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
         })
     };
   }),
-  deleteTimelineEvent: (eventId) => set((state) => ({
+  toggleTimelineEventHorizontal: (eventId: string, targetEventId: string) => set((state) => {
+    const eventA = state.timelineEvents.find(e => e.id === eventId);
+    if (!eventA) return state;
+    
+    const hasLink = (eventA.horizontalIds || []).includes(targetEventId);
+    
+    return {
+        timelineEvents: state.timelineEvents.map(e => {
+            if (e.id === eventId) {
+                const horizontalIds = e.horizontalIds || [];
+                return {
+                    ...e,
+                    horizontalIds: hasLink 
+                        ? horizontalIds.filter(id => id !== targetEventId)
+                        : [...horizontalIds, targetEventId]
+                };
+            }
+            if (e.id === targetEventId) {
+                const horizontalIds = e.horizontalIds || [];
+                return {
+                    ...e,
+                    horizontalIds: hasLink 
+                        ? horizontalIds.filter(id => id !== eventId)
+                        : [...horizontalIds, eventId]
+                };
+            }
+            return e;
+        })
+    };
+  }),
+  toggleTimelineEventVertical: (eventId: string, targetEventId: string) => set((state) => {
+    const eventA = state.timelineEvents.find(e => e.id === eventId);
+    if (!eventA) return state;
+    
+    const hasLink = (eventA.verticalIds || []).includes(targetEventId);
+    
+    return {
+        timelineEvents: state.timelineEvents.map(e => {
+            if (e.id === eventId) {
+                const verticalIds = e.verticalIds || [];
+                return {
+                    ...e,
+                    verticalIds: hasLink 
+                        ? verticalIds.filter(id => id !== targetEventId)
+                        : [...verticalIds, targetEventId]
+                };
+            }
+            if (e.id === targetEventId) {
+                const verticalIds = e.verticalIds || [];
+                return {
+                    ...e,
+                    verticalIds: hasLink 
+                        ? verticalIds.filter(id => id !== eventId)
+                        : [...verticalIds, eventId]
+                };
+            }
+            return e;
+        })
+    };
+  }),
+  deleteTimelineEvent: (eventId: string) => set((state) => ({
     timelineEvents: state.timelineEvents
         .filter(e => e.id !== eventId)
         .map(e => ({
             ...e,
             linkedEventIds: e.linkedEventIds ? e.linkedEventIds.filter(id => id !== eventId) : e.linkedEventIds,
-            beforeIds: e.beforeIds ? e.beforeIds.filter(id => id !== eventId) : e.beforeIds,
-            afterIds: e.afterIds ? e.afterIds.filter(id => id !== eventId) : e.afterIds,
-            simultaneousIds: e.simultaneousIds ? e.simultaneousIds.filter(id => id !== eventId) : e.simultaneousIds
+            horizontalIds: e.horizontalIds ? e.horizontalIds.filter(id => id !== eventId) : e.horizontalIds,
+            verticalIds: e.verticalIds ? e.verticalIds.filter(id => id !== eventId) : e.verticalIds
         })),
     scenes: state.scenes.map(s => {
         if (s.linkedEventIds && s.linkedEventIds.includes(eventId)) {
@@ -114,14 +164,14 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
         return s;
     })
   })),
-  reorderTimelineEvents: (workId, sourceId, destinationIndex, sourceStatus, destinationStatus) => set((state) => {
+  reorderTimelineEvents: (workId, sourceId, destinationIndex, isSourcePool, isDestPool) => set((state) => {
     const workEvents = state.timelineEvents.filter(e => e.workId === workId);
     const sourceEvent = workEvents.find(e => e.id === sourceId);
     if (!sourceEvent) return state;
 
-    if (sourceStatus === 'pool' && destinationStatus === 'pool') {
+    if (isSourcePool && isDestPool) {
         const listEvents = workEvents
-            .filter(e => e.status === 'pool')
+            .filter(e => e.startTime === undefined)
             .sort((a, b) => (a.order || 0) - (b.order || 0));
         
         const startIndex = listEvents.findIndex(e => e.id === sourceId);
@@ -134,7 +184,7 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
         
         return {
             timelineEvents: state.timelineEvents.map(e => {
-                if (e.workId === workId && e.status === 'pool') {
+                if (e.workId === workId && e.startTime === undefined) {
                     return updatedEvents.find(ue => ue.id === e.id) || e;
                 }
                 return e;
@@ -143,47 +193,21 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
     }
 
     const timelineEvents = workEvents
-        .filter(e => (e.status || 'timeline') === 'timeline')
+        .filter(e => e.startTime !== undefined)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
-        
-    const groupedEvents: { id: string, events: TimelineEvent[] }[] = [];
-    const processedIds = new Set<string>();
-    
-    timelineEvents.forEach(event => {
-        if (processedIds.has(event.id)) return;
-        
-        const groupEvents = [event];
-        processedIds.add(event.id);
-        
-        let gAdded = true;
-        while (gAdded) {
-            gAdded = false;
-            timelineEvents.forEach(e => {
-                if (!processedIds.has(e.id)) {
-                    if (groupEvents.some(ge => (ge.simultaneousIds || []).includes(e.id) || (e.simultaneousIds || []).includes(ge.id))) {
-                        groupEvents.push(e);
-                        processedIds.add(e.id);
-                        gAdded = true;
-                    }
-                }
-            });
-        }
-        groupedEvents.push({ id: groupEvents[0].id, events: groupEvents });
-    });
 
-    if (sourceStatus === 'timeline' && destinationStatus === 'timeline') {
-        const startIndex = groupedEvents.findIndex(g => g.events.some(e => e.id === sourceId));
+    if (!isSourcePool && !isDestPool) {
+        const startIndex = timelineEvents.findIndex(e => e.id === sourceId);
         if (startIndex === -1) return state;
         
-        const [removedGroup] = groupedEvents.splice(startIndex, 1);
-        groupedEvents.splice(destinationIndex, 0, removedGroup);
+        const [removed] = timelineEvents.splice(startIndex, 1);
+        timelineEvents.splice(destinationIndex, 0, removed);
         
-        const flatEvents = groupedEvents.flatMap(g => g.events);
-        const updatedEvents = flatEvents.map((e, i) => ({ ...e, order: i }));
+        const updatedEvents = timelineEvents.map((e, i) => ({ ...e, order: i }));
         
         return {
             timelineEvents: state.timelineEvents.map(e => {
-                if (e.workId === workId && (e.status || 'timeline') === 'timeline') {
+                if (e.workId === workId && e.startTime !== undefined) {
                     return updatedEvents.find(ue => ue.id === e.id) || e;
                 }
                 return e;
@@ -191,68 +215,33 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
         };
     }
 
-    if (sourceStatus === 'pool' && destinationStatus === 'timeline') {
+    if (isSourcePool && !isDestPool) {
         const poolEvents = workEvents
-            .filter(e => e.status === 'pool')
+            .filter(e => e.startTime === undefined)
             .sort((a, b) => (a.order || 0) - (b.order || 0));
             
         const pIndex = poolEvents.findIndex(e => e.id === sourceId);
         if (pIndex === -1) return state;
         
-        const removed = { ...poolEvents[pIndex], status: 'timeline' as const };
+        // When moving to timeline, we need a default startTime if not provided
+        // But reorderTimelineEvents usually doesn't have it.
+        // We'll assume the caller will handle startTime update separately if needed,
+        // or we set a default here.
+        const removed = { ...poolEvents[pIndex], startTime: poolEvents[pIndex].startTime || 0 };
         poolEvents.splice(pIndex, 1);
         
-        // Check if it should be grouped with any existing group
-        const targetGroupIndex = groupedEvents.findIndex(g => g.events.some(e => (e.simultaneousIds || []).includes(removed.id) || (removed.simultaneousIds || []).includes(e.id)));
+        timelineEvents.splice(destinationIndex, 0, removed);
         
-        if (targetGroupIndex !== -1) {
-            // If it joins a group, we just add it and re-group everything to ensure transitive merges
-            timelineEvents.push(removed);
-        } else {
-            // If it doesn't join a group, we insert it at the specific flat index corresponding to destinationIndex
-            // Actually, destinationIndex is the group index. We can just insert it into groupedEvents and then flatten.
-            groupedEvents.splice(destinationIndex, 0, { id: removed.id, events: [removed] });
-            timelineEvents.length = 0;
-            timelineEvents.push(...groupedEvents.flatMap(g => g.events));
-        }
-        
-        // Re-group to handle any transitive merges
-        const newGroupedEvents: { id: string, events: TimelineEvent[] }[] = [];
-        const newProcessedIds = new Set<string>();
-        
-        timelineEvents.forEach(event => {
-            if (newProcessedIds.has(event.id)) return;
-            
-            const groupEvents = [event];
-            newProcessedIds.add(event.id);
-            
-            let gAdded = true;
-            while (gAdded) {
-                gAdded = false;
-                timelineEvents.forEach(e => {
-                    if (!newProcessedIds.has(e.id)) {
-                        if (groupEvents.some(ge => (ge.simultaneousIds || []).includes(e.id) || (e.simultaneousIds || []).includes(ge.id))) {
-                            groupEvents.push(e);
-                            newProcessedIds.add(e.id);
-                            gAdded = true;
-                        }
-                    }
-                });
-            }
-            newGroupedEvents.push({ id: groupEvents[0].id, events: groupEvents });
-        });
-        
-        const flatEvents = newGroupedEvents.flatMap(g => g.events);
-        const updatedEvents = flatEvents.map((e, i) => ({ ...e, order: i }));
+        const updatedEvents = timelineEvents.map((e, i) => ({ ...e, order: i }));
         const updatedPoolEvents = poolEvents.map((e, i) => ({ ...e, order: i }));
         
         return {
             timelineEvents: state.timelineEvents.map(e => {
                 if (e.id === sourceId) return { ...removed, order: updatedEvents.find(ue => ue.id === e.id)?.order || 0 };
-                if (e.workId === workId && (e.status || 'timeline') === 'timeline') {
+                if (e.workId === workId && e.startTime !== undefined) {
                     return updatedEvents.find(ue => ue.id === e.id) || e;
                 }
-                if (e.workId === workId && e.status === 'pool') {
+                if (e.workId === workId && e.startTime === undefined) {
                     return updatedPoolEvents.find(ue => ue.id === e.id) || e;
                 }
                 return e;
@@ -260,34 +249,31 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
         };
     }
 
-    if (sourceStatus === 'timeline' && destinationStatus === 'pool') {
-        const groupIndex = groupedEvents.findIndex(g => g.events.some(e => e.id === sourceId));
-        if (groupIndex === -1) return state;
+    if (!isSourcePool && isDestPool) {
+        const startIndex = timelineEvents.findIndex(e => e.id === sourceId);
+        if (startIndex === -1) return state;
         
-        const removedGroup = groupedEvents[groupIndex];
-        groupedEvents.splice(groupIndex, 1);
+        const [removed] = timelineEvents.splice(startIndex, 1);
+        const removedEvent = { ...removed, startTime: undefined };
         
-        const flatEvents = groupedEvents.flatMap(g => g.events);
-        const updatedTimelineEvents = flatEvents.map((e, i) => ({ ...e, order: i }));
+        const updatedTimelineEvents = timelineEvents.map((e, i) => ({ ...e, order: i }));
         
         const poolEvents = workEvents
-            .filter(e => e.status === 'pool')
+            .filter(e => e.startTime === undefined)
             .sort((a, b) => (a.order || 0) - (b.order || 0));
             
-        const removedEvents = removedGroup.events.map(e => ({ ...e, status: 'pool' as const }));
-        poolEvents.splice(destinationIndex, 0, ...removedEvents);
+        poolEvents.splice(destinationIndex, 0, removedEvent);
         const updatedPoolEvents = poolEvents.map((e, i) => ({ ...e, order: i }));
         
         return {
             timelineEvents: state.timelineEvents.map(e => {
-                const removedEvent = removedEvents.find(re => re.id === e.id);
-                if (removedEvent) {
+                if (e.id === sourceId) {
                     return { ...removedEvent, order: updatedPoolEvents.find(ue => ue.id === e.id)?.order || 0 };
                 }
-                if (e.workId === workId && (e.status || 'timeline') === 'timeline') {
+                if (e.workId === workId && e.startTime !== undefined) {
                     return updatedTimelineEvents.find(ue => ue.id === e.id) || e;
                 }
-                if (e.workId === workId && e.status === 'pool') {
+                if (e.workId === workId && e.startTime === undefined) {
                     return updatedPoolEvents.find(ue => ue.id === e.id) || e;
                 }
                 return e;

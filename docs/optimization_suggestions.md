@@ -36,12 +36,34 @@
 
 *   **角色关系图 (Relationship Web)**：
     *   在 Characters 标签页新增关系图功能，允许作者连线定义角色之间的关系（如“敌对”、“亲属”、“暗恋”），并可视化展示。
-*   **时间线视图 (Timeline View)**：
-    *   将场景 (Scenes) 按照设定的时间顺序排列在一条时间线上，并将角色在场景中的出场情况映射到时间线上，直观检查角色的时间线是否存在逻辑冲突。
-*   **地点/物品管理 (Locations & Items)**：
-    *   扩展当前的 Characters 模块，增加对“地点”和“关键物品”的管理，形成完整的世界观百科 (Wiki) 系统。
+*   **地点/物品管理 (Locations & Items) [已初步实现]**：
+    *   扩展当前的 Characters 模块，增加对“地点”和“关键物品”的管理，形成完整的世界观百科 (Wiki) 系统。**(注：已初步实现 Location 管理)**
+*   **客观事件驱动模型 (Objective Event-Driven Model) [已初步实现]**：
+    *   引入 `TimelineEvent` (客观事件卡片)，将人物行为从场景正文中剥离，实现“客观事实”与“主观叙事”的解耦。**(注：已完成核心架构设计与数据模型实现)**
 
-## 5. UI/UX 与多端适配 (UI/UX & Multi-device)
+## 5. 叙事剪辑与逻辑校验 (Narrative Editing & Logic Validation)
+
+*   **透镜转事件 (Lens-to-Event Conversion)**：
+    *   允许作者将正文中的某个 Lens（如“冲突”或“关键伏笔”）一键转换为 `TimelineEvent`。这有助于将主观灵感快速沉淀为客观的世界观事实。
+*   **AI 逻辑一致性检查 (AI Consistency Checker)**：
+    *   利用 AI 对比“客观参考区”（Timeline Events）与“主观叙事区”（Scene Content）。检查正文描述是否与关联的客观事实冲突（例如：角色瞬移、因果倒置等）。
+*   **多视角写作支持 (Multi-Perspective Support)**：
+    *   在编辑器中支持切换“视角角色”。选中特定角色后，侧边栏会自动高亮该角色在当前场景关联的所有事件中的客观行为，帮助作者保持视角的一致性。
+*   **场景结构快照 (Structural Snapshots)**：
+    *   在“设计模式”下进行大规模结构调整前，支持为场景拍摄“快照”。允许作者在不同的叙事结构方案之间快速切换和对比。
+
+## 6. 可视化与管理增强 (Visualization & Management)
+
+*   **可视化编年史 (Visual Chronology)**：
+    *   提供一个横向滚动的甘特图界面，展示所有 `TimelineEvents`。直观呈现事件的重叠、间隙以及角色的活跃曲线。
+*   **动态世界百科 (Dynamic World Wiki)**：
+    *   为每个地点或角色自动生成百科页面，汇总其参与的所有 `TimelineEvents`，形成完整的实体历史档案。
+*   **透镜热力图 (Lens Heatmap)**：
+    *   提供全局视图，展示不同颜色 Lens 的分布密度。帮助作者直观感知作品的节奏（如：红色“冲突”透镜过于密集可能意味着节奏过快）。
+*   **管理模式仪表盘 (Management Dashboard)**：
+    *   在“管理模式”下增加仪表盘，展示距离 `Deadline` 的进度、`Inbox` 待办事项统计以及 `Compile` 导出就绪度。
+
+## 7. UI/UX 与多端适配 (UI/UX & Multi-device)
 
 *   **全局暗黑模式 (Dark Mode)**：
     *   目前侧边栏是暗色，但主编辑器是亮色。建议提供完整的暗黑模式切换开关，保护夜间创作者的视力。
@@ -50,21 +72,21 @@
 *   **移动端手势操作 (Swipe Gestures)**：
     *   在移动端，为章节列表、场景卡片和 Lens 卡片增加左滑/右滑手势，快速执行“删除”、“归档”、“固定(Pin)”等操作。
 
-## 6. 导出与发布 (Export & Publishing)
+## 8. 导出与发布 (Export & Publishing)
 
 *   **多格式导出支持**：
     *   除了 `.docx`，增加对 `.epub` (电子书格式)、`.pdf` 和 `.md` (Markdown 压缩包) 的导出支持。
 *   **自定义编译模板 (Compile Templates)**：
     *   允许作者在 Compile 界面自定义导出格式，例如：是否包含章节标题、段首是否自动缩进、是否将特定颜色的 Lens 作为脚注 (Footnotes) 导出等。
 
-## 7. AI 辅助创作 (AI Assisted Writing - 可选方向)
+## 9. AI 辅助创作 (AI Assisted Writing - 可选方向)
 
 *   **智能上下文回顾**：
     *   基于当前场景的上下文和已链接的 Lens，AI 自动总结当前剧情进度，或提示遗漏的伏笔（绿 Lens）。
 *   **角色语气一致性检查**：
     *   根据 Characters 面板中的角色描述，AI 辅助检查当前段落中角色的对话是否符合其性格设定。
 
-## 8. 最新架构与性能优化建议 (Latest Architecture & Performance)
+## 10. 最新架构与性能优化建议 (Latest Architecture & Performance)
 
 ### 8.1 性能优化 (Performance)
 *   **状态管理拆分 (Context Splitting) [已完成]**：

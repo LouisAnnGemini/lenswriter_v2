@@ -18,8 +18,9 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
     tags: allTags, 
     timelineEvents: allTimelineEvents,
     addTimelineEvent,
-    updateTimelineEventRelations,
-    toggleTimelineEventLink
+    toggleTimelineEventLink,
+    toggleTimelineEventHorizontal,
+    toggleTimelineEventVertical
   } = useStore(useShallow(state => ({
     activeWorkId: state.activeWorkId,
     locations: state.locations,
@@ -27,21 +28,23 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
     tags: state.tags,
     timelineEvents: state.timelineEvents,
     addTimelineEvent: state.addTimelineEvent,
-    updateTimelineEventRelations: state.updateTimelineEventRelations,
-    toggleTimelineEventLink: state.toggleTimelineEventLink
+    toggleTimelineEventLink: state.toggleTimelineEventLink,
+    toggleTimelineEventHorizontal: state.toggleTimelineEventHorizontal,
+    toggleTimelineEventVertical: state.toggleTimelineEventVertical
   })));
 
   const [title, setTitle] = useState('');
   const [timestamp, setTimestamp] = useState('');
   const [description, setDescription] = useState('');
   const [locationId, setLocationId] = useState('');
+  const [startTime, setStartTime] = useState<number | ''>('');
+  const [duration, setDuration] = useState(1);
+  const [importance, setImportance] = useState(3);
   const [characterActions, setCharacterActions] = useState<Record<string, string>>({});
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [linkedEventIds, setLinkedEventIds] = useState<string[]>([]);
-  
-  const [beforeIds, setBeforeIds] = useState<string[]>([]);
-  const [afterIds, setAfterIds] = useState<string[]>([]);
-  const [simultaneousIds, setSimultaneousIds] = useState<string[]>([]);
+  const [horizontalIds, setHorizontalIds] = useState<string[]>([]);
+  const [verticalIds, setVerticalIds] = useState<string[]>([]);
 
   const [activeTab, setActiveTab] = useState<'general' | 'characters' | 'relations'>('general');
 
@@ -62,24 +65,31 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
         timestamp: timestamp.trim(),
         description: description.trim(),
         locationId: locationId || undefined,
+        startTime: startTime === '' ? undefined : startTime,
+        duration,
+        importance,
         characterActions,
         tagIds: selectedTagIds,
-        linkedEventIds: [] // We'll add links via toggleTimelineEventLink to ensure bidirectional linking
+        horizontalIds: [],
+        verticalIds: [],
+        linkedEventIds: []
       });
-
-      if (beforeIds.length > 0 || afterIds.length > 0 || simultaneousIds.length > 0) {
-        updateTimelineEventRelations(newEventId, beforeIds, afterIds, simultaneousIds);
-      }
 
       linkedEventIds.forEach(targetId => {
         toggleTimelineEventLink(newEventId, targetId);
+      });
+      horizontalIds.forEach(targetId => {
+        toggleTimelineEventHorizontal(newEventId, targetId);
+      });
+      verticalIds.forEach(targetId => {
+        toggleTimelineEventVertical(newEventId, targetId);
       });
 
       onClose();
     }
   };
 
-  const relationCount = beforeIds.length + afterIds.length + simultaneousIds.length + linkedEventIds.length;
+  const relationCount = linkedEventIds.length + horizontalIds.length + verticalIds.length;
   const characterCount = Object.keys(characterActions).length;
 
   return (
@@ -186,11 +196,53 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
         {/* Tab Content */}
         <div className="p-6 overflow-y-auto flex-1 bg-stone-50/50">
           {activeTab === 'general' && (
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col gap-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">Start Time</label>
+                  <input
+                    type="number"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value === '' ? '' : parseInt(e.target.value))}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    placeholder="Pool"
+                  />
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">Duration</label>
+                  <input
+                    type="number"
+                    value={duration}
+                    onChange={(e) => setDuration(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    min="1"
+                  />
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">Importance (1-5)</label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setImportance(val)}
+                        className={cn(
+                          "w-8 h-8 rounded-full text-xs font-bold transition-all",
+                          importance === val 
+                            ? "bg-emerald-500 text-white shadow-md scale-110" 
+                            : "bg-stone-100 text-stone-400 hover:bg-stone-200"
+                        )}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="flex-1 min-h-[300px] text-base leading-relaxed bg-transparent border-none p-0 w-full focus:ring-0 resize-none text-stone-700 placeholder-stone-400 focus:outline-none"
+                className="flex-1 min-h-[200px] text-base leading-relaxed bg-transparent border-none p-0 w-full focus:ring-0 resize-none text-stone-700 placeholder-stone-400 focus:outline-none"
                 placeholder="Write the event description here..."
               />
             </div>
@@ -264,42 +316,6 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
 
           {activeTab === 'relations' && (
             <div className="space-y-8">
-              {/* Logical Sequence */}
-              <div>
-                <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
-                  <Network size={16} className="text-emerald-600" /> Logical Sequence
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-                    <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">Before This Event</label>
-                    <MultiSelectDropdown
-                      options={allEvents.map(e => ({ id: e.id, title: e.title }))}
-                      selectedIds={beforeIds}
-                      onChange={setBeforeIds}
-                      placeholder="Select events..."
-                    />
-                  </div>
-                  <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-                    <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">Simultaneous</label>
-                    <MultiSelectDropdown
-                      options={allEvents.map(e => ({ id: e.id, title: e.title }))}
-                      selectedIds={simultaneousIds}
-                      onChange={setSimultaneousIds}
-                      placeholder="Select events..."
-                    />
-                  </div>
-                  <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-                    <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">After This Event</label>
-                    <MultiSelectDropdown
-                      options={allEvents.map(e => ({ id: e.id, title: e.title }))}
-                      selectedIds={afterIds}
-                      onChange={setAfterIds}
-                      placeholder="Select events..."
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Linked Events */}
               <div>
                 <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
@@ -312,6 +328,38 @@ export function AddEventModal({ onClose }: AddEventModalProps) {
                     selectedIds={linkedEventIds}
                     onChange={setLinkedEventIds}
                     placeholder="+ Link another event..."
+                  />
+                </div>
+              </div>
+
+              {/* Horizontal Relations */}
+              <div>
+                <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
+                  <Network size={16} className="text-emerald-600" /> Horizontal (Fixed Interval)
+                </h4>
+                <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
+                  <p className="text-xs text-stone-500 mb-4">Fix events horizontally to maintain a fixed interval.</p>
+                  <MultiSelectDropdown
+                    options={allEvents.map(e => ({ id: e.id, title: e.title }))}
+                    selectedIds={horizontalIds}
+                    onChange={setHorizontalIds}
+                    placeholder="+ Fix horizontal interval..."
+                  />
+                </div>
+              </div>
+
+              {/* Vertical Relations */}
+              <div>
+                <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
+                  <Network size={16} className="text-emerald-600" /> Vertical (Sync/Stack)
+                </h4>
+                <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
+                  <p className="text-xs text-stone-500 mb-4">Sync events vertically to stack them.</p>
+                  <MultiSelectDropdown
+                    options={allEvents.map(e => ({ id: e.id, title: e.title }))}
+                    selectedIds={verticalIds}
+                    onChange={setVerticalIds}
+                    placeholder="+ Sync vertically..."
                   />
                 </div>
               </div>

@@ -121,6 +121,11 @@ export const useStore = create<StoreState>()(
     {
       name: 'app-storage',
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.appMode = 'design';
+        }
+      }
     }
   )
 );

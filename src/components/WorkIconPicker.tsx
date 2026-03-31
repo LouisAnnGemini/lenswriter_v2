@@ -31,9 +31,11 @@ export function WorkIconPicker({ currentIcon, onSelect, children }: WorkIconPick
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
       if (
-        popoverRef.current && !popoverRef.current.contains(event.target as Node) &&
-        triggerRef.current && !triggerRef.current.contains(event.target as Node)
+        popoverRef.current && !popoverRef.current.contains(target) &&
+        triggerRef.current && !triggerRef.current.contains(target)
       ) {
         setIsOpen(false);
       }

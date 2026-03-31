@@ -12,9 +12,9 @@ describe('timelineSlice', () => {
     useTestStore = create<StoreState>()((set, get, api) => ({
       ...initialState,
       timelineEvents: [
-        { id: 'event-1', workId: mockWorkId, title: 'Event 1', timestamp: 'Day 1', characterActions: {}, order: 0, status: 'timeline', linkedEventIds: ['event-2'] },
-        { id: 'event-2', workId: mockWorkId, title: 'Event 2', timestamp: 'Day 2', characterActions: {}, order: 1, status: 'timeline', linkedEventIds: ['event-1'] },
-        { id: 'event-3', workId: mockWorkId, title: 'Event 3', timestamp: 'Day 3', characterActions: {}, order: 0, status: 'pool' },
+        { id: 'event-1', workId: mockWorkId, title: 'Event 1', timestamp: 'Day 1', characterActions: {}, order: 0, startTime: 0, linkedEventIds: ['event-2'] },
+        { id: 'event-2', workId: mockWorkId, title: 'Event 2', timestamp: 'Day 2', characterActions: {}, order: 1, startTime: 10, linkedEventIds: ['event-1'] },
+        { id: 'event-3', workId: mockWorkId, title: 'Event 3', timestamp: 'Day 3', characterActions: {}, order: 0, startTime: undefined },
       ],
       scenes: [
         { id: 'scene-1', chapterId: 'chap-1', title: 'Scene 1', order: 0, characterIds: [], linkedEventIds: ['event-1'] },
@@ -31,7 +31,7 @@ describe('timelineSlice', () => {
     expect(state.timelineEvents.length).toBe(4);
     const newEvent = state.timelineEvents[state.timelineEvents.length - 1];
     expect(newEvent.title).toBe('New Event');
-    expect(newEvent.status).toBe('pool');
+    expect(newEvent.startTime).toBeUndefined();
     expect(newEvent.order).toBe(1); // Since there is already 1 event in the pool
   });
 
@@ -41,18 +41,6 @@ describe('timelineSlice', () => {
     
     const state = useTestStore.getState();
     expect(state.timelineEvents.find((e: any) => e.id === 'event-1')?.title).toBe('Updated Event 1');
-  });
-
-  it('should update timeline event relations', () => {
-    const { updateTimelineEventRelations } = useTestStore.getState();
-    updateTimelineEventRelations('event-1', ['event-2'], [], []);
-    
-    const state = useTestStore.getState();
-    const event1 = state.timelineEvents.find((e: any) => e.id === 'event-1');
-    const event2 = state.timelineEvents.find((e: any) => e.id === 'event-2');
-    
-    expect(event1?.beforeIds).toContain('event-2');
-    expect(event2?.afterIds).toContain('event-1');
   });
 
   it('should update timeline event character action', () => {
@@ -99,13 +87,13 @@ describe('timelineSlice', () => {
     it('should reorder events within the pool', () => {
       useTestStore.setState({
         timelineEvents: [
-          { id: 'p1', workId: mockWorkId, status: 'pool', order: 0 },
-          { id: 'p2', workId: mockWorkId, status: 'pool', order: 1 },
-          { id: 'p3', workId: mockWorkId, status: 'pool', order: 2 },
+          { id: 'p1', workId: mockWorkId, startTime: undefined, order: 0 },
+          { id: 'p2', workId: mockWorkId, startTime: undefined, order: 1 },
+          { id: 'p3', workId: mockWorkId, startTime: undefined, order: 2 },
         ]
       });
 
-      useTestStore.getState().reorderTimelineEvents(mockWorkId, 'p1', 2, 'pool', 'pool');
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 'p1', 2, true, true);
       
       const state = useTestStore.getState();
       const p1 = state.timelineEvents.find((e: any) => e.id === 'p1');
@@ -120,13 +108,13 @@ describe('timelineSlice', () => {
     it('should reorder events within the timeline', () => {
       useTestStore.setState({
         timelineEvents: [
-          { id: 't1', workId: mockWorkId, status: 'timeline', order: 0 },
-          { id: 't2', workId: mockWorkId, status: 'timeline', order: 1 },
-          { id: 't3', workId: mockWorkId, status: 'timeline', order: 2 },
+          { id: 't1', workId: mockWorkId, startTime: 0, order: 0 },
+          { id: 't2', workId: mockWorkId, startTime: 10, order: 1 },
+          { id: 't3', workId: mockWorkId, startTime: 20, order: 2 },
         ]
       });
 
-      useTestStore.getState().reorderTimelineEvents(mockWorkId, 't1', 2, 'timeline', 'timeline');
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 't1', 2, false, false);
       
       const state = useTestStore.getState();
       const t1 = state.timelineEvents.find((e: any) => e.id === 't1');
@@ -141,34 +129,34 @@ describe('timelineSlice', () => {
     it('should move an event from pool to timeline', () => {
       useTestStore.setState({
         timelineEvents: [
-          { id: 'p1', workId: mockWorkId, status: 'pool', order: 0 },
-          { id: 't1', workId: mockWorkId, status: 'timeline', order: 0 },
+          { id: 'p1', workId: mockWorkId, startTime: undefined, order: 0 },
+          { id: 't1', workId: mockWorkId, startTime: 0, order: 0 },
         ]
       });
 
-      useTestStore.getState().reorderTimelineEvents(mockWorkId, 'p1', 1, 'pool', 'timeline');
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 'p1', 1, true, false);
       
       const state = useTestStore.getState();
       const p1 = state.timelineEvents.find((e: any) => e.id === 'p1');
       
-      expect(p1.status).toBe('timeline');
+      expect(p1.startTime).toBeDefined();
       expect(p1.order).toBe(1);
     });
 
     it('should move an event from timeline to pool', () => {
       useTestStore.setState({
         timelineEvents: [
-          { id: 't1', workId: mockWorkId, status: 'timeline', order: 0 },
-          { id: 'p1', workId: mockWorkId, status: 'pool', order: 0 },
+          { id: 't1', workId: mockWorkId, startTime: 0, order: 0 },
+          { id: 'p1', workId: mockWorkId, startTime: undefined, order: 0 },
         ]
       });
 
-      useTestStore.getState().reorderTimelineEvents(mockWorkId, 't1', 1, 'timeline', 'pool');
+      useTestStore.getState().reorderTimelineEvents(mockWorkId, 't1', 1, false, true);
       
       const state = useTestStore.getState();
       const t1 = state.timelineEvents.find((e: any) => e.id === 't1');
       
-      expect(t1.status).toBe('pool');
+      expect(t1.startTime).toBeUndefined();
       expect(t1.order).toBe(1);
     });
   });

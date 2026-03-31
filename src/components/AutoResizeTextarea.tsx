@@ -108,7 +108,9 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (ref.current && !ref.current.contains(target)) {
         console.log('Click outside detected, blurring');
         setIsFocused(false);
         setClickedPIdx(null);

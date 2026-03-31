@@ -4,6 +4,7 @@ import { StoreState, UISlice } from '../../types';
 export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, get) => ({
   setActiveDocument: (documentId) => set({ activeDocumentId: documentId }),
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setTimelineViewMode: (mode) => set({ timelineViewMode: mode }),
   setDeadlineViewMode: (mode) => set({ deadlineViewMode: mode }),
   setActiveLens: (lensId) => set({ activeLensId: lensId }),
   setSelectedEventId: (eventId) => set({ selectedEventId: eventId }),
@@ -16,14 +17,21 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
   setAppMode: (mode) => set({ appMode: mode }),
   toggleAppMode: () => set((state) => {
-    const newMode = state.appMode === 'writing' ? 'management' : 'writing';
+    const newMode = state.appMode === 'design' ? 'management' : 'design';
     let newTab = state.activeTab;
-    if (newMode === 'writing' && ['deadline', 'compile'].includes(state.activeTab)) {
-      newTab = 'writing';
+    let newTimelineViewMode = state.timelineViewMode;
+
+    if (newMode === 'design' && ['deadline', 'compile'].includes(state.activeTab)) {
+      newTab = 'design';
     } else if (newMode === 'management' && ['world'].includes(state.activeTab)) {
-      newTab = 'writing';
+      newTab = 'design';
     }
-    return { appMode: newMode, activeTab: newTab };
+
+    if (newMode === 'management') {
+      newTimelineViewMode = 'list';
+    }
+
+    return { appMode: newMode, activeTab: newTab, timelineViewMode: newTimelineViewMode };
   }),
   saveHistoryVersion: async (name) => {
     console.log('saveHistoryVersion called with name:', name);

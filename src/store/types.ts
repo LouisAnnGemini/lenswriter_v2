@@ -25,10 +25,11 @@ export type TimelineEvent = {
   tagIds?: string[];
   color?: string;
   order: number;
-  status?: 'pool' | 'timeline';
-  beforeIds?: string[];
-  afterIds?: string[];
-  simultaneousIds?: string[];
+  duration?: number; // Abstract duration units
+  importance?: number; // 1-5
+  startTime?: number; // Start time on the timeline (determines if in pool)
+  horizontalIds?: string[];
+  verticalIds?: string[];
 };
 
 export type CharacterFieldType = 'text' | 'number' | 'select' | 'multiselect';
@@ -86,8 +87,9 @@ export type State = {
   snapshots: SceneSnapshot[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'writing' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
-  appMode: 'writing' | 'management';
+  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
+  appMode: 'design' | 'management';
+  timelineViewMode: 'list' | 'table' | 'chronology' | 'montage' | 'tags';
   deadlineViewMode: 'global' | 'local';
   activeLensId: string | null;
   selectedEventId: string | null;
@@ -116,8 +118,9 @@ export type StoreState = State & UISlice & BlockSlice & ChapterSlice & Character
 
 export interface UISlice {
   setActiveDocument: (documentId: string | null) => void;
-  setActiveTab: (tab: 'writing' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents') => void;
-  setAppMode: (mode: 'writing' | 'management') => void;
+  setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents') => void;
+  setAppMode: (mode: 'design' | 'management') => void;
+  setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'montage' | 'tags') => void;
   toggleAppMode: () => void;
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
   setActiveLens: (lensId: string | null) => void;
@@ -133,7 +136,7 @@ export interface UISlice {
 }
 
 export interface BlockSlice {
-  addBlock: (params: { documentId: string, type: 'text', isLens?: boolean, lensColor?: string, afterBlockId?: string, notes?: string }) => void;
+  addBlock: (params: { id?: string, documentId: string, type: 'text', isLens?: boolean, lensColor?: string, afterBlockId?: string, notes?: string }) => void;
   updateBlock: (block: Partial<Block> & { id: string }) => void;
   deleteBlock: (blockId: string) => void;
   removeLens: (blockId: string) => void;
@@ -199,13 +202,14 @@ export interface SnapshotSlice {
 }
 
 export interface TimelineSlice {
-  addTimelineEvent: (event: Omit<TimelineEvent, 'id' | 'order' | 'status' | 'beforeIds' | 'afterIds' | 'simultaneousIds'> & { id?: string }) => void;
+  addTimelineEvent: (event: Omit<TimelineEvent, 'id' | 'order'> & { id?: string }) => void;
   updateTimelineEvent: (event: Partial<TimelineEvent> & { id: string }) => void;
-  updateTimelineEventRelations: (eventId: string, beforeIds: string[], afterIds: string[], simultaneousIds: string[]) => void;
   updateTimelineEventCharacterAction: (eventId: string, characterId: string, action: string) => void;
   toggleTimelineEventLink: (eventId: string, targetEventId: string) => void;
+  toggleTimelineEventHorizontal: (eventId: string, targetEventId: string) => void;
+  toggleTimelineEventVertical: (eventId: string, targetEventId: string) => void;
   deleteTimelineEvent: (eventId: string) => void;
-  reorderTimelineEvents: (workId: string, sourceId: string, destinationIndex: number, sourceStatus: 'pool' | 'timeline', destinationStatus: 'pool' | 'timeline') => void;
+  reorderTimelineEvents: (workId: string, sourceId: string, destinationIndex: number, isSourcePool: boolean, isDestPool: boolean) => void;
 }
 
 export interface WorkSlice {

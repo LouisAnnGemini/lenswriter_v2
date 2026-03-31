@@ -2,11 +2,15 @@ import { StateCreator } from 'zustand';
 import { StoreState, Scene, SceneSlice } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 
-export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (set) => ({
-  addScene: ({ chapterId, title }) => set((state) => ({
-    scenes: [...state.scenes, { id: uuidv4(), chapterId, title: title || '', order: state.scenes.length, characterIds: [] }],
-    lastModified: Date.now()
-  })),
+export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (set, get) => ({
+  addScene: ({ chapterId, title }) => {
+    const newSceneId = uuidv4();
+    set((state) => ({
+      scenes: [...state.scenes, { id: newSceneId, chapterId, title: title || '', order: state.scenes.length, characterIds: [] }],
+      lastModified: Date.now()
+    }));
+    get().addBlock({ documentId: newSceneId, type: 'text' });
+  },
   updateScene: (scene) => set((state) => ({
     scenes: state.scenes.map(s => s.id === scene.id ? { ...s, ...scene } : s),
     lastModified: Date.now()

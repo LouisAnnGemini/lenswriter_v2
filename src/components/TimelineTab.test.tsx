@@ -53,7 +53,6 @@ describe('TimelineTab', () => {
     reorderTimelineEvents: vi.fn(),
     toggleTimelineEventLink: vi.fn(),
     deleteTimelineEvent: vi.fn(),
-    updateTimelineEventRelations: vi.fn(),
   };
 
   beforeEach(() => {

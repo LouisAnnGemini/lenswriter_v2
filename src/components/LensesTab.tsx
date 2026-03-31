@@ -128,7 +128,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   };
 
   const handleNavigateToLens = (lensId: string, documentId: string) => {
-    setActiveTab('writing');
+    setActiveTab('design');
     setActiveDocument(documentId);
     setTimeout(() => {
       const el = document.getElementById(`block-${lensId}`);

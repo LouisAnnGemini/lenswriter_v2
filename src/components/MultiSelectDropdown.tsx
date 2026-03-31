@@ -31,7 +31,9 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (containerRef.current && !containerRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -53,7 +55,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   };
 
   return (
-    <div className={cn("relative w-full", className)} ref={containerRef}>
+    <div className={cn("relative w-full", isOpen ? "z-50" : "z-10", className)} ref={containerRef}>
       <div 
         className="min-h-[36px] bg-white border border-stone-200 rounded px-2 py-1 flex flex-wrap gap-1 items-center cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}

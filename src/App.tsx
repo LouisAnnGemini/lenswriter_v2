@@ -16,6 +16,7 @@ import { Minimize2 } from 'lucide-react';
 import { QuickCapture } from './components/QuickCapture';
 import { BackupProvider } from './context/BackupContext';
 import { SyncManager } from './components/SyncManager';
+import { ShortcutModal } from './components/ShortcutModal';
 import { Toaster, toast } from 'sonner';
 
 function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMobileOpen: (open: boolean) => void }) {
@@ -51,6 +52,8 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
     saveHistoryVersion: state.saveHistoryVersion
   })));
 
+  const [showShortcutModal, setShowShortcutModal] = React.useState(false);
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -79,7 +82,7 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
 
       // Ctrl+I toggle Inspector
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
-        if (activeTab === 'writing' && activeDocumentId && !disguiseMode) {
+        if (activeTab === 'design' && activeDocumentId && !disguiseMode) {
           e.preventDefault();
           if (rightSidebarMode === 'closed') {
             const isScene = scenes.some(s => s.id === activeDocumentId);
@@ -90,16 +93,32 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
           }
         }
       }
+
+      // Ctrl + Shift + K (Shortcut Modal)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowShortcutModal(prev => !prev);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    
+    const handleToggleShortcutModal = () => {
+      setShowShortcutModal(prev => !prev);
+    };
+    window.addEventListener('toggle-shortcut-modal', handleToggleShortcutModal);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('toggle-shortcut-modal', handleToggleShortcutModal);
+    };
   }, [disguiseMode, focusMode, activeTab, activeDocumentId, rightSidebarMode, lastInspectorTab, scenes, toggleDisguiseMode, toggleFocusMode, setRightSidebarMode, supabaseSyncEnabled, saveHistoryVersion]);
 
   return (
     <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden bg-white relative">
+      {showShortcutModal && <ShortcutModal onClose={() => setShowShortcutModal(false)} />}
       {!disguiseMode && <TopNav setMobileOpen={setMobileOpen} />}
       <div className="flex-1 flex overflow-hidden relative">
-        {activeTab === 'writing' && (
+        {activeTab === 'design' && (
           <>
             {!disguiseMode && <OutlinePanel setMobileOpen={setMobileOpen} />}
             <EditorPanel />

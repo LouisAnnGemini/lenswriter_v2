@@ -7,10 +7,12 @@ import { cn } from '../lib/utils';
 
 interface EventDetailsModalProps {
   eventId: string;
+  initialTab?: 'general' | 'characters' | 'relations';
+  initialCharacterId?: string;
   onClose: () => void;
 }
 
-export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) {
+export function EventDetailsModal({ eventId, initialTab, initialCharacterId, onClose }: EventDetailsModalProps) {
   const { 
     timelineEvents, 
     locations, 
@@ -18,9 +20,10 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
     characters, 
     activeWorkId, 
     updateTimelineEvent, 
-    updateTimelineEventRelations, 
     updateTimelineEventCharacterAction, 
     toggleTimelineEventLink,
+    toggleTimelineEventHorizontal,
+    toggleTimelineEventVertical,
     deleteTimelineEvent
   } = useStore(useShallow(state => ({
     timelineEvents: state.timelineEvents,
@@ -29,9 +32,10 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
     characters: state.characters,
     activeWorkId: state.activeWorkId,
     updateTimelineEvent: state.updateTimelineEvent,
-    updateTimelineEventRelations: state.updateTimelineEventRelations,
     updateTimelineEventCharacterAction: state.updateTimelineEventCharacterAction,
     toggleTimelineEventLink: state.toggleTimelineEventLink,
+    toggleTimelineEventHorizontal: state.toggleTimelineEventHorizontal,
+    toggleTimelineEventVertical: state.toggleTimelineEventVertical,
     deleteTimelineEvent: state.deleteTimelineEvent
   })));
 
@@ -43,20 +47,48 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
   const [localTitle, setLocalTitle] = useState('');
   const [localDescription, setLocalDescription] = useState('');
   const [localTimestamp, setLocalTimestamp] = useState('');
+  const [localStartTime, setLocalStartTime] = useState<number | ''>('');
+  const [localDuration, setLocalDuration] = useState(1);
+  const [localImportance, setLocalImportance] = useState(3);
   const [activeTab, setActiveTab] = useState<'general' | 'characters' | 'relations'>('general');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, eventId]);
+
+  useEffect(() => {
+    if (activeTab === 'characters' && initialCharacterId) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`modal-char-${initialCharacterId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-2');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-2');
+          }, 2000);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, initialCharacterId]);
 
   useEffect(() => {
     if (event) {
       setLocalTitle(event.title || '');
       setLocalDescription(event.description || '');
       setLocalTimestamp(event.timestamp || '');
+      setLocalStartTime(event.startTime ?? '');
+      setLocalDuration(event.duration || 1);
+      setLocalImportance(event.importance || 3);
     }
   }, [event]);
 
   if (!event) return null;
 
-  const relationCount = (event.beforeIds?.length || 0) + (event.afterIds?.length || 0) + (event.simultaneousIds?.length || 0) + (event.linkedEventIds?.length || 0);
+  const relationCount = (event.linkedEventIds?.length || 0);
   const characterCount = Object.keys(event.characterActions || {}).length;
 
   return (
@@ -90,12 +122,6 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />
                     <div className="absolute right-0 mt-1 w-48 bg-white border border-stone-200 rounded-xl shadow-lg py-1 z-20">
-                      <button 
-                        className="w-full text-left px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 flex items-center gap-2 transition-colors"
-                        onClick={() => { updateTimelineEvent({ id: event.id, status: 'pool' }); onClose(); }}
-                      >
-                        <ArrowRightToLine size={16} /> Move to Pool
-                      </button>
                       <button 
                         className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
                         onClick={() => { deleteTimelineEvent(event.id); onClose(); }}
@@ -195,7 +221,59 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
         {/* Tab Content */}
         <div className="p-6 overflow-y-auto flex-1 bg-stone-50/50">
           {activeTab === 'general' && (
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col gap-6">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">Start Time</label>
+                  <input
+                    type="number"
+                    value={localStartTime}
+                    onChange={(e) => setLocalStartTime(e.target.value === '' ? '' : parseInt(e.target.value))}
+                    onBlur={() => {
+                      const val = localStartTime === '' ? undefined : localStartTime;
+                      if (val !== event.startTime) updateTimelineEvent({ id: event.id, startTime: val });
+                    }}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    placeholder="Pool"
+                  />
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">Duration</label>
+                  <input
+                    type="number"
+                    value={localDuration}
+                    onChange={(e) => setLocalDuration(Math.max(1, parseInt(e.target.value) || 1))}
+                    onBlur={() => {
+                      if (localDuration !== event.duration) updateTimelineEvent({ id: event.id, duration: localDuration });
+                    }}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    min="1"
+                  />
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">Importance (1-5)</label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => {
+                          setLocalImportance(val);
+                          updateTimelineEvent({ id: event.id, importance: val });
+                        }}
+                        className={cn(
+                          "w-8 h-8 rounded-full text-xs font-bold transition-all",
+                          localImportance === val 
+                            ? "bg-emerald-500 text-white shadow-md scale-110" 
+                            : "bg-stone-100 text-stone-400 hover:bg-stone-200"
+                        )}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <textarea
                 value={localDescription}
                 onChange={(e) => setLocalDescription(e.target.value)}
@@ -204,7 +282,7 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
                     updateTimelineEvent({ id: event.id, description: localDescription });
                   }
                 }}
-                className="flex-1 min-h-[300px] text-base leading-relaxed bg-transparent border-none p-0 w-full focus:ring-0 resize-none text-stone-700 placeholder-stone-400 focus:outline-none"
+                className="flex-1 min-h-[200px] text-base leading-relaxed bg-transparent border-none p-0 w-full focus:ring-0 resize-none text-stone-700 placeholder-stone-400 focus:outline-none"
                 placeholder="Write the event description here..."
               />
             </div>
@@ -241,7 +319,11 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
                   Object.entries(event.characterActions || {}).map(([charId, action]) => {
                     const character = characters.find(c => c.id === charId);
                     return (
-                      <div key={charId} className="flex gap-4 p-5 bg-white rounded-xl border border-stone-200 shadow-sm group transition-all hover:shadow-md">
+                      <div 
+                        key={charId} 
+                        id={`modal-char-${charId}`}
+                        className="flex gap-4 p-5 bg-white rounded-xl border border-stone-200 shadow-sm group transition-all hover:shadow-md"
+                      >
                         <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0 border border-stone-200">
                           <span className="text-sm font-bold text-stone-500">{character?.name?.charAt(0) || '?'}</span>
                         </div>
@@ -274,42 +356,6 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
 
           {activeTab === 'relations' && (
             <div className="space-y-8">
-              {/* Logical Sequence */}
-              <div>
-                <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
-                  <Network size={16} className="text-emerald-600" /> Logical Sequence
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-                    <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">Before This Event</label>
-                    <MultiSelectDropdown
-                      options={allEvents.filter(e => e.id !== event.id).map(e => ({ id: e.id, title: e.title }))}
-                      selectedIds={event.beforeIds || []}
-                      onChange={(newIds) => updateTimelineEventRelations(event.id, newIds, event.afterIds || [], event.simultaneousIds || [])}
-                      placeholder="Select events..."
-                    />
-                  </div>
-                  <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-                    <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">Simultaneous</label>
-                    <MultiSelectDropdown
-                      options={allEvents.filter(e => e.id !== event.id).map(e => ({ id: e.id, title: e.title }))}
-                      selectedIds={event.simultaneousIds || []}
-                      onChange={(newIds) => updateTimelineEventRelations(event.id, event.beforeIds || [], event.afterIds || [], newIds)}
-                      placeholder="Select events..."
-                    />
-                  </div>
-                  <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
-                    <label className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-3">After This Event</label>
-                    <MultiSelectDropdown
-                      options={allEvents.filter(e => e.id !== event.id).map(e => ({ id: e.id, title: e.title }))}
-                      selectedIds={event.afterIds || []}
-                      onChange={(newIds) => updateTimelineEventRelations(event.id, event.beforeIds || [], newIds, event.simultaneousIds || [])}
-                      placeholder="Select events..."
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Linked Events */}
               <div>
                 <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
@@ -328,6 +374,50 @@ export function EventDetailsModal({ eventId, onClose }: EventDetailsModalProps) 
                       removedIds.forEach(id => toggleTimelineEventLink(event.id, id));
                     }}
                     placeholder="+ Link another event..."
+                  />
+                </div>
+              </div>
+
+              {/* Horizontal Relations */}
+              <div>
+                <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
+                  <Network size={16} className="text-emerald-600" /> Horizontal (Fixed Interval)
+                </h4>
+                <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
+                  <p className="text-xs text-stone-500 mb-4">Fix events horizontally to maintain a fixed interval.</p>
+                  <MultiSelectDropdown
+                    options={allEvents.filter(e => e.id !== event.id).map(e => ({ id: e.id, title: e.title }))}
+                    selectedIds={event.horizontalIds || []}
+                    onChange={(newIds) => {
+                      const oldIds = event.horizontalIds || [];
+                      const addedIds = newIds.filter(id => !oldIds.includes(id));
+                      const removedIds = oldIds.filter(id => !newIds.includes(id));
+                      addedIds.forEach(id => toggleTimelineEventHorizontal(event.id, id));
+                      removedIds.forEach(id => toggleTimelineEventHorizontal(event.id, id));
+                    }}
+                    placeholder="+ Fix horizontal interval..."
+                  />
+                </div>
+              </div>
+
+              {/* Vertical Relations */}
+              <div>
+                <h4 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
+                  <Network size={16} className="text-emerald-600" /> Vertical (Sync/Stack)
+                </h4>
+                <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
+                  <p className="text-xs text-stone-500 mb-4">Sync events vertically to stack them.</p>
+                  <MultiSelectDropdown
+                    options={allEvents.filter(e => e.id !== event.id).map(e => ({ id: e.id, title: e.title }))}
+                    selectedIds={event.verticalIds || []}
+                    onChange={(newIds) => {
+                      const oldIds = event.verticalIds || [];
+                      const addedIds = newIds.filter(id => !oldIds.includes(id));
+                      const removedIds = oldIds.filter(id => !newIds.includes(id));
+                      addedIds.forEach(id => toggleTimelineEventVertical(event.id, id));
+                      removedIds.forEach(id => toggleTimelineEventVertical(event.id, id));
+                    }}
+                    placeholder="+ Sync vertically..."
                   />
                 </div>
               </div>

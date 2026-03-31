@@ -3,9 +3,9 @@ import { StoreState, Block, BlockSlice, HistoryAction } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (set) => ({
-  addBlock: ({ documentId, type, isLens, lensColor, afterBlockId, notes }) => set((state) => {
+  addBlock: ({ id, documentId, type, isLens, lensColor, afterBlockId, notes }) => set((state) => {
     const newBlock: Block = { 
-      id: uuidv4(), 
+      id: id || uuidv4(), 
       documentId, 
       type, 
       isLens, 
@@ -39,7 +39,16 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     };
   }),
   updateBlock: (block) => set((state) => ({
-    blocks: state.blocks.map(b => b.id === block.id ? { ...b, ...block } : b),
+    blocks: state.blocks.map(b => {
+      if (b.id === block.id) {
+        const newBlock = { ...b, ...block };
+        if (block.isLens === false) {
+          delete newBlock.lensColor;
+        }
+        return newBlock;
+      }
+      return b;
+    }),
     lastModified: Date.now()
   })),
   deleteBlock: (blockId) => set((state) => {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors, Keyboard } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
@@ -179,12 +180,68 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Global Undo/Redo Shortcuts
-  useEffect(() => {
+  const toggleBlockLens = React.useCallback((blockId: string) => {
+    const blocks = useStore.getState().blocks;
+    const block = blocks.find(b => b.id === blockId);
+    if (block) {
+      if (block.isLens) {
+        updateBlock({ id: blockId, isLens: false });
+      } else {
+        updateBlock({ id: blockId, isLens: true, lensColor: 'red' });
+      }
+      // Re-focus the block after the update
+      setTimeout(() => {
+        const el = document.getElementById(`block-${blockId}`);
+        if (el) {
+          const textarea = el.querySelector('textarea');
+          if (textarea) {
+            textarea.focus();
+          }
+        }
+      }, 0);
+    }
+  }, [updateBlock]);
+
+  const handleBlockChange = (id: string, updates: Partial<typeof allBlocks[0]>) => {
+    updateBlock({ id, ...updates });
+  };
+
+  const handleAddBlock = React.useCallback((isLens?: boolean, afterBlockId?: string) => {
+    const newId = uuidv4();
+    addBlock({ id: newId, documentId: activeDocId, type: 'text', isLens, lensColor: isLens ? 'red' : undefined, afterBlockId });
+    setFocusedBlockId(newId);
+  }, [addBlock, activeDocId, setFocusedBlockId]);
+
+  React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      
+
+      // Ctrl+Shift+M Toggle App Mode
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        toggleAppMode();
+      }
+
+      // Ctrl+/ Toggle Block/Lens
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        if (focusedBlockId) {
+          toggleBlockLens(focusedBlockId);
+        }
+      }
+
+      // Ctrl+Enter Add Block Below
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        // Find the focused block
+        if (focusedBlockId) {
+          handleAddBlock(false, focusedBlockId);
+        } else {
+          handleAddBlock(false);
+        }
+      }
+
       if (isInput) return; // Let native undo/redo handle text inputs
 
       // Undo: Ctrl+Z
@@ -202,7 +259,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, toggleAppMode, handleAddBlock, focusedBlockId, toggleBlockLens]);
 
   if (!activeDocument) {
     return (
@@ -212,10 +269,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       </div>
     );
   }
-
-  const handleBlockChange = (id: string, updates: Partial<typeof allBlocks[0]>) => {
-    updateBlock({ id, ...updates });
-  };
 
   const navigateToBlock = (blockId: string) => {
     const block = allBlocks.find(b => b.id === blockId);
@@ -246,10 +299,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     } else if (block.description === '') {
       handleBlockChange(block.id, { description: undefined });
     }
-  };
-
-  const handleAddBlock = (isLens?: boolean, afterBlockId?: string) => {
-    addBlock({ documentId: activeDocId, type: 'text', isLens, lensColor: isLens ? 'red' : undefined, afterBlockId });
   };
 
   const handleLensColorChange = (id: string, color: string) => {
@@ -537,15 +586,6 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         }}
                         onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                         onKeyDown={(e: React.KeyboardEvent) => {
-                          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                            e.preventDefault();
-                            updateBlock({ 
-                              id: block.id, 
-                              isLens: !block.isLens,
-                              lensColor: !block.isLens ? (block.lensColor || 'red') : undefined
-                            });
-                          }
-
                           if (e.key === 'Tab') {
                             e.preventDefault();
                             const currentIndex = blocks.findIndex(b => b.id === block.id);
@@ -1083,6 +1123,19 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   </div>
                   <ChevronRight size={16} className="text-stone-400" />
                 </button>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new Event('toggle-shortcut-modal'));
+                    setShowSettings(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Keyboard size={16} className="text-stone-500" />
+                    Keyboard Shortcuts
+                  </div>
+                  <ChevronRight size={16} className="text-stone-400" />
+                </button>
               </div>
             )}
             <div className="mb-4">
@@ -1092,10 +1145,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   onClick={() => toggleAppMode()}
                   className={cn(
                     "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
-                    appMode === 'writing' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                    appMode === 'design' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
                   )}
                 >
-                  Writing
+                  Design
                 </button>
                 <button
                   onClick={() => toggleAppMode()}

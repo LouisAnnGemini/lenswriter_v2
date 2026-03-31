@@ -185,7 +185,7 @@ export function BlockManagementTab() {
                             </div>
                             <button
                               onClick={() => {
-                                setActiveTab('writing');
+                                setActiveTab('design');
                                 setActiveDocument(block.documentId);
                                 setTimeout(() => {
                                   const el = document.getElementById(`block-${block.id}`);
