@@ -63,7 +63,8 @@ LensWriter 是一款专为作家和创作者设计的非线性写作工具，它
 *   **块操作菜单**：将鼠标悬停在文本块上，块的**左下方**会出现操作按钮：
     *   **Add Text**：插入普通文本块。
     *   **Add Lens**：插入透镜块。
-    *   **Delete Block**：插入普通文本块。
+    *   **Compare & Edit (对比与编辑)**：点击此按钮（GitCompare 图标），会弹出一个双栏对比编辑窗口。左侧为原始版本，右侧为草稿/AI润色版本。您可以在两边同时编辑，底部会实时显示差异高亮 (Diff)。编辑完成后，您可以选择接受原文、接受草稿，或者保存并保持对比状态（此时块的右上角会显示蓝色的 "Comparing" 徽章）。
+    *   **Delete Block**：删除当前块。
 *   **向上合并 (Merge Up)**：点击块顶部的 `↑ Merge Up` 按钮，可将当前块与上一个文本块合并。
 *   **块描述与完成状态**：将鼠标悬停在普通文本块上，右侧会出现按钮：
     *   **块描述 (气泡图标)**：添加批注或大纲描述。
@@ -190,6 +191,11 @@ LensWriter 提供多种方式保障您的数据安全：
     *   `id`: 类型为 `uuid` (主键)。
     *   `state`: 类型为 `jsonb`。
 *   **操作**：在设置菜单中输入您的 Supabase URL 和 Anon Key，开启同步开关。
+*   **安全提示**：此方案将 Anon Key 作为您的个人“密码”。您必须在 Supabase 的 SQL Editor 中执行以下代码，允许所有持有 Anon Key 的请求访问数据：
+    ```sql
+    DROP POLICY IF EXISTS "Users can only access their own data" ON app_state;
+    CREATE POLICY "Allow all access with Anon Key" ON app_state FOR ALL USING (true) WITH CHECK (true);
+    ```
 *   **状态监控**：设置菜单中会实时显示同步状态（Syncing / Success / Error）。
 
 ### 11.4 手动导入导出 (Import/Export)

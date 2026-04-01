@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors, Keyboard, LayoutGrid } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors, Keyboard, LayoutGrid, GitCompare } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
@@ -18,6 +18,7 @@ import { CharacterAppearanceMatrix } from './CharacterAppearanceMatrix';
 import { SnapshotDialog } from './SnapshotDialog';
 import { NotesTab } from './NotesTab';
 import { TabSettingsModal } from './TabSettingsModal';
+import { BlockCompareModal } from './BlockCompareModal';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -127,6 +128,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [collapsedTocSections, setCollapsedTocSections] = useState<Set<string>>(new Set());
+  const [comparingBlockId, setComparingBlockId] = useState<string | null>(null);
 
   const toggleTocSection = (documentId: string) => {
     setCollapsedTocSections(prev => {
@@ -542,12 +544,22 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                   <div className="flex-1 min-w-0">
                     {/* Block Content */}
                     <div className={cn(
-                      "w-full rounded-lg transition-colors",
+                      "w-full rounded-lg transition-colors relative",
+                      block.isComparing && "ring-2 ring-blue-500 shadow-sm",
                       block.isLens && !disguiseMode 
                         ? cn("p-4 border-2", LENS_COLORS[block.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red) 
                         : "px-4 border-2 border-transparent",
                       disguiseMode && "rounded-none p-0 border-0"
                     )}>
+                      {block.isComparing && !disguiseMode && (
+                        <div 
+                          className="absolute -top-3 -right-3 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 z-10"
+                          onClick={() => setComparingBlockId(block.id)}
+                        >
+                          <GitCompare size={12} />
+                          Comparing
+                        </div>
+                      )}
                       {block.isLens && !disguiseMode && (
                         <div className="flex justify-between items-center mb-2">
                           <div className="flex space-x-1">
@@ -716,6 +728,16 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                                   <Scissors size={14} />
                                 </button>
                               )}
+                              <button 
+                                onClick={() => {
+                                  setComparingBlockId(block.id);
+                                  setOpenMenuBlockId(null);
+                                }}
+                                className="p-1 text-stone-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Compare & Edit"
+                              >
+                                <GitCompare size={14} />
+                              </button>
                               <button 
                                 onClick={() => {
                                   handleDeleteBlock(block.id);
@@ -1399,6 +1421,13 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
             </div>
           </div>
         </div>
+      )}
+      
+      {comparingBlockId && (
+        <BlockCompareModal
+          blockId={comparingBlockId}
+          onClose={() => setComparingBlockId(null)}
+        />
       )}
     </div>
   );

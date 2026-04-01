@@ -6,11 +6,12 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 
 ### 1. 🎨 Design & Editor (设计与编辑器)
 - **Main Editor:** `src/components/EditorPanel.tsx`
+- **Block Compare & Edit:** `src/components/BlockCompareModal.tsx`
 - **Sidebar (Navigation/Outline):** `src/components/Sidebar.tsx`
 - **Outline Panel:** `src/components/OutlinePanel.tsx`
 - **Find & Replace:** `src/components/FindReplaceBar.tsx`
 - **Chapter Overview:** `src/components/ChapterScenesList.tsx`, `src/components/CharacterAppearanceMatrix.tsx`
-- **State Management:** `src/store/stores/slices/sceneSlice.ts`, `src/store/stores/slices/chapterSlice.ts`, `src/store/stores/slices/workSlice.ts`
+- **State Management:** `src/store/stores/slices/sceneSlice.ts`, `src/store/stores/slices/chapterSlice.ts`, `src/store/stores/slices/workSlice.ts`, `src/store/stores/slices/blockSlice.ts`
 
 ### 2. 📥 Inbox (收件箱 / 快速记录)
 - **Main Tab View:** `src/components/InboxTab.tsx`

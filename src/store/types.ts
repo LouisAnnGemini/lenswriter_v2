@@ -2,7 +2,7 @@ export type Work = { id: string; title: string; createdAt: number; order: number
 export type Character = { id: string; workId: string; name: string; description: string; order: number; customFields?: Record<string, any> };
 export type Chapter = { id: string; workId: string; title: string; order: number; goalWordCount?: number; deadline?: string; completed?: boolean; archived?: boolean };
 export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; characterPresence?: Record<string, { note?: string }>; statusColor?: string; linkedEventIds?: string[]; goalWordCount?: number; deadline?: string };
-export type Block = { id: string; documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; content: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean };
+export type Block = { id: string; documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; content: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean; draftContent?: string; isComparing?: boolean };
 
 export type Location = { id: string; workId: string; name: string; description: string; order: number };
 
