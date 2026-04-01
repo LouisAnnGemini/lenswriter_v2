@@ -42,9 +42,9 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-stone-200">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-2">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-2 border-b border-stone-200">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <GitCompare className="w-5 h-5 text-stone-500" />
             Compare & Edit Block
@@ -59,7 +59,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
           <div className="flex flex-1 min-h-[40vh] border-b border-stone-200">
             {/* Original */}
             <div className="flex-1 flex flex-col border-r border-stone-200">
-              <div className="p-3 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
+              <div className="p-2 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
                 <span>Original Version</span>
                 <button 
                   onClick={handleAcceptOriginal}
@@ -72,14 +72,14 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
               <textarea
                 value={originalText}
                 onChange={(e) => setOriginalText(e.target.value)}
-                className="flex-1 p-6 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
+                className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
                 placeholder="Original content..."
               />
             </div>
 
             {/* Draft */}
             <div className="flex-1 flex flex-col">
-              <div className="p-3 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
+              <div className="p-2 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
                 <span>Draft Version</span>
                 <button 
                   onClick={handleAcceptDraft}
@@ -92,7 +92,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
               <textarea
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
-                className="flex-1 p-6 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
+                className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
                 placeholder="Draft content..."
               />
             </div>
@@ -100,7 +100,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
 
           {/* Diff Preview */}
           <div className="flex-1 flex flex-col min-h-[30vh] bg-stone-50">
-            <div className="p-3 border-b border-stone-200 font-medium text-stone-700 flex items-center justify-between">
+            <div className="p-2 border-b border-stone-200 font-medium text-stone-700 flex items-center justify-between">
               <span>Diff Preview</span>
               <div className="flex items-center gap-4 text-sm text-stone-600">
                 <div className="flex items-center gap-1.5">
@@ -113,7 +113,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
                 </div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-8 font-serif text-lg leading-relaxed whitespace-pre-wrap bg-white">
+            <div className="flex-1 overflow-y-auto p-4 font-serif text-lg leading-relaxed whitespace-pre-wrap bg-white">
               {diffResult?.map((part, index) => {
                 if (part.added) {
                   return <span key={index} className="bg-[#e6ffe6] text-green-900 font-medium">{part.value}</span>;
@@ -127,7 +127,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
           </div>
         </div>
 
-        <div className="p-4 border-t border-stone-200 bg-stone-50 flex justify-end gap-3">
+        <div className="p-2 border-t border-stone-200 bg-stone-50 flex justify-end gap-3">
           <button 
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
