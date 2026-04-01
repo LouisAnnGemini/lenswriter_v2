@@ -24,6 +24,32 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
     return Diff.diffWords(originalText, draftText);
   }, [originalText, draftText]);
 
+  const [topSectionHeight, setTopSectionHeight] = useState<number>(400);
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      setTopSectionHeight(Math.max(100, Math.min(e.clientY - 100, window.innerHeight - 200)));
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.body.style.cursor = 'default';
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'row-resize';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   if (!block) return null;
 
   const handleAcceptOriginal = () => {
@@ -43,7 +69,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-2">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-2 border-b border-stone-200">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <GitCompare className="w-5 h-5 text-stone-500" />
@@ -54,53 +80,61 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col">
           {/* Editors */}
-          <div className="flex flex-1 min-h-[40vh] border-b border-stone-200">
-            {/* Original */}
-            <div className="flex-1 flex flex-col border-r border-stone-200">
-              <div className="p-2 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
-                <span>Original Version</span>
-                <button 
-                  onClick={handleAcceptOriginal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
-                >
-                  <Check className="w-4 h-4 text-green-600" />
-                  Accept Original
-                </button>
+          <div style={{ height: topSectionHeight }} className="flex flex-col border-b border-stone-200">
+            <div className="flex flex-1 min-h-0">
+              {/* Original */}
+              <div className="flex-1 flex flex-col border-r border-stone-200">
+                <div className="py-1 px-2 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
+                  <span>Original Version</span>
+                  <button 
+                    onClick={handleAcceptOriginal}
+                    className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+                  >
+                    <Check className="w-3 h-3 text-green-600" />
+                    Accept Original
+                  </button>
+                </div>
+                <textarea
+                  value={originalText}
+                  onChange={(e) => setOriginalText(e.target.value)}
+                  className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
+                  placeholder="Original content..."
+                />
               </div>
-              <textarea
-                value={originalText}
-                onChange={(e) => setOriginalText(e.target.value)}
-                className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
-                placeholder="Original content..."
-              />
-            </div>
 
-            {/* Draft */}
-            <div className="flex-1 flex flex-col">
-              <div className="p-2 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
-                <span>Draft Version</span>
-                <button 
-                  onClick={handleAcceptDraft}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
-                >
-                  <Check className="w-4 h-4 text-green-600" />
-                  Accept Draft
-                </button>
+              {/* Draft */}
+              <div className="flex-1 flex flex-col">
+                <div className="py-1 px-2 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
+                  <span>Draft Version</span>
+                  <button 
+                    onClick={handleAcceptDraft}
+                    className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+                  >
+                    <Check className="w-3 h-3 text-green-600" />
+                    Accept Draft
+                  </button>
+                </div>
+                <textarea
+                  value={draftText}
+                  onChange={(e) => setDraftText(e.target.value)}
+                  className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
+                  placeholder="Draft content..."
+                />
               </div>
-              <textarea
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
-                placeholder="Draft content..."
-              />
             </div>
           </div>
 
+          {/* Divider */}
+          <div 
+            className="h-2 bg-stone-200 cursor-row-resize hover:bg-stone-400 transition-colors"
+            onMouseDown={() => setIsDragging(true)}
+          />
+
           {/* Diff Preview */}
-          <div className="flex-1 flex flex-col min-h-[30vh] bg-stone-50">
-            <div className="p-2 border-b border-stone-200 font-medium text-stone-700 flex items-center justify-between">
+          <div className="flex-1 flex flex-col bg-stone-50 overflow-hidden">
+            <div className="py-1 px-2 border-b border-stone-200 font-medium text-stone-700 flex items-center justify-between">
               <span>Diff Preview</span>
               <div className="flex items-center gap-4 text-sm text-stone-600">
                 <div className="flex items-center gap-1.5">
