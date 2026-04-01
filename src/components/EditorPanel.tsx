@@ -2,19 +2,22 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors, Keyboard } from 'lucide-react';
+import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors, Keyboard, LayoutGrid } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
+import { toast } from 'sonner';
 
 import { LensesPanel } from './LensesPanel';
 import { EventPoolPanel } from './EventPoolPanel';
 import { AutoResizeTextarea } from './AutoResizeTextarea';
 import { ChapterScenesList } from './ChapterScenesList';
 import { SCENE_STATUS_COLORS } from '../store/constants';
-import { ChapterCharacterSummary } from './ChapterCharacterSummary';
+import { CharacterAppearanceMatrix } from './CharacterAppearanceMatrix';
 import { SnapshotDialog } from './SnapshotDialog';
+import { NotesTab } from './NotesTab';
+import { TabSettingsModal } from './TabSettingsModal';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -26,7 +29,7 @@ const LENS_COLORS = {
   black: 'bg-stone-900 border-stone-700 text-stone-100',
 };
 
-export function EditorPanel({ compact }: { compact?: boolean }) {
+export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMode?: boolean }) {
   const {
     setRightSidebarMode,
     undo,
@@ -39,6 +42,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     deleteBlock,
     mergeBlockUp,
     toggleSceneCharacter,
+    updateSceneCharacterNote,
     updateScene,
     updateChapter,
     deleteChapter,
@@ -60,7 +64,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     blocks: allBlocks,
     characters: allCharacters,
     timelineEvents,
-    focusMode: isFocusMode,
+    focusMode: storeFocusMode,
     rightSidebarMode,
     lastInspectorTab,
     disguiseMode,
@@ -78,6 +82,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     deleteBlock: state.deleteBlock,
     mergeBlockUp: state.mergeBlockUp,
     toggleSceneCharacter: state.toggleSceneCharacter,
+    updateSceneCharacterNote: state.updateSceneCharacterNote,
     updateScene: state.updateScene,
     updateChapter: state.updateChapter,
     deleteChapter: state.deleteChapter,
@@ -107,13 +112,17 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
     editorMargin: state.editorMargin
   })));
 
+  const isFocusMode = focusMode !== undefined ? focusMode : storeFocusMode;
+
   const [copied, setCopied] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
+  const [openMenuBlockId, setOpenMenuBlockId] = useState<string | null>(null);
 
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
   const [showCreateSnapshotModal, setShowCreateSnapshotModal] = useState(false);
+  const [showTabSettings, setShowTabSettings] = useState(false);
   const [newSnapshotName, setNewSnapshotName] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -312,6 +321,13 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
 
   const handleDeleteBlock = (id: string) => {
     deleteBlock(id);
+    toast.success('Deleted 1 block', {
+      action: {
+        label: 'Undo',
+        onClick: () => undo()
+      },
+      duration: 5000,
+    });
   };
 
   const handleMergeUp = (id: string) => {
@@ -393,6 +409,9 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       "flex-1 flex bg-white overflow-hidden relative transition-all duration-300",
       !activeDocId ? "hidden md:flex" : "flex"
     )}>
+      {showTabSettings && (
+        <TabSettingsModal onClose={() => setShowTabSettings(false)} />
+      )}
       {showSnapshotDialog && isScene && (
         <SnapshotDialog
           sceneId={activeDocId}
@@ -401,7 +420,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       )}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {showFindReplace && (
-          <div className="border-b border-stone-200 z-20 bg-stone-50">
+          <div className="absolute top-4 right-4 z-[100] bg-white/90 backdrop-blur-md shadow-xl rounded-xl border border-stone-200/50 p-2 animate-in fade-in slide-in-from-top-4">
             <FindReplaceBar 
               onClose={() => {
                 setShowFindReplace(false);
@@ -416,15 +435,15 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
         className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-12 transition-all duration-300",
         isFocusMode 
-          ? "px-4 py-8 md:px-8 md:py-12 lg:px-12 xl:px-16" 
+          ? "px-6 py-12 md:px-12 md:py-16 lg:px-20 xl:px-24" 
           : compact
-            ? "px-4 py-6 md:px-6 md:py-8"
-            : "px-4 py-8 md:px-8 md:py-12 lg:px-12 xl:px-16"
+            ? "px-4 py-6 md:px-8 md:py-10"
+            : "px-6 py-10 md:px-12 md:py-16 lg:px-16 xl:px-20"
       )}>
         <div 
           className={cn(
             "mx-auto transition-all duration-300",
-            isFocusMode ? "max-w-5xl" : "max-w-5xl"
+            isFocusMode ? "max-w-4xl" : "max-w-4xl"
           )}
         >
           <div className="flex items-start justify-between mb-4 gap-4">
@@ -491,16 +510,19 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
             updateScene={updateScene}
           />
 
-          {/* Chapter Character Summary */}
-          <ChapterCharacterSummary
-            isScene={isScene}
-            disguiseMode={disguiseMode}
-            chapterCharacters={chapterCharacters}
-            characters={characters}
-            scenes={scenes}
-            activeDocId={activeDocId}
-            activeDocumentOrder={activeDocument.order}
-          />
+          {/* Character Appearance Matrix */}
+          {!isScene && !disguiseMode && chapterCharacters.length > 0 && (
+            <div className="mb-12 space-y-6">
+              <h3 className="text-sm font-bold text-stone-400 uppercase tracking-wider border-b border-stone-100 pb-2">Character Appearance Matrix</h3>
+              <CharacterAppearanceMatrix
+                scenes={chapterScenes}
+                characters={characters.filter(c => chapterCharacters.includes(c.id))}
+                selectedCharacterIds={chapterCharacters}
+                onTogglePresence={toggleSceneCharacter}
+                onUpdateNote={updateSceneCharacterNote}
+              />
+            </div>
+          )}
 
           {/* Blocks */}
           <div className={cn("space-y-6", disguiseMode && "space-y-4")}>
@@ -511,17 +533,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
               return (
               <div key={block.id} id={`block-${block.id}`} className="group relative flex flex-col transition-colors duration-500">
                 {/* Merge Up Button */}
-                {canMergeUp && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <button
-                      onClick={() => handleMergeUp(block.id)}
-                      className="flex items-center px-2 py-1 bg-white border border-stone-200 shadow-sm text-xs font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-50 rounded-full transition-colors"
-                      title="Merge with previous text block"
-                    >
-                      <ArrowUpToLine size={12} className="mr-1" /> Merge Up
-                    </button>
-                  </div>
-                )}
+                {/* Removed floating Merge Up button */}
 
                 <div className="flex items-start gap-2" style={{
                   paddingLeft: `${(editorMargin || 0)}rem`,
@@ -580,7 +592,10 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         enableReadMode={true}
                         isFocused={focusedBlockId === block.id}
                         isDimmed={focusedBlockId !== null && focusedBlockId !== block.id}
-                        onFocus={() => setFocusedBlockId(block.id)}
+                        onFocus={() => {
+                          setFocusedBlockId(block.id);
+                          setOpenMenuBlockId(null);
+                        }}
                         onBlur={() => {
                           // Only clear if the focused block is still this one
                           setFocusedBlockId(prev => prev === block.id ? null : prev);
@@ -633,8 +648,15 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                         placeholder={block.isLens ? (block.lensColor === 'black' ? "Hidden content..." : "Enter lens content...") : "Start writing..."}
                         className={cn(
                           "w-full outline-none bg-transparent p-0",
-                          disguiseMode ? "font-mono text-base leading-snug text-black" : (block.isLens ? "text-base md:text-sm font-medium leading-relaxed" : "text-lg leading-loose tracking-wide text-stone-800 font-serif"),
-                          block.isLens && block.lensColor === 'black' && !disguiseMode ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : ""
+                          disguiseMode 
+                            ? "font-mono text-base leading-snug text-black" 
+                            : (block.isLens 
+                                ? "text-base md:text-sm font-medium leading-relaxed" 
+                                : "text-lg leading-loose tracking-wide text-stone-900 font-serif"
+                              ),
+                          block.isLens && block.lensColor === 'black' && !disguiseMode 
+                            ? "text-transparent focus:text-stone-900 placeholder:text-stone-400 focus:placeholder:text-stone-300 selection:bg-stone-200 selection:text-stone-900" 
+                            : ""
                         )}
                         style={{ letterSpacing: `${(letterSpacing || 0) * 0.05}em` }}
                       />
@@ -642,46 +664,78 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
 
                     {/* Block Actions (Hover) */}
                     {!disguiseMode && !isArchived && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-2 px-2 absolute top-full left-0 z-10 bg-white shadow-sm rounded-md border border-stone-200 py-0.5 mt-1">
+                      <div className="transition-opacity flex items-center space-x-1 absolute -left-10 top-2 z-10 opacity-0 group-hover:opacity-100">
                         <button 
                           onClick={() => handleAddBlock(false, block.id)}
-                          className="flex items-center px-2 py-0.5 text-[10px] font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                          className="p-1 text-stone-300 hover:text-emerald-600 hover:bg-stone-100 rounded transition-colors"
                           title="Add Text Block Below"
                         >
-                          <AlignLeft size={12} className="mr-1" /> Add Text
+                          <Plus size={16} />
                         </button>
-                        <button 
-                          onClick={() => handleAddBlock(true, block.id)}
-                          className="flex items-center px-2 py-0.5 text-[10px] font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
-                          title="Add Color Lens Below"
-                        >
-                          <Highlighter size={12} className="mr-1" /> Add Lens
-                        </button>
-                        {isScene && (
+                        <div className="relative">
                           <button 
-                            onClick={() => handleSplitScene(block.id)}
-                            className="flex items-center px-2 py-0.5 text-[10px] font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
-                            title="Split Scene After This Block"
+                            onClick={() => setOpenMenuBlockId(openMenuBlockId === block.id ? null : block.id)}
+                            className={cn("p-1 rounded transition-colors", openMenuBlockId === block.id ? "text-stone-600 bg-stone-100" : "text-stone-300 hover:text-stone-600 hover:bg-stone-100")}
+                            title="More Actions"
                           >
-                            <Scissors size={12} className="mr-1" /> Split
+                            <MoreVertical size={16} />
                           </button>
-                        )}
-                        <button 
-                          onClick={() => handleDeleteBlock(block.id)}
-                          className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                          title="Delete Block"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                          {openMenuBlockId === block.id && (
+                            <div className="absolute left-full top-0 ml-1 flex items-center space-x-1 bg-white shadow-sm rounded-md border border-stone-200 p-1 z-20">
+                              <button 
+                                onClick={() => {
+                                  handleBlockChange(block.id, { isLens: !block.isLens });
+                                  setOpenMenuBlockId(null);
+                                }}
+                                className="p-1 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                                title={block.isLens ? "Convert to Normal Block" : "Convert to Lens Block"}
+                              >
+                                <Highlighter size={14} />
+                              </button>
+                              {canMergeUp && (
+                                <button 
+                                  onClick={() => {
+                                    handleMergeUp(block.id);
+                                    setOpenMenuBlockId(null);
+                                  }}
+                                  className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                                  title="Merge with previous text block"
+                                >
+                                  <ArrowUpToLine size={14} />
+                                </button>
+                              )}
+                              {isScene && (
+                                <button 
+                                  onClick={() => {
+                                    handleSplitScene(block.id);
+                                    setOpenMenuBlockId(null);
+                                  }}
+                                  className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                                  title="Split Scene After This Block"
+                                >
+                                  <Scissors size={14} />
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => {
+                                  handleDeleteBlock(block.id);
+                                  setOpenMenuBlockId(null);
+                                }}
+                                className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Delete Block"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
 
                   {/* Right Side Actions for Text Blocks */}
                   {!disguiseMode && !isArchived && (
-                    <div className={cn(
-                      "flex flex-col items-center space-y-2 opacity-0 group-hover:opacity-100 transition-opacity pt-2 w-8 shrink-0"
-                    )}>
+                    <div className="flex flex-col items-center space-y-2 transition-opacity pt-2 w-8 shrink-0 opacity-0 group-hover:opacity-100">
                       <button 
                         onClick={() => toggleBlockDescription(block)}
                         className={cn("p-1.5 rounded-md transition-colors", block.description !== undefined ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
@@ -729,51 +783,83 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
       </div>
       
       {/* Inspector Sidebar */}
-      {rightSidebarMode !== 'closed' && !disguiseMode && (
+      {rightSidebarMode !== 'closed' && !disguiseMode && !isFocusMode && (
         <div className={cn(
-          "bg-stone-50 border-l border-stone-200 shrink-0 flex flex-col transition-all duration-300",
-          "fixed inset-0 w-full z-[60] md:relative md:w-72 md:inset-auto md:z-20"
+          "bg-white border-l border-stone-200 shrink-0 flex transition-all duration-300",
+          "fixed inset-0 w-full z-[60] md:relative md:w-80 md:inset-auto md:z-20"
         )}>
-          <div className="p-2 border-b border-stone-200 flex items-center justify-between bg-stone-50/80">
-            <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
-              {isScene && (
-                <button
-                  onClick={() => setRightSidebarMode('info')}
-                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'info' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
-                >
-                  Info
-                </button>
-              )}
+          {/* Vertical Tab Bar */}
+          <div className="w-12 border-r border-stone-100 bg-stone-50 flex flex-col items-center py-4 space-y-4 shrink-0">
+            {isScene && (
               <button
-                onClick={() => setRightSidebarMode('micro')}
-                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'micro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                onClick={() => setRightSidebarMode('info')}
+                className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'info' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
+                title="Scene Info"
               >
-                Directory
+                <Info size={18} />
               </button>
+            )}
+            <button
+              onClick={() => setRightSidebarMode('micro')}
+              className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'micro' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
+              title="Directory"
+            >
+              <List size={18} />
+            </button>
+            <button
+              onClick={() => setRightSidebarMode('meso')}
+              className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'meso' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
+              title="Lenses"
+            >
+              <LayoutGrid size={18} />
+            </button>
+            {isScene && (
               <button
-                onClick={() => setRightSidebarMode('meso')}
-                className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'meso' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
+                onClick={() => setRightSidebarMode('macro')}
+                className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'macro' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
+                title="Events"
               >
-                Lenses
+                <Clock size={18} />
               </button>
-              {isScene && (
-                <button
-                  onClick={() => setRightSidebarMode('macro')}
-                  className={cn("px-2 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap", rightSidebarMode === 'macro' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100")}
-                >
-                  Events
-                </button>
-              )}
-            </div>
+            )}
+            <button
+              onClick={() => setRightSidebarMode('notes')}
+              className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'notes' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
+              title="Notes"
+            >
+              <FileText size={18} />
+            </button>
+            <div className="flex-1" />
             <button
               onClick={() => setRightSidebarMode('closed')}
-              className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-200 rounded-md transition-colors shrink-0 ml-1"
+              className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-200/50 rounded-xl transition-colors"
               title="Close Inspector"
             >
-              <X size={16} />
+              <PanelRightClose size={18} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto">
+
+          {/* Content Area */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-white">
+            <div className="p-4 border-b border-stone-100 flex items-center justify-between shrink-0 bg-white">
+              <h3 className="text-sm font-semibold text-stone-800">
+                {rightSidebarMode === 'info' && 'Scene Info'}
+                {rightSidebarMode === 'micro' && 'Directory'}
+                {rightSidebarMode === 'meso' && 'Lenses'}
+                {rightSidebarMode === 'macro' && 'Events'}
+                {rightSidebarMode === 'notes' && 'Notes'}
+              </h3>
+              <button
+                onClick={() => setRightSidebarMode('closed')}
+                className="md:hidden p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+            {rightSidebarMode === 'notes' && (
+              <NotesTab workId={activeWorkId} sceneId={isScene ? activeDocId : null} />
+            )}
             {rightSidebarMode === 'micro' && (
               <div className="p-2 space-y-2">
                 {tocSections.length > 0 && (
@@ -1088,6 +1174,7 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
@@ -1189,6 +1276,22 @@ export function EditorPanel({ compact }: { compact?: boolean }) {
                   Management
                 </button>
               </div>
+            </div>
+
+            <div className="mb-4 pb-4 border-b border-stone-100">
+              <button
+                onClick={() => {
+                  setShowTabSettings(true);
+                  setShowSettings(false);
+                }}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <LayoutGrid size={16} className="text-stone-500" />
+                  Customize Tabs
+                </div>
+                <ChevronRight size={16} className="text-stone-400" />
+              </button>
             </div>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">

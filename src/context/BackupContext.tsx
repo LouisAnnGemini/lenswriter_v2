@@ -137,7 +137,7 @@ export const BackupProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         if (Date.now() - lastModifiedRef.current < tenMinutes) {
           performBackup();
         } else {
-          console.log('Skipping backup: No modifications in the last 10 minutes.');
+          // Skipping backup: No modifications in the last 10 minutes.
         }
       }, 10 * 60 * 1000);
     } else {

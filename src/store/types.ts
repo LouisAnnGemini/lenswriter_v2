@@ -1,7 +1,7 @@
 export type Work = { id: string; title: string; createdAt: number; order: number; characterFields?: CharacterFieldDef[]; lensesDescription?: string; icon?: string };
 export type Character = { id: string; workId: string; name: string; description: string; order: number; customFields?: Record<string, any> };
 export type Chapter = { id: string; workId: string; title: string; order: number; goalWordCount?: number; deadline?: string; completed?: boolean; archived?: boolean };
-export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; statusColor?: string; linkedEventIds?: string[]; goalWordCount?: number; deadline?: string };
+export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; characterPresence?: Record<string, { note?: string }>; statusColor?: string; linkedEventIds?: string[]; goalWordCount?: number; deadline?: string };
 export type Block = { id: string; documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; content: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean };
 
 export type Location = { id: string; workId: string; name: string; description: string; order: number };
@@ -50,6 +50,15 @@ export type InboxTag = {
   color?: string;
 };
 
+export type Note = {
+  id: string;
+  content: string;
+  createdAt: number;
+  workId: string | null;
+  sceneId: string | null;
+  tagIds?: string[];
+};
+
 export type InboxItem = {
   id: string;
   content: string;
@@ -72,6 +81,17 @@ export type HistoryAction =
   | { type: 'REMOVE_LENS'; blockId: string; originalLensColor?: string }
   | { type: 'RESTORE_SNAPSHOT'; sceneId: string; previousBlocks: Block[]; restoredBlocks: Block[] };
 
+export type TabConfigItem = {
+  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
+  label: string;
+  visible: boolean;
+};
+
+export type TabConfig = {
+  design: TabConfigItem[];
+  management: TabConfigItem[];
+};
+
 export type State = {
   works: Work[];
   characters: Character[];
@@ -82,21 +102,22 @@ export type State = {
   scenes: Scene[];
   blocks: Block[];
   deadlines: Deadline[];
-  inbox: InboxItem[];
+  notes: Note[];
   inboxTags: InboxTag[];
   snapshots: SceneSnapshot[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
   activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
   appMode: 'design' | 'management';
+  tabConfig: TabConfig;
   timelineViewMode: 'list' | 'table' | 'chronology' | 'montage' | 'tags';
   deadlineViewMode: 'global' | 'local';
   activeLensId: string | null;
   selectedEventId: string | null;
   focusMode: boolean;
   disguiseMode: boolean;
-  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info';
-  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info';
+  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes';
+  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info' | 'notes';
   showDescriptions: boolean;
   letterSpacing: number;
   editorMargin: number;
@@ -109,7 +130,7 @@ export type State = {
   futureActions?: HistoryAction[];
 };
 
-export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & InboxSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & {
+export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & {
   importData: (data: Partial<State>) => void;
   syncFromCloud: (data: Partial<State>) => void;
   undo: () => void;
@@ -120,6 +141,7 @@ export interface UISlice {
   setActiveDocument: (documentId: string | null) => void;
   setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents') => void;
   setAppMode: (mode: 'design' | 'management') => void;
+  updateTabConfig: (mode: 'design' | 'management', config: TabConfigItem[]) => void;
   setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'montage' | 'tags') => void;
   toggleAppMode: () => void;
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
@@ -127,7 +149,7 @@ export interface UISlice {
   setSelectedEventId: (eventId: string | null) => void;
   toggleFocusMode: () => void;
   toggleDisguiseMode: () => void;
-  setRightSidebarMode: (mode: 'closed' | 'micro' | 'meso' | 'macro' | 'info') => void;
+  setRightSidebarMode: (mode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes') => void;
   toggleShowDescriptions: () => void;
   setLetterSpacing: (spacing: number) => void;
   setEditorMargin: (margin: number) => void;
@@ -167,6 +189,7 @@ export interface SceneSlice {
   reorderScenes: (chapterId: string, startIndex: number, endIndex: number) => void;
   moveScene: (sceneId: string, newChapterId: string, newIndex: number) => void;
   toggleSceneCharacter: (sceneId: string, characterId: string) => void;
+  updateSceneCharacterNote: (sceneId: string, characterId: string, note: string) => void;
   toggleSceneEvent: (sceneId: string, eventId: string) => void;
   reorderSceneEvents: (sceneId: string, startIndex: number, endIndex: number) => void;
   toggleLensPin: (sceneId: string) => void;
@@ -185,10 +208,11 @@ export interface DeadlineSlice {
   deleteDeadline: (deadlineId: string) => void;
 }
 
-export interface InboxSlice {
-  addInboxItem: (params: { content: string; tagIds?: string[] }) => void;
-  updateInboxItem: (item: Partial<InboxItem> & { id: string }) => void;
-  deleteInboxItem: (params: { id: string }) => void;
+export interface NoteSlice {
+  addNote: (params: { content: string; workId?: string | null; sceneId?: string | null; tagIds?: string[] }) => void;
+  updateNote: (note: Partial<Note> & { id: string }) => void;
+  deleteNote: (noteId: string) => void;
+  reassignNote: (noteId: string, workId: string | null, sceneId: string | null) => void;
   addInboxTag: (tag: Omit<InboxTag, 'id'>) => string;
   updateInboxTag: (tag: Partial<InboxTag> & { id: string }) => void;
   deleteInboxTag: (tagId: string) => void;
@@ -204,6 +228,7 @@ export interface SnapshotSlice {
 export interface TimelineSlice {
   addTimelineEvent: (event: Omit<TimelineEvent, 'id' | 'order'> & { id?: string }) => void;
   updateTimelineEvent: (event: Partial<TimelineEvent> & { id: string }) => void;
+  updateTimelineEvents: (events: (Partial<TimelineEvent> & { id: string })[]) => void;
   updateTimelineEventCharacterAction: (eventId: string, characterId: string, action: string) => void;
   toggleTimelineEventLink: (eventId: string, targetEventId: string) => void;
   toggleTimelineEventHorizontal: (eventId: string, targetEventId: string) => void;

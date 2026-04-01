@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { create } from 'zustand';
 import { StoreState } from '../../types';
 import { initialState } from '../../constants';
-import { createTagSlice, createDeadlineSlice, createInboxSlice } from './tagDeadlineInboxSlice';
+import { createTagSlice, createDeadlineSlice } from './tagDeadlineInboxSlice';
 
 describe('tagDeadlineInboxSlice', () => {
   let useTestStore: any;
@@ -17,12 +17,8 @@ describe('tagDeadlineInboxSlice', () => {
       deadlines: [
         { id: 'deadline-1', workId: mockWorkId, title: 'Deadline 1', date: '2026-01-01', completed: false },
       ],
-      inbox: [
-        { id: 'inbox-1', content: 'Inbox 1', createdAt: 1000 },
-      ],
       ...createTagSlice(set, get, api as any),
       ...createDeadlineSlice(set, get, api as any),
-      ...createInboxSlice(set, get, api as any),
     } as StoreState));
   });
 
@@ -80,33 +76,6 @@ describe('tagDeadlineInboxSlice', () => {
       
       const state = useTestStore.getState();
       expect(state.deadlines.length).toBe(0);
-    });
-  });
-
-  describe('InboxSlice', () => {
-    it('should add an inbox item', () => {
-      const { addInboxItem } = useTestStore.getState();
-      addInboxItem({ content: 'New Inbox Item' });
-      
-      const state = useTestStore.getState();
-      expect(state.inbox.length).toBe(2);
-      expect(state.inbox[1].content).toBe('New Inbox Item');
-    });
-
-    it('should update an inbox item', () => {
-      const { updateInboxItem } = useTestStore.getState();
-      updateInboxItem({ id: 'inbox-1', content: 'Updated Inbox Item' });
-      
-      const state = useTestStore.getState();
-      expect(state.inbox.find((i: any) => i.id === 'inbox-1')?.content).toBe('Updated Inbox Item');
-    });
-
-    it('should delete an inbox item', () => {
-      const { deleteInboxItem } = useTestStore.getState();
-      deleteInboxItem({ id: 'inbox-1' });
-      
-      const state = useTestStore.getState();
-      expect(state.inbox.length).toBe(0);
     });
   });
 });

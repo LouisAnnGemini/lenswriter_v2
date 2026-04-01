@@ -12,7 +12,6 @@ import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
 import { CompileTab } from './components/CompileTab';
 import { InboxTab } from './components/InboxTab';
-import { Minimize2 } from 'lucide-react';
 import { QuickCapture } from './components/QuickCapture';
 import { BackupProvider } from './context/BackupContext';
 import { SyncManager } from './components/SyncManager';
@@ -120,8 +119,8 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
       <div className="flex-1 flex overflow-hidden relative">
         {activeTab === 'design' && (
           <>
-            {!disguiseMode && <OutlinePanel setMobileOpen={setMobileOpen} />}
-            <EditorPanel />
+            {!disguiseMode && !focusMode && <OutlinePanel setMobileOpen={setMobileOpen} />}
+            <EditorPanel focusMode={focusMode} />
           </>
         )}
         {activeTab === 'blockDescriptions' && <BlockManagementTab />}
@@ -135,17 +134,7 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         {activeTab === 'inbox' && <InboxTab />}
       </div>
 
-      {focusMode && !disguiseMode && (
-        <div className="fixed top-0 right-0 w-32 h-32 z-50 flex items-start justify-end p-6 opacity-0 hover:opacity-100 transition-opacity duration-300">
-          <button
-            onClick={() => toggleFocusMode()}
-            className="p-3 bg-stone-900/80 text-white rounded-full shadow-lg backdrop-blur-sm hover:bg-stone-900 transition-colors"
-            title="Exit Focus Mode (Esc)"
-          >
-            <Minimize2 size={24} />
-          </button>
-        </div>
-      )}
+      {/* Focus mode exit button removed as TopNav now handles focus mode exit */}
     </div>
   );
 }

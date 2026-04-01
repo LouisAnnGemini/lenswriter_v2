@@ -41,13 +41,35 @@ export const initialState: State = {
   deadlines: [
     { id: uuidv4(), workId: initialWorkId, title: 'First Draft', date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], completed: false }
   ],
-  inbox: [],
+  notes: [],
   inboxTags: [],
   snapshots: [],
   activeWorkId: initialWorkId,
   activeDocumentId: initialSceneId,
   activeTab: 'design',
   appMode: 'design',
+  tabConfig: {
+    design: [
+      { id: 'design', label: 'Writing', visible: true },
+      { id: 'inbox', label: 'Notes', visible: true },
+      { id: 'blockDescriptions', label: 'Block Descriptions', visible: true },
+      { id: 'lenses', label: 'Lenses', visible: true },
+      { id: 'timelineEvents', label: 'Timeline Events', visible: true },
+      { id: 'world', label: 'World', visible: true },
+      { id: 'deadline', label: 'Deadline', visible: false },
+      { id: 'compile', label: 'Compile', visible: false },
+    ],
+    management: [
+      { id: 'design', label: 'Writing', visible: true },
+      { id: 'inbox', label: 'Notes', visible: true },
+      { id: 'deadline', label: 'Deadline', visible: true },
+      { id: 'compile', label: 'Compile', visible: true },
+      { id: 'blockDescriptions', label: 'Block Descriptions', visible: false },
+      { id: 'lenses', label: 'Lenses', visible: false },
+      { id: 'timelineEvents', label: 'Timeline Events', visible: false },
+      { id: 'world', label: 'World', visible: false },
+    ]
+  },
   timelineViewMode: 'list',
   deadlineViewMode: 'local',
   activeLensId: null,

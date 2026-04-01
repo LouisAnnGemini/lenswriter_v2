@@ -21,8 +21,8 @@ const shortcuts = [
     { keys: ['Ctrl/Cmd', 'Shift', 'Z'], description: 'Redo' },
     { keys: ['Ctrl/Cmd', 'Y'], description: 'Redo' },
   ]},
-  { section: 'Quick Capture', shortcuts: [
-    { keys: ['Ctrl/Cmd', 'Enter'], description: 'Save to Inbox' },
+  { section: 'Quick Note', shortcuts: [
+    { keys: ['Ctrl/Cmd', 'Enter'], description: 'Save to Notes' },
     { keys: ['Esc'], description: 'Close' },
   ]},
 ];

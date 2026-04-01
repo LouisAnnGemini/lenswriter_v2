@@ -11,12 +11,16 @@ export const createChapterSlice: StateCreator<StoreState, [], [], ChapterSlice> 
     chapters: state.chapters.map(c => c.id === chapter.id ? { ...c, ...chapter } : c),
     lastModified: Date.now()
   })),
-  deleteChapter: (chapterId) => set((state) => ({
-    chapters: state.chapters.filter(c => c.id !== chapterId),
-    scenes: state.scenes.filter(s => s.chapterId !== chapterId),
-    blocks: state.blocks.filter(b => !state.scenes.some(s => s.chapterId === chapterId && s.id === b.documentId) && b.documentId !== chapterId),
-    lastModified: Date.now()
-  })),
+  deleteChapter: (chapterId) => set((state) => {
+    const scenesToDelete = state.scenes.filter(s => s.chapterId === chapterId).map(s => s.id);
+    return {
+      chapters: state.chapters.filter(c => c.id !== chapterId),
+      scenes: state.scenes.filter(s => s.chapterId !== chapterId),
+      blocks: state.blocks.filter(b => !scenesToDelete.includes(b.documentId) && b.documentId !== chapterId),
+      notes: state.notes.map(n => n.sceneId && scenesToDelete.includes(n.sceneId) ? { ...n, sceneId: null } : n),
+      lastModified: Date.now()
+    };
+  }),
   toggleChapterArchive: (chapterId) => set((state) => ({
     chapters: state.chapters.map(c => c.id === chapterId ? { ...c, archived: !c.archived } : c),
     lastModified: Date.now()

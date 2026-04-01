@@ -15,8 +15,9 @@ interface TimelineVisualChronologyProps {
 
 export const TimelineVisualChronology = ({ events, characters, onEventClick }: TimelineVisualChronologyProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { updateTimelineEvent, locations, tags } = useStore(useShallow(state => ({
+  const { updateTimelineEvent, updateTimelineEvents, locations, tags } = useStore(useShallow(state => ({
     updateTimelineEvent: state.updateTimelineEvent,
+    updateTimelineEvents: state.updateTimelineEvents,
     locations: state.locations,
     tags: state.tags
   })));
@@ -223,12 +224,17 @@ export const TimelineVisualChronology = ({ events, characters, onEventClick }: T
           
           const clusterIds = getCluster(draggingEventId, processedEvents);
           
+          const updates: (Partial<TimelineEvent> & { id: string })[] = [];
           clusterIds.forEach(id => {
             const ev = processedEvents.find(e => e.id === id);
             if (ev) {
-              updateTimelineEvent({ id, startTime: Math.max(0, (ev.startTime || 0) + delta) });
+              updates.push({ id, startTime: Math.max(0, (ev.startTime || 0) + delta) });
             }
           });
+          
+          if (updates.length > 0) {
+            updateTimelineEvents(updates);
+          }
         }
         return;
       }
@@ -256,7 +262,7 @@ export const TimelineVisualChronology = ({ events, characters, onEventClick }: T
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, [isDragging, draggingEventId, resizingEventId, dragOffset, startX, scrollLeftStart, xScale, updateTimelineEvent, processedEvents]);
+  }, [isDragging, draggingEventId, resizingEventId, dragOffset, startX, scrollLeftStart, xScale, updateTimelineEvent, updateTimelineEvents, processedEvents]);
 
   // Update minimap state on scroll
   useEffect(() => {
@@ -651,6 +657,88 @@ export const TimelineVisualChronology = ({ events, characters, onEventClick }: T
             className="relative border-b-2 border-stone-300 bg-stone-50/30 flex"
             style={{ height: Math.max(120, maxLevel * 45 + 40) }}
           >
+            {/* Dependency Lines (SVG) */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+              {processedEvents.map(event => {
+                const eventX = xScale(event.startTime) + 160 + (xScale(event.endTime) - xScale(event.startTime)) / 2;
+                const eventY = 20 + (event.level * 45) + 18;
+
+                return (
+                  <g key={`deps-${event.id}`}>
+                    {/* Linked Events (Curved Links) */}
+                    {(event.linkedEventIds || []).map(targetId => {
+                      const target = processedEvents.find(e => e.id === targetId);
+                      if (!target) return null;
+                      const targetX = xScale(target.startTime) + 160 + (xScale(target.endTime) - xScale(target.startTime)) / 2;
+                      const targetY = 20 + (target.level * 45) + 18;
+                      
+                      // Only draw if this event is before the target to avoid double drawing
+                      if (event.startTime > target.startTime || (event.startTime === target.startTime && event.id > target.id)) return null;
+
+                      return (
+                        <path
+                          key={`link-${event.id}-${target.id}`}
+                          d={`M ${eventX} ${eventY} Q ${(eventX + targetX) / 2} ${Math.min(eventY, targetY) - 30}, ${targetX} ${targetY}`}
+                          fill="none"
+                          stroke="#10b981" // emerald-500
+                          strokeWidth="1.5"
+                          strokeDasharray="2 2"
+                          className="opacity-40"
+                        />
+                      );
+                    })}
+
+                    {/* Horizontal Links */}
+                    {(event.horizontalIds || []).map(targetId => {
+                      const target = processedEvents.find(e => e.id === targetId);
+                      if (!target) return null;
+                      const targetX = xScale(target.startTime) + 160 + (xScale(target.endTime) - xScale(target.startTime)) / 2;
+                      const targetY = 20 + (target.level * 45) + 18;
+                      
+                      // Only draw if this event is before the target to avoid double drawing
+                      if (event.startTime > target.startTime || (event.startTime === target.startTime && event.id > target.id)) return null;
+
+                      return (
+                        <path
+                          key={`h-${event.id}-${target.id}`}
+                          d={`M ${eventX} ${eventY} C ${(eventX + targetX) / 2} ${eventY}, ${(eventX + targetX) / 2} ${targetY}, ${targetX} ${targetY}`}
+                          fill="none"
+                          stroke="#94a3b8" // stone-400
+                          strokeWidth="2"
+                          strokeDasharray="4 4"
+                          className="opacity-50"
+                        />
+                      );
+                    })}
+
+                    {/* Vertical Links */}
+                    {(event.verticalIds || []).map(targetId => {
+                      const target = processedEvents.find(e => e.id === targetId);
+                      if (!target) return null;
+                      const targetX = xScale(target.startTime) + 160 + (xScale(target.endTime) - xScale(target.startTime)) / 2;
+                      const targetY = 20 + (target.level * 45) + 18;
+                      
+                      // Only draw if this event is above the target to avoid double drawing
+                      if (event.level > target.level || (event.level === target.level && event.id > target.id)) return null;
+
+                      return (
+                        <line
+                          key={`v-${event.id}-${target.id}`}
+                          x1={eventX}
+                          y1={eventY}
+                          x2={targetX}
+                          y2={targetY}
+                          stroke="#3b82f6" // blue-500
+                          strokeWidth="2"
+                          className="opacity-50"
+                        />
+                      );
+                    })}
+                  </g>
+                );
+              })}
+            </svg>
+
             {/* Track Label */}
             <div className="sticky left-0 z-20 h-full w-40 bg-stone-100/95 backdrop-blur border-r border-stone-200 flex items-center px-4 gap-3 shrink-0">
               <div className="w-8 h-8 rounded-full bg-stone-800 flex items-center justify-center shrink-0">

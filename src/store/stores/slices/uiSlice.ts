@@ -16,6 +16,12 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setEditorMargin: (margin) => set({ editorMargin: margin }),
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
   setAppMode: (mode) => set({ appMode: mode }),
+  updateTabConfig: (mode, config) => set((state) => ({
+    tabConfig: {
+      ...state.tabConfig,
+      [mode]: config
+    }
+  })),
   toggleAppMode: () => set((state) => {
     const newMode = state.appMode === 'design' ? 'management' : 'design';
     let newTab = state.activeTab;
@@ -34,7 +40,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
     return { appMode: newMode, activeTab: newTab, timelineViewMode: newTimelineViewMode };
   }),
   saveHistoryVersion: async (name) => {
-    console.log('saveHistoryVersion called with name:', name);
+    // saveHistoryVersion called with name: name
     const state = get();
     const { supabase } = await import('../../../lib/supabase');
     const { getDeviceType } = await import('../../../lib/utils');
@@ -51,7 +57,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
         _device: getDeviceType()
       };
 
-      console.log('Saving state:', stateToSave);
+      // Saving state: stateToSave
       const { error } = await supabase
         .from('app_state')
         .insert([{ id: crypto.randomUUID(), state: stateToSave }]);
@@ -61,7 +67,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
         return false;
       }
       
-      console.log('Saved history version:', name);
+      // Saved history version: name
       
       // Rotate history: keep only the last 20 versions
       try {
@@ -89,7 +95,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
               .delete()
               .in('id', idsToDelete);
             
-            console.log(`Deleted ${idsToDelete.length} old history version(s).`);
+            // Deleted idsToDelete.length old history version(s).
           }
         }
       } catch (rotateError) {

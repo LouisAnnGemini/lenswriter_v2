@@ -103,7 +103,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   }, [isFocused, adjustHeight, clickedPIdx, blockId]);
 
   useEffect(() => {
-    console.log('isFocused changed:', isFocused, 'blockId:', blockId);
+    // isFocused changed: isFocused, 'blockId:', blockId
   }, [isFocused, blockId]);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (ref.current && !ref.current.contains(target)) {
-        console.log('Click outside detected, blurring');
+        // Click outside detected, blurring
         setIsFocused(false);
         setClickedPIdx(null);
         ref.current.blur();
@@ -122,14 +122,14 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   }, []);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    console.log('Focusing, blockId:', blockId);
+    // Focusing, blockId: blockId
     setIsFocused(true);
     setCursorPosition(e.target.selectionStart);
     props.onFocus?.(e);
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    console.log('Blurring, blockId:', blockId);
+    // Blurring, blockId: blockId
     setIsFocused(false);
     setClickedPIdx(null);
     props.onBlur?.(e);
@@ -146,7 +146,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   };
 
   const renderHighlights = () => {
-    console.log('renderHighlights called, isFocused:', isFocused);
+    // renderHighlights called, isFocused: isFocused
     if (!value) return null;
 
     const paragraphs = value.split('\n');
@@ -178,7 +178,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
                 "relative break-words whitespace-pre-wrap transition-all duration-200", leadingClass, 
                 isActiveP ? "bg-black/[0.03]" : ""
               )}>
-                {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
+                {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />}
                 {paragraph === '' ? <br /> : paragraph}
               </div>
             );
@@ -191,7 +191,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
               "relative break-words whitespace-pre-wrap transition-all duration-200", leadingClass, 
               isActiveP ? "bg-black/[0.03]" : ""
             )}>
-              {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />}
+              {isActiveP && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />}
               {paragraph === '' ? <br /> : parts.map((part: string, i: number) => {
                 if (i % 2 === 1) {
                   const matchIndex = (i - 1) / 2;
@@ -302,7 +302,6 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
         placeholder={placeholder}
         className={cn(
           "overflow-hidden resize-none relative z-10 bg-transparent w-full p-0",
-          "caret-blue-500",
           isDimmed && "opacity-40",
           isFocused && "text-transparent",
           className

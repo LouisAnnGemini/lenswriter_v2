@@ -25,6 +25,23 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
     };
     return { timelineEvents: [...state.timelineEvents, newEvent] };
   }),
+  updateTimelineEvents: (events) => {
+    const state = get();
+    // Skip validation for bulk updates to avoid intermediate state conflicts
+    // Or we could write a bulk validation function
+    set((state) => {
+      const updates = new Map(events.map(e => [e.id, e]));
+      return {
+        timelineEvents: state.timelineEvents.map(e => {
+          if (updates.has(e.id)) {
+            return { ...e, ...updates.get(e.id) };
+          }
+          return e;
+        })
+      };
+    });
+    return { success: true };
+  },
   updateTimelineEvent: (event) => {
     const state = get();
     const validation = validateEventUpdate(event, state.timelineEvents);

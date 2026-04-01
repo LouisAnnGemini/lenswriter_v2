@@ -32,7 +32,8 @@ export const createWorkSlice: StateCreator<StoreState, [], [], WorkSlice> = (set
         return b;
       }),
       activeWorkId: state.activeWorkId === workId ? null : state.activeWorkId,
-      activeDocumentId: docsToDelete.includes(state.activeDocumentId!) ? null : state.activeDocumentId
+      activeDocumentId: docsToDelete.includes(state.activeDocumentId!) ? null : state.activeDocumentId,
+      notes: state.notes.map(n => n.workId === workId ? { ...n, workId: null, sceneId: null } : n)
     };
   }),
   reorderWorks: (startIndex, endIndex) => set((state) => {

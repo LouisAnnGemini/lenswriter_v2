@@ -5,10 +5,10 @@ import { X, Send, Inbox } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function QuickCapture() {
-  const { addInboxItem, inboxTags, inbox, addInboxTag } = useStore(useShallow(state => ({
-    addInboxItem: state.addInboxItem,
+  const { addNote, inboxTags, notes, addInboxTag } = useStore(useShallow(state => ({
+    addNote: state.addNote,
     inboxTags: state.inboxTags,
-    inbox: state.inbox,
+    notes: state.notes,
     addInboxTag: state.addInboxTag
   })));
   const [isOpen, setIsOpen] = useState(false);
@@ -19,11 +19,11 @@ export function QuickCapture() {
 
   const recentTags = React.useMemo(() => {
     const tagCounts: Record<string, number> = {};
-    inbox.forEach(item => item.tagIds?.forEach(id => tagCounts[id] = (tagCounts[id] || 0) + 1));
+    notes.forEach(item => item.tagIds?.forEach(id => tagCounts[id] = (tagCounts[id] || 0) + 1));
     return inboxTags
       .sort((a, b) => (tagCounts[b.id] || 0) - (tagCounts[a.id] || 0))
       .slice(0, 5);
-  }, [inbox, inboxTags]);
+  }, [notes, inboxTags]);
 
   const filteredTags = inboxTags.filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()));
 
@@ -63,7 +63,7 @@ export function QuickCapture() {
 
   const handleSave = () => {
     if (content.trim()) {
-      addInboxItem({ content: content.trim(), tagIds });
+      addNote({ content: content.trim(), tagIds, workId: null, sceneId: null });
       setContent('');
       setTagIds([]);
       setIsOpen(false);
@@ -90,7 +90,7 @@ export function QuickCapture() {
       >
         <div className="flex items-center justify-between p-4 border-b border-stone-100 bg-stone-50/50">
           <div className="flex items-center gap-2 text-stone-700 font-medium">
-            <Inbox size={20} className="text-emerald-600" /> Quick Capture
+            <Inbox size={20} className="text-emerald-600" /> Quick Note
           </div>
           <button 
             onClick={() => setIsOpen(false)}
@@ -164,7 +164,7 @@ export function QuickCapture() {
             className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send size={14} />
-            Save to Inbox
+            Save to Notes
           </button>
         </div>
       </div>

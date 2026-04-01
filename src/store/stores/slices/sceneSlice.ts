@@ -18,6 +18,7 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
   deleteScene: (sceneId) => set((state) => ({
     scenes: state.scenes.filter(s => s.id !== sceneId),
     blocks: state.blocks.filter(b => b.documentId !== sceneId),
+    notes: state.notes.map(n => n.sceneId === sceneId ? { ...n, sceneId: null } : n),
     lastModified: Date.now()
   })),
   reorderScenes: (chapterId, startIndex, endIndex) => set((state) => {
@@ -53,7 +54,25 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
       const characterIds = s.characterIds.includes(characterId)
         ? s.characterIds.filter(id => id !== characterId)
         : [...s.characterIds, characterId];
-      return { ...s, characterIds };
+      
+      // If removing character, remove their note as well
+      const characterPresence = { ...s.characterPresence };
+      if (!characterIds.includes(characterId)) {
+        delete characterPresence[characterId];
+      }
+      
+      return { ...s, characterIds, characterPresence };
+    }),
+    lastModified: Date.now()
+  })),
+  updateSceneCharacterNote: (sceneId, characterId, note) => set((state) => ({
+    scenes: state.scenes.map(s => {
+      if (s.id !== sceneId) return s;
+      const characterPresence = { 
+        ...(s.characterPresence || {}),
+        [characterId]: { ...(s.characterPresence?.[characterId] || {}), note }
+      };
+      return { ...s, characterPresence };
     }),
     lastModified: Date.now()
   })),
@@ -79,7 +98,7 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
   })),
   toggleLensPin: (sceneId) => set((state) => {
     // Placeholder logic for lens pinning
-    console.log('Toggling lens pin for scene:', sceneId);
+    // Toggling lens pin for scene: sceneId
     return state;
   }),
   splitSceneAtBlock: (sceneId, blockId) => set((state) => {

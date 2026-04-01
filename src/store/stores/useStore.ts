@@ -7,11 +7,12 @@ import { createCharacterSlice } from './slices/characterSlice';
 import { createChapterSlice } from './slices/chapterSlice';
 import { createSceneSlice } from './slices/sceneSlice';
 import { createBlockSlice } from './slices/blockSlice';
-import { createTagSlice, createDeadlineSlice, createInboxSlice } from './slices/tagDeadlineInboxSlice';
+import { createTagSlice, createDeadlineSlice } from './slices/tagDeadlineInboxSlice';
 import { createTimelineSlice } from './slices/timelineSlice';
 import { createUISlice } from './slices/uiSlice';
 import { createLocationSlice } from './slices/locationSlice';
 import { createSnapshotSlice } from './slices/snapshotSlice';
+import { createNoteSlice } from './slices/noteSlice';
 
 export const useStore = create<StoreState>()(
   persist(
@@ -24,11 +25,11 @@ export const useStore = create<StoreState>()(
       ...createBlockSlice(set, get, api),
       ...createTagSlice(set, get, api),
       ...createDeadlineSlice(set, get, api),
-      ...createInboxSlice(set, get, api),
       ...createTimelineSlice(set, get, api),
       ...createUISlice(set, get, api),
       ...createLocationSlice(set, get, api),
       ...createSnapshotSlice(set, get, api),
+      ...createNoteSlice(set, get, api),
       importData: (data) => set((state) => ({ ...state, ...data })),
       syncFromCloud: (data) => set((state) => ({ ...state, ...data })),
       undo: () => set((state) => {

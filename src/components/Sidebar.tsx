@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar } from 'lucide-react';
+import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar, Inbox } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '../lib/utils';
 import { WorkIcon } from './WorkIcon';
@@ -146,6 +146,24 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         </div>
 
       <div className="flex-1 overflow-y-auto py-4">
+        <div className="px-2 mb-4">
+          <button
+            onClick={() => {
+              setActiveTab('inbox');
+              setMobileOpen?.(false);
+            }}
+            className={cn(
+              "w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+              activeTab === 'inbox'
+                ? "bg-stone-800 text-stone-100"
+                : "text-stone-400 hover:text-stone-100 hover:bg-stone-800/50"
+            )}
+          >
+            <Inbox size={18} className={cn(isExpanded ? "mr-3" : "mx-auto")} />
+            {isExpanded && <span>Notes</span>}
+          </button>
+        </div>
+
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="works" type="work">
             {(provided) => (

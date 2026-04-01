@@ -92,11 +92,12 @@ export function EventDetailsModal({ eventId, initialTab, initialCharacterId, onC
   const characterCount = Object.keys(event.characterActions || {}).length;
 
   return (
-    <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <>
+      <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-[60] transition-opacity" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 w-full md:w-[600px] lg:w-[800px] bg-white shadow-2xl z-[70] flex flex-col transform transition-transform duration-300 ease-in-out translate-x-0 border-l border-stone-200" onClick={(e) => e.stopPropagation()}>
         
         {/* Header Section */}
-        <div className="p-6 pb-0 border-b border-stone-100 relative bg-white z-20">
+        <div className="p-6 pb-0 border-b border-stone-100 relative bg-white z-20 shrink-0">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1 mr-8">
                <input
@@ -425,6 +426,6 @@ export function EventDetailsModal({ eventId, initialTab, initialCharacterId, onC
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

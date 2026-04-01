@@ -6,6 +6,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { MobileInboxDrawer } from './MobileInboxDrawer';
 import { toast } from 'sonner';
 
+import { initialState } from '../store/constants';
+
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
   const { 
     focusMode,
@@ -23,6 +25,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     toggleFocusMode, 
     setRightSidebarMode,
     appMode,
+    tabConfig,
     supabaseSyncEnabled,
     saveHistoryVersion
   } = useStore(useShallow(state => ({
@@ -41,17 +44,19 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     toggleFocusMode: state.toggleFocusMode,
     setRightSidebarMode: state.setRightSidebarMode,
     appMode: state.appMode,
+    tabConfig: state.tabConfig || initialState.tabConfig, // Fallback for existing users
     supabaseSyncEnabled: state.supabaseSyncEnabled,
     saveHistoryVersion: state.saveHistoryVersion
   })));
   const [isMobileInboxOpen, setIsMobileInboxOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  if (focusMode) return null;
+  // Remove the early return for focusMode
+  // if (focusMode) return null;
 
   const allTabs = [
     { id: 'design', label: 'Writing', icon: Edit3 },
-    { id: 'inbox', label: 'Inbox', icon: Inbox },
+    { id: 'inbox', label: 'Notes', icon: Inbox },
     { id: 'blockDescriptions', label: 'Block Descriptions', icon: AlignLeft },
     { id: 'lenses', label: 'Lenses', icon: LayoutGrid },
     { id: 'timelineEvents', label: 'Timeline Events', icon: Clock },
@@ -60,16 +65,44 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     { id: 'compile', label: 'Compile', icon: FileText },
   ] as const;
 
-  const tabs = appMode === 'design' 
-    ? allTabs.filter(t => ['design', 'blockDescriptions', 'lenses', 'timelineEvents', 'world'].includes(t.id))
-    : allTabs.filter(t => ['design', 'inbox', 'deadline', 'compile'].includes(t.id));
+  const currentConfig = tabConfig?.[appMode] || [];
+  
+  // Combine config with icons and filter visible
+  const tabs = currentConfig
+    .filter(configItem => configItem.visible)
+    .map(configItem => {
+      const baseTab = allTabs.find(t => t.id === configItem.id);
+      return {
+        ...baseTab,
+        id: configItem.id,
+        label: configItem.label,
+        icon: baseTab?.icon || Edit3 // Fallback icon
+      };
+    });
+  
+  const tabIds = tabs.map(t => t.id).join(',');
+  
+  // Reset activeTab if it's no longer visible in the current mode
+  useEffect(() => {
+    if (!tabIds.split(',').includes(activeTab)) {
+      setActiveTab('design');
+    }
+  }, [tabIds, activeTab, setActiveTab]);
   
   const isScene = scenes.some(s => s.id === activeDocumentId);
 
   return (
     <>
       {/* Desktop Top Nav */}
-      <div className="h-14 border-b border-stone-200 bg-white flex items-center justify-between px-4 md:px-6 shrink-0">
+      <div className={cn(
+        "h-14 border-b border-stone-200 bg-white flex items-center justify-between px-4 md:px-6 shrink-0 transition-all duration-300 z-[60]",
+        focusMode 
+          ? "fixed top-0 left-0 right-0 opacity-0 hover:opacity-100 shadow-md" 
+          : "relative"
+      )}>
+        {focusMode && (
+          <div className="absolute top-full left-0 right-0 h-4 bg-transparent" />
+        )}
         <div className="flex items-center">
           {activeTab === 'design' && activeDocumentId ? (
             <button 
@@ -156,7 +189,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
           <button
             onClick={() => setIsMobileInboxOpen(true)}
             className="md:hidden p-2 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
-            title="Inbox"
+            title="Notes"
           >
             <Inbox size={20} />
           </button>

@@ -24,7 +24,7 @@ export function SyncManager() {
   useEffect(() => {
     if (!supabase || !supabaseSyncEnabled) return;
 
-    console.log('Setting up real-time subscription...');
+    // Setting up real-time subscription
     const channel = supabase
       .channel('app_state_changes')
       .on(
@@ -40,7 +40,7 @@ export function SyncManager() {
           const currentState = useStore.getState();
 
           if (newState && newState.lastModified > currentState.lastModified) {
-            console.log('Real-time sync: updating local state from cloud');
+            // Real-time sync: updating local state from cloud
             
             const dataKeys = Object.keys(initialState);
             const updates = Object.fromEntries(
@@ -68,14 +68,14 @@ export function SyncManager() {
 
   useEffect(() => {
     if (supabaseSyncEnabled && supabase) {
-      console.log('Starting auto-save history timer (10m)');
+      // Starting auto-save history timer (10m)
       historyTimerRef.current = setInterval(() => {
         const tenMinutes = 10 * 60 * 1000;
         if (Date.now() - lastModifiedRef.current < tenMinutes) {
-          console.log('Auto-saving history version...');
+          // Auto-saving history version...
           saveHistoryVersion('Auto-Save');
         } else {
-          console.log('Skipping auto-save: No modifications in the last 10 minutes.');
+          // Skipping auto-save: No modifications in the last 10 minutes.
         }
       }, 10 * 60 * 1000);
     } else {
@@ -131,7 +131,7 @@ export function SyncManager() {
 
     // Debounce sync to cloud
     syncTimerRef.current = setTimeout(async () => {
-      console.log('Syncing state to cloud...');
+      // Syncing state to cloud...
       useStore.setState({ syncStatus: 'syncing' });
       
       try {
@@ -153,7 +153,7 @@ export function SyncManager() {
 
         if (error) throw error;
         useStore.setState({ syncStatus: 'success', syncError: null });
-        console.log('Cloud sync successful.');
+        // Cloud sync successful.
       } catch (err: any) {
         console.error('Cloud sync failed:', err);
         useStore.setState({ syncStatus: 'error', syncError: err.message });
