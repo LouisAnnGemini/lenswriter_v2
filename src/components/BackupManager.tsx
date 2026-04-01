@@ -27,9 +27,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     importData, 
     syncStatus, 
     syncError, 
-    saveHistoryVersion,
-    user,
-    setUser
+    saveHistoryVersion
   } = useStore(useShallow(state => ({
     supabaseSyncEnabled: state.supabaseSyncEnabled,
     lastModified: state.lastModified,
@@ -37,9 +35,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     importData: state.importData,
     syncStatus: state.syncStatus,
     syncError: state.syncError,
-    saveHistoryVersion: state.saveHistoryVersion,
-    user: state.user,
-    setUser: state.setUser
+    saveHistoryVersion: state.saveHistoryVersion
   })));
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -63,50 +59,6 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     return import.meta.env.VITE_SUPABASE_ANON_KEY || '';
   });
 
-  // Auth State
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) return;
-    
-    setIsAuthenticating(true);
-    setAuthError(null);
-    
-    try {
-      if (authMode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        if (data.user) {
-          toast.success('Signup successful! You can now sync your data.');
-        } else {
-          toast.success('Please check your email to confirm your signup.');
-        }
-      } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success('Logged in successfully');
-      }
-    } catch (err: any) {
-      setAuthError(err.message || 'Authentication failed');
-    } finally {
-      setIsAuthenticating(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    if (supabaseSyncEnabled) {
-      toggleSupabaseSync(); // Disable sync on logout
-    }
-    toast.success('Logged out successfully');
-  };
-
   const handleSaveConfig = () => {
     updateSupabaseConfig(tempUrl, tempKey);
   };
@@ -117,17 +69,14 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    if (!supabase || !user) {
-      alert("Please log in to enable cloud sync.");
-      return;
-    }
+    if (!supabase) return;
 
     setIsCheckingCloud(true);
     try {
       const { data, error } = await supabase
         .from('app_state')
         .select('state')
-        .eq('id', user.id)
+        .eq('id', '00000000-0000-0000-0000-000000000000')
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
@@ -166,14 +115,14 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   const handlePullFromSupabase = async () => {
-    if (!supabase || !user) return;
+    if (!supabase) return;
     setIsPulling(true);
     setPullStatus(null);
     try {
       const { data, error } = await supabase
         .from('app_state')
         .select('state')
-        .eq('id', user.id)
+        .eq('id', '00000000-0000-0000-0000-000000000000')
         .single();
       
       if (error) throw error;
@@ -193,14 +142,13 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   const fetchCloudHistory = async () => {
-    if (!supabase || !user) return;
+    if (!supabase) return;
     setIsLoadingHistory(true);
     try {
       const { data, error } = await supabase
         .from('app_state')
         .select('id, state')
-        .eq('user_id', user.id)
-        .neq('id', user.id);
+        .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (error) throw error;
       if (data) {
@@ -246,10 +194,10 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   React.useEffect(() => {
-    if (supabaseSyncEnabled && supabase && user) {
+    if (supabaseSyncEnabled && supabase) {
       fetchCloudHistory();
     }
-  }, [supabaseSyncEnabled, supabase, user]);
+  }, [supabaseSyncEnabled, supabase]);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">

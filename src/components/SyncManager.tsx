@@ -9,39 +9,20 @@ export function SyncManager() {
   const { 
     supabaseSyncEnabled, 
     lastModified, 
-    saveHistoryVersion,
-    user
+    saveHistoryVersion
   } = useStore(useShallow(state => ({
     supabaseSyncEnabled: state.supabaseSyncEnabled,
     lastModified: state.lastModified,
-    saveHistoryVersion: state.saveHistoryVersion,
-    user: state.user
+    saveHistoryVersion: state.saveHistoryVersion
   })));
 
   const historyTimerRef = useRef<NodeJS.Timeout | null>(null);
   const syncTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isSyncingFromCloud = useRef(false);
 
-  // Initialize Auth State
-  useEffect(() => {
-    if (!supabase) return;
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      useStore.getState().setUser(session?.user || null);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      useStore.getState().setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   // 0. Real-time subscription
   useEffect(() => {
-    if (!supabase || !supabaseSyncEnabled || !user) return;
+    if (!supabase || !supabaseSyncEnabled) return;
 
     // Setting up real-time subscription
     const channel = supabase
@@ -52,7 +33,7 @@ export function SyncManager() {
           event: 'UPDATE',
           schema: 'public',
           table: 'app_state',
-          filter: `id=eq.${user.id}`
+          filter: `id=eq.00000000-0000-0000-0000-000000000000`
         },
         (payload) => {
           const newState = payload.new.state;
@@ -77,7 +58,7 @@ export function SyncManager() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabaseSyncEnabled, user]);
+  }, [supabaseSyncEnabled]);
 
   // 1. Auto-save history every 10 minutes
   const lastModifiedRef = useRef(lastModified);
@@ -144,11 +125,6 @@ export function SyncManager() {
   useEffect(() => {
     if (!supabaseSyncEnabled || !supabase) return;
 
-    if (!user) {
-      useStore.setState({ syncStatus: 'error', syncError: 'Authentication required. Please log in.' });
-      return;
-    }
-
     if (syncTimerRef.current) {
       clearTimeout(syncTimerRef.current);
     }
@@ -171,9 +147,8 @@ export function SyncManager() {
         const { error } = await supabase
           .from('app_state')
           .upsert([{ 
-            id: user.id, 
-            state: stateToSync,
-            user_id: user.id
+            id: '00000000-0000-0000-0000-000000000000', 
+            state: stateToSync
           }]);
 
         if (error) throw error;
@@ -190,7 +165,7 @@ export function SyncManager() {
         clearTimeout(syncTimerRef.current);
       }
     };
-  }, [lastModified, supabaseSyncEnabled, user]);
+  }, [lastModified, supabaseSyncEnabled]);
 
   return null;
 }

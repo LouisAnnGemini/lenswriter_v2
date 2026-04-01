@@ -122,7 +122,6 @@ export type State = {
   letterSpacing: number;
   editorMargin: number;
   supabaseSyncEnabled?: boolean;
-  user: any | null;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
   lastModified: number;
@@ -154,7 +153,6 @@ export interface UISlice {
   toggleShowDescriptions: () => void;
   setLetterSpacing: (spacing: number) => void;
   setEditorMargin: (margin: number) => void;
-  setUser: (user: any | null) => void;
   toggleSupabaseSync: () => void;
   saveHistoryVersion: (name: string) => Promise<boolean>;
 }
