@@ -313,68 +313,8 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                   <div className="text-xs text-stone-500 italic bg-amber-50 p-3 rounded-lg border border-amber-100">
                     Supabase is not yet connected. Enter your credentials above and click Save.
                   </div>
-                ) : !user ? (
-                  <div className="space-y-3 bg-stone-50 p-4 rounded-lg border border-stone-200">
-                    <div className="text-sm font-medium text-stone-700">
-                      Authentication Required
-                    </div>
-                    <div className="text-xs text-stone-500">
-                      Please log in to enable cloud sync and secure your data.
-                    </div>
-                    <form onSubmit={handleAuth} className="space-y-3">
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="w-full px-3 py-2 bg-white border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="w-full px-3 py-2 bg-white border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      {authError && (
-                        <div className="text-[10px] text-red-600 bg-red-50 p-2 rounded border border-red-100">
-                          {authError}
-                        </div>
-                      )}
-                      <button
-                        type="submit"
-                        disabled={isAuthenticating}
-                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
-                      >
-                        {isAuthenticating ? 'Please wait...' : authMode === 'login' ? 'Log In' : 'Sign Up'}
-                      </button>
-                    </form>
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                        className="text-[10px] text-blue-600 hover:underline"
-                      >
-                        {authMode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Log in"}
-                      </button>
-                    </div>
-                  </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
-                      <div className="text-xs text-blue-800">
-                        Logged in as <span className="font-semibold">{user.email}</span>
-                      </div>
-                      <button
-                        onClick={handleLogout}
-                        className="text-[10px] px-2 py-1 bg-white border border-blue-200 text-blue-700 rounded hover:bg-blue-100 transition-colors"
-                      >
-                        Log Out
-                      </button>
-                    </div>
-                    
                     <div className="text-xs text-stone-500">
                       When enabled, your data will automatically sync to Supabase in the background. Local storage remains your primary data source.
                     </div>
