@@ -81,6 +81,7 @@ export const initialState: State = {
   showDescriptions: true,
   letterSpacing: 0,
   editorMargin: 0,
+  user: null,
   supabaseSyncEnabled: false,
   syncStatus: 'idle',
   syncError: null,

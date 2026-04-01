@@ -14,6 +14,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   toggleShowDescriptions: () => set((state) => ({ showDescriptions: !state.showDescriptions })),
   setLetterSpacing: (spacing) => set({ letterSpacing: spacing }),
   setEditorMargin: (margin) => set({ editorMargin: margin }),
+  setUser: (user) => set({ user }),
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
   setAppMode: (mode) => set({ appMode: mode }),
   updateTabConfig: (mode, config) => set((state) => ({
@@ -60,7 +61,11 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       // Saving state: stateToSave
       const { error } = await supabase
         .from('app_state')
-        .insert([{ id: crypto.randomUUID(), state: stateToSave }]);
+        .insert([{ 
+          id: crypto.randomUUID(), 
+          state: stateToSave,
+          user_id: state.user?.id 
+        }]);
 
       if (error) {
         console.error('Failed to save history version:', error);
@@ -75,7 +80,8 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
         const { data: history, error: fetchError } = await supabase
           .from('app_state')
           .select('id, _isHistory:state->>_isHistory, _timestamp:state->>_timestamp')
-          .neq('id', '00000000-0000-0000-0000-000000000000');
+          .eq('user_id', state.user?.id)
+          .neq('id', state.user?.id);
         
         if (fetchError) throw fetchError;
         

@@ -27,7 +27,9 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     importData, 
     syncStatus, 
     syncError, 
-    saveHistoryVersion 
+    saveHistoryVersion,
+    user,
+    setUser
   } = useStore(useShallow(state => ({
     supabaseSyncEnabled: state.supabaseSyncEnabled,
     lastModified: state.lastModified,
@@ -35,7 +37,9 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     importData: state.importData,
     syncStatus: state.syncStatus,
     syncError: state.syncError,
-    saveHistoryVersion: state.saveHistoryVersion
+    saveHistoryVersion: state.saveHistoryVersion,
+    user: state.user,
+    setUser: state.setUser
   })));
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -59,6 +63,50 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     return import.meta.env.VITE_SUPABASE_ANON_KEY || '';
   });
 
+  // Auth State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    
+    setIsAuthenticating(true);
+    setAuthError(null);
+    
+    try {
+      if (authMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        if (data.user) {
+          toast.success('Signup successful! You can now sync your data.');
+        } else {
+          toast.success('Please check your email to confirm your signup.');
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success('Logged in successfully');
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Authentication failed');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    if (supabaseSyncEnabled) {
+      toggleSupabaseSync(); // Disable sync on logout
+    }
+    toast.success('Logged out successfully');
+  };
+
   const handleSaveConfig = () => {
     updateSupabaseConfig(tempUrl, tempKey);
   };
@@ -69,14 +117,17 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    if (!supabase) return;
+    if (!supabase || !user) {
+      alert("Please log in to enable cloud sync.");
+      return;
+    }
 
     setIsCheckingCloud(true);
     try {
       const { data, error } = await supabase
         .from('app_state')
         .select('state')
-        .eq('id', '00000000-0000-0000-0000-000000000000')
+        .eq('id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
@@ -115,14 +166,14 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   const handlePullFromSupabase = async () => {
-    if (!supabase) return;
+    if (!supabase || !user) return;
     setIsPulling(true);
     setPullStatus(null);
     try {
       const { data, error } = await supabase
         .from('app_state')
         .select('state')
-        .eq('id', '00000000-0000-0000-0000-000000000000')
+        .eq('id', user.id)
         .single();
       
       if (error) throw error;
@@ -142,13 +193,14 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   const fetchCloudHistory = async () => {
-    if (!supabase) return;
+    if (!supabase || !user) return;
     setIsLoadingHistory(true);
     try {
       const { data, error } = await supabase
         .from('app_state')
         .select('id, state')
-        .neq('id', '00000000-0000-0000-0000-000000000000');
+        .eq('user_id', user.id)
+        .neq('id', user.id);
       
       if (error) throw error;
       if (data) {
@@ -194,10 +246,10 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
   };
 
   React.useEffect(() => {
-    if (supabaseSyncEnabled && supabase) {
+    if (supabaseSyncEnabled && supabase && user) {
       fetchCloudHistory();
     }
-  }, [supabaseSyncEnabled, supabase]);
+  }, [supabaseSyncEnabled, supabase, user]);
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -313,8 +365,68 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
                   <div className="text-xs text-stone-500 italic bg-amber-50 p-3 rounded-lg border border-amber-100">
                     Supabase is not yet connected. Enter your credentials above and click Save.
                   </div>
+                ) : !user ? (
+                  <div className="space-y-3 bg-stone-50 p-4 rounded-lg border border-stone-200">
+                    <div className="text-sm font-medium text-stone-700">
+                      Authentication Required
+                    </div>
+                    <div className="text-xs text-stone-500">
+                      Please log in to enable cloud sync and secure your data.
+                    </div>
+                    <form onSubmit={handleAuth} className="space-y-3">
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 bg-white border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 bg-white border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      {authError && (
+                        <div className="text-[10px] text-red-600 bg-red-50 p-2 rounded border border-red-100">
+                          {authError}
+                        </div>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={isAuthenticating}
+                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      >
+                        {isAuthenticating ? 'Please wait...' : authMode === 'login' ? 'Log In' : 'Sign Up'}
+                      </button>
+                    </form>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                        className="text-[10px] text-blue-600 hover:underline"
+                      >
+                        {authMode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Log in"}
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-3">
+                    <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
+                      <div className="text-xs text-blue-800">
+                        Logged in as <span className="font-semibold">{user.email}</span>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="text-[10px] px-2 py-1 bg-white border border-blue-200 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                      >
+                        Log Out
+                      </button>
+                    </div>
+                    
                     <div className="text-xs text-stone-500">
                       When enabled, your data will automatically sync to Supabase in the background. Local storage remains your primary data source.
                     </div>
