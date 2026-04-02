@@ -75,7 +75,7 @@ const SortableTabItem: React.FC<SortableTabItemProps> = ({ item, onChange, isFir
             "w-full bg-transparent border-none outline-none text-sm font-medium focus:ring-0 p-0",
             isFirst ? "text-stone-500 cursor-not-allowed" : "text-stone-700"
           )}
-          placeholder="Tab Name"
+          placeholder={item.id.charAt(0).toUpperCase() + item.id.slice(1)}
         />
       </div>
 

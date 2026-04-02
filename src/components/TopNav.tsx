@@ -75,7 +75,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
       return {
         ...baseTab,
         id: configItem.id,
-        label: configItem.label,
+        label: configItem.label || baseTab?.label || 'Untitled',
         icon: baseTab?.icon || Edit3 // Fallback icon
       };
     });
