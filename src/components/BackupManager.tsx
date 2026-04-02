@@ -145,19 +145,20 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
     if (!supabase) return;
     setIsLoadingHistory(true);
     try {
+      // Use JSONB extraction to avoid downloading the massive state object for every version
       const { data, error } = await supabase
         .from('app_state')
-        .select('id, state')
+        .select('id, _isHistory:state->>_isHistory, _timestamp:state->>_timestamp, _device:state->>_device, lastDevice:state->>lastDevice')
         .neq('id', '00000000-0000-0000-0000-000000000000');
       
       if (error) throw error;
       if (data) {
         const history = data
-          .filter(row => row.state?._isHistory)
+          .filter(row => row._isHistory === 'true')
           .map(row => ({ 
             id: row.id, 
-            timestamp: row.state._timestamp, 
-            device: row.state._device || row.state.lastDevice 
+            timestamp: Number(row._timestamp), 
+            device: row._device || row.lastDevice 
           }))
           .sort((a, b) => b.timestamp - a.timestamp);
         setCloudHistory(history);
