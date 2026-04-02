@@ -33,7 +33,9 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
     addTag,
     reorderTimelineEvents,
     toggleTimelineEventLink,
-    deleteTimelineEvent
+    deleteTimelineEvent,
+    timelineTableColumns,
+    setTimelineTableColumns
   } = useStore(useShallow(state => ({
     timelineEvents: state.timelineEvents,
     locations: state.locations,
@@ -52,7 +54,9 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
     addTag: state.addTag,
     reorderTimelineEvents: state.reorderTimelineEvents,
     toggleTimelineEventLink: state.toggleTimelineEventLink,
-    deleteTimelineEvent: state.deleteTimelineEvent
+    deleteTimelineEvent: state.deleteTimelineEvent,
+    timelineTableColumns: state.timelineTableColumns,
+    setTimelineTableColumns: state.setTimelineTableColumns
   })));
   
   useEffect(() => {
@@ -173,6 +177,8 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
           updateTimelineEvent={updateTimelineEvent}
           deleteTimelineEvent={deleteTimelineEvent}
           addTag={addTag}
+          columns={timelineTableColumns}
+          setColumns={setTimelineTableColumns}
         />
       ) : timelineViewMode === 'chronology' ? (
         <TimelineVisualChronology

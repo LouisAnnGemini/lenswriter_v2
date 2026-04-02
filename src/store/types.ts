@@ -121,6 +121,7 @@ export type State = {
   showDescriptions: boolean;
   letterSpacing: number;
   editorMargin: number;
+  timelineTableColumns?: any[];
   supabaseSyncEnabled?: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
@@ -153,6 +154,7 @@ export interface UISlice {
   toggleShowDescriptions: () => void;
   setLetterSpacing: (spacing: number) => void;
   setEditorMargin: (margin: number) => void;
+  setTimelineTableColumns: (columns: any[]) => void;
   toggleSupabaseSync: () => void;
   saveHistoryVersion: (name: string) => Promise<boolean>;
 }

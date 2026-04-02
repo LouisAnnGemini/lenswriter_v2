@@ -14,6 +14,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   toggleShowDescriptions: () => set((state) => ({ showDescriptions: !state.showDescriptions })),
   setLetterSpacing: (spacing) => set({ letterSpacing: spacing }),
   setEditorMargin: (margin) => set({ editorMargin: margin }),
+  setTimelineTableColumns: (columns) => set({ timelineTableColumns: columns }),
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
   setAppMode: (mode) => set({ appMode: mode }),
   updateTabConfig: (mode, config) => set((state) => ({

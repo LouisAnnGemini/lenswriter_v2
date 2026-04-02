@@ -35,6 +35,8 @@ interface TimelineTableViewProps {
   updateTimelineEvent: (updates: Partial<TimelineEvent> & { id: string }) => void;
   deleteTimelineEvent: (id: string) => void;
   addTag: (tag: Omit<Tag, 'id'>) => string;
+  columns?: ColumnConfig[];
+  setColumns: (columns: ColumnConfig[]) => void;
 }
 
 type ColumnId = 'timestamp' | 'event' | 'characters' | 'tags' | 'startTime' | 'duration';
@@ -122,27 +124,12 @@ export const TimelineTableView = React.memo(({
   setSelectedEventId,
   updateTimelineEvent,
   deleteTimelineEvent,
-  addTag
+  addTag,
+  columns: propColumns,
+  setColumns
 }: TimelineTableViewProps) => {
-  const [columns, setColumns] = useState<ColumnConfig[]>(() => {
-    const saved = localStorage.getItem('timeline_table_columns');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const filtered = parsed.filter((col: ColumnConfig) => 
-          !['before', 'simultaneous', 'after'].includes(col.id.toLowerCase())
-        );
-        // 如果有过滤，更新 localStorage
-        if (filtered.length !== parsed.length) {
-          localStorage.setItem('timeline_table_columns', JSON.stringify(filtered));
-        }
-        return filtered;
-      } catch (e) {
-        return DEFAULT_COLUMNS;
-      }
-    }
-    return DEFAULT_COLUMNS;
-  });
+  const columns = propColumns || DEFAULT_COLUMNS;
+
   const [showSettings, setShowSettings] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
@@ -303,24 +290,18 @@ export const TimelineTableView = React.memo(({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      setColumns((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        localStorage.setItem('timeline_table_columns', JSON.stringify(newItems));
-        return newItems;
-      });
+      const oldIndex = columns.findIndex((i) => i.id === active.id);
+      const newIndex = columns.findIndex((i) => i.id === over.id);
+      const newItems = arrayMove(columns, oldIndex, newIndex);
+      setColumns(newItems);
     }
   };
 
   const toggleColumn = (id: ColumnId) => {
-    setColumns(items => {
-      const newItems = items.map(col => 
-        col.id === id ? { ...col, visible: !col.visible } : col
-      );
-      localStorage.setItem('timeline_table_columns', JSON.stringify(newItems));
-      return newItems;
-    });
+    const newItems = columns.map(col => 
+      col.id === id ? { ...col, visible: !col.visible } : col
+    );
+    setColumns(newItems);
   };
 
   const scrollToCenter = () => {
@@ -678,7 +659,6 @@ export const TimelineTableView = React.memo(({
               <button 
                 onClick={() => {
                   setColumns(DEFAULT_COLUMNS);
-                  localStorage.setItem('timeline_table_columns', JSON.stringify(DEFAULT_COLUMNS));
                 }}
                 className="text-[10px] text-stone-400 hover:text-stone-600 underline decoration-stone-300 underline-offset-2 transition-colors"
               >
