@@ -870,13 +870,25 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
           {/* Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden bg-white">
             <div className="p-4 border-b border-stone-100 flex items-center justify-between shrink-0 bg-white">
-              <h3 className="text-sm font-semibold text-stone-800">
-                {rightSidebarMode === 'info' && 'Scene Info'}
-                {rightSidebarMode === 'micro' && 'Directory'}
-                {rightSidebarMode === 'meso' && 'Lenses'}
-                {rightSidebarMode === 'macro' && 'Events'}
-                {rightSidebarMode === 'notes' && 'Notes'}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-stone-800">
+                  {rightSidebarMode === 'info' && 'Scene Info'}
+                  {rightSidebarMode === 'micro' && 'Directory'}
+                  {rightSidebarMode === 'meso' && 'Lenses'}
+                  {rightSidebarMode === 'macro' && 'Events'}
+                  {rightSidebarMode === 'notes' && 'Notes'}
+                </h3>
+                {rightSidebarMode === 'micro' && isScene && (activeDocument as any)?.chapterId && (
+                  <button
+                    onClick={() => setActiveDocument((activeDocument as any).chapterId)}
+                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded transition-colors"
+                    title="Back to Chapter"
+                  >
+                    <ArrowLeft size={10} />
+                    <span>Back to Chapter</span>
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setRightSidebarMode('closed')}
                 className="md:hidden p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
@@ -937,15 +949,6 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                       </div>
                       {!isCollapsed && (
                         <div className="space-y-0.5">
-                          {scene && (
-                            <button
-                              onClick={() => setActiveDocument(scene.chapterId)}
-                              className="w-full flex items-center gap-2 p-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors mb-1"
-                            >
-                              <ArrowLeft size={14} />
-                              Back to Chapter
-                            </button>
-                          )}
                           {section.entries.map(entry => (
                             <div key={entry.id} className={cn(
                               "p-2 bg-white rounded-lg border shadow-sm transition-colors",
