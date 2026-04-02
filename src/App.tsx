@@ -84,9 +84,8 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         if (activeTab === 'design' && activeDocumentId && !disguiseMode) {
           e.preventDefault();
           if (rightSidebarMode === 'closed') {
-            const isScene = scenes.some(s => s.id === activeDocumentId);
-            const canShowLastTab = isScene || (lastInspectorTab !== 'info' && lastInspectorTab !== 'macro');
-            setRightSidebarMode(canShowLastTab ? lastInspectorTab : 'micro');
+            // Default to 'micro' (Directory) as requested by user
+            setRightSidebarMode('micro');
           } else {
             setRightSidebarMode('closed');
           }

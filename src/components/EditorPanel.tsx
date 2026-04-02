@@ -127,20 +127,8 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
   const [newSnapshotName, setNewSnapshotName] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [collapsedTocSections, setCollapsedTocSections] = useState<Set<string>>(new Set());
+  const [collapsedTocSections, setCollapsedTocSections] = useState<Set<string> | null>(null);
   const [comparingBlockId, setComparingBlockId] = useState<string | null>(null);
-
-  const toggleTocSection = (documentId: string) => {
-    setCollapsedTocSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(documentId)) {
-        newSet.delete(documentId);
-      } else {
-        newSet.add(documentId);
-      }
-      return newSet;
-    });
-  };
 
   const activeDocument = scenes.find(s => s.id === activeDocId) || allChapters.find(c => c.id === activeDocId);
   const isScene = scenes.some(s => s.id === activeDocId);
@@ -153,6 +141,54 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
   
   const chapterScenes = scenes.filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
   const currentSceneIndex = chapterScenes.findIndex(s => s.id === activeDocId);
+
+  // TOC Data
+  const tocSections: { title: string; documentId: string; entries: { id: string; description: string; content: string; completed: boolean; documentId: string }[] }[] = [];
+  if (activeDocument) {
+    const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
+    const chapter = allChapters.find(c => c.id === chapterId);
+    
+    if (chapter) {
+      const chapterBlocks = allBlocks.filter(b => b.documentId === chapterId && b.description !== undefined).sort((a, b) => a.order - b.order);
+      if (chapterBlocks.length > 0) {
+        tocSections.push({
+          title: chapter.title || 'Untitled Chapter',
+          documentId: chapterId,
+          entries: chapterBlocks.map(b => ({ id: b.id, description: b.description || '', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
+        });
+      }
+      
+      const chapterScenes = scenes.filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
+      for (const scene of chapterScenes) {
+        const sceneBlocks = allBlocks.filter(b => b.documentId === scene.id && b.description !== undefined).sort((a, b) => a.order - b.order);
+        if (sceneBlocks.length > 0) {
+          tocSections.push({
+            title: scene.title || 'Untitled Scene',
+            documentId: scene.id,
+            entries: sceneBlocks.map(b => ({ id: b.id, description: b.description || '', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
+          });
+        }
+      }
+    }
+  }
+
+  const isSectionCollapsed = (documentId: string) => {
+    if (collapsedTocSections === null) return true;
+    return collapsedTocSections.has(documentId);
+  };
+
+  const toggleTocSection = (documentId: string) => {
+    setCollapsedTocSections(prev => {
+      const current = prev === null ? new Set(tocSections.map(s => s.documentId)) : prev;
+      const newSet = new Set(current);
+      if (newSet.has(documentId)) {
+        newSet.delete(documentId);
+      } else {
+        newSet.add(documentId);
+      }
+      return newSet;
+    });
+  };
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -365,36 +401,6 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     const charIds = new Set<string>();
     chapterScenes.forEach(s => s.characterIds.forEach(id => charIds.add(id)));
     chapterCharacters = Array.from(charIds);
-  }
-
-  // TOC Data
-  const tocSections: { title: string; documentId: string; entries: { id: string; description: string; content: string; completed: boolean; documentId: string }[] }[] = [];
-  if (activeDocument) {
-    const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
-    const chapter = allChapters.find(c => c.id === chapterId);
-    
-    if (chapter) {
-      const chapterBlocks = allBlocks.filter(b => b.documentId === chapterId && b.description !== undefined).sort((a, b) => a.order - b.order);
-      if (chapterBlocks.length > 0) {
-        tocSections.push({
-          title: chapter.title || 'Untitled Chapter',
-          documentId: chapterId,
-          entries: chapterBlocks.map(b => ({ id: b.id, description: b.description || '', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
-        });
-      }
-      
-      const chapterScenes = scenes.filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
-      for (const scene of chapterScenes) {
-        const sceneBlocks = allBlocks.filter(b => b.documentId === scene.id && b.description !== undefined).sort((a, b) => a.order - b.order);
-        if (sceneBlocks.length > 0) {
-          tocSections.push({
-            title: scene.title || 'Untitled Scene',
-            documentId: scene.id,
-            entries: sceneBlocks.map(b => ({ id: b.id, description: b.description || '', content: b.content || '', completed: !!b.completed, documentId: b.documentId }))
-          });
-        }
-      }
-    }
   }
 
   const countWords = (text: string) => {
@@ -889,7 +895,8 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                     <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">Table of Contents</h3>
                     <button
                       onClick={() => {
-                        const allCollapsed = tocSections.every(s => collapsedTocSections.has(s.documentId));
+                        const current = collapsedTocSections === null ? new Set(tocSections.map(s => s.documentId)) : collapsedTocSections;
+                        const allCollapsed = tocSections.every(s => current.has(s.documentId));
                         if (allCollapsed) {
                           setCollapsedTocSections(new Set());
                         } else {
@@ -898,7 +905,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                       }}
                       className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
                     >
-                      {tocSections.every(s => collapsedTocSections.has(s.documentId)) ? 'Expand All' : 'Collapse All'}
+                      {tocSections.every(s => isSectionCollapsed(s.documentId)) ? 'Expand All' : 'Collapse All'}
                     </button>
                   </div>
                 )}
@@ -906,7 +913,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                   <div className="text-center text-xs text-stone-500 py-4">No blocks found.</div>
                 ) : (
                   tocSections.map((section, idx) => {
-                    const isCollapsed = collapsedTocSections.has(section.documentId);
+                    const isCollapsed = isSectionCollapsed(section.documentId);
                     const scene = scenes.find(s => s.id === section.documentId);
                     const statusColor = scene && scene.statusColor ? SCENE_STATUS_COLORS[scene.statusColor as keyof typeof SCENE_STATUS_COLORS] : null;
                     const isActive = section.documentId === activeDocId;
@@ -930,6 +937,15 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                       </div>
                       {!isCollapsed && (
                         <div className="space-y-0.5">
+                          {scene && (
+                            <button
+                              onClick={() => setActiveDocument(scene.chapterId)}
+                              className="w-full flex items-center gap-2 p-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors mb-1"
+                            >
+                              <ArrowLeft size={14} />
+                              Back to Chapter
+                            </button>
+                          )}
                           {section.entries.map(entry => (
                             <div key={entry.id} className={cn(
                               "p-2 bg-white rounded-lg border shadow-sm transition-colors",
