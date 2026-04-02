@@ -70,12 +70,12 @@ export function SyncManager() {
     if (supabaseSyncEnabled && supabase) {
       // Starting auto-save history timer (10m)
       historyTimerRef.current = setInterval(() => {
-        const tenMinutes = 10 * 60 * 1000;
-        if (Date.now() - lastModifiedRef.current < tenMinutes) {
+        const checkWindow = 11 * 60 * 1000; // 11 minutes to ensure overlap with 10m interval
+        if (Date.now() - lastModifiedRef.current < checkWindow) {
           // Auto-saving history version...
           saveHistoryVersion('Auto-Save');
         } else {
-          // Skipping auto-save: No modifications in the last 10 minutes.
+          // Skipping auto-save: No modifications in the last 11 minutes.
         }
       }, 10 * 60 * 1000);
     } else {
