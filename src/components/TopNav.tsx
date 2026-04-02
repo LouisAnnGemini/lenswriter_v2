@@ -121,9 +121,9 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
           )}
           
           <div className="hidden md:flex space-x-8 h-full">
-            {tabs.map(tab => (
+            {tabs.map((tab, index) => (
               <button
-                key={tab.id}
+                key={tab.id || `tab-desktop-${index}`}
                 onClick={() => {
                   setActiveTab(tab.id as any);
                   if (tab.id === 'deadline') {
@@ -212,9 +212,9 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
       {/* Mobile Bottom Nav */}
       <div className="md:hidden">
         <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-stone-200 flex items-center justify-around z-30 pb-safe">
-          {tabs.map(tab => (
+          {tabs.map((tab, index) => (
             <button
-              key={tab.id}
+              key={tab.id || `tab-mobile-${index}`}
               onClick={() => {
                 setActiveTab(tab.id as any);
                 if (tab.id === 'deadline') {

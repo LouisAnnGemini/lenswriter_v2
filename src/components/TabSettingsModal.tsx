@@ -190,7 +190,7 @@ export function TabSettingsModal({ onClose }: { onClose: () => void }) {
             >
               {items.map((item, index) => (
                 <SortableTabItem
-                  key={item.id}
+                  key={item.id || `tab-${index}`}
                   item={item}
                   onChange={handleItemChange}
                   isFirst={index === 0}
