@@ -77,17 +77,19 @@ export function CharacterAppearanceMatrix({
                         <Check size={14} />
                       </button>
                       
-                      {isPresent && (
-                        <button
-                          onClick={() => openNoteModal(scene.id, charId, note)}
-                          className={cn(
-                            "w-6 h-6 flex items-center justify-center rounded transition-colors",
-                            note ? "text-emerald-600 hover:bg-emerald-100" : "text-stone-300 hover:bg-stone-100 hover:text-stone-500"
-                          )}
-                        >
-                          {note ? <Info size={14} /> : <Plus size={14} />}
-                        </button>
-                      )}
+                      <div className="w-6 h-6">
+                        {isPresent && (
+                          <button
+                            onClick={() => openNoteModal(scene.id, charId, note)}
+                            className={cn(
+                              "w-6 h-6 flex items-center justify-center rounded transition-colors",
+                              note ? "text-emerald-600 hover:bg-emerald-100" : "text-stone-300 hover:bg-stone-100 hover:text-stone-500"
+                            )}
+                          >
+                            {note ? <Info size={14} /> : <Plus size={14} />}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </td>
                 );
