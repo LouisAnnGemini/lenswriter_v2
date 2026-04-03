@@ -109,8 +109,14 @@ describe('uiSlice', () => {
   it('should toggle app mode and adjust active tab', () => {
     const { toggleAppMode } = useTestStore.getState();
     
-    // If switching to management and tab is world, it should switch to design
+    // If switching to review and tab is world, it should switch to design
     useTestStore.setState({ appMode: 'design', activeTab: 'world' });
+    toggleAppMode();
+    expect(useTestStore.getState().appMode).toBe('review');
+    expect(useTestStore.getState().activeTab).toBe('design');
+
+    // If switching to management and tab is world, it should switch to design
+    useTestStore.setState({ appMode: 'review', activeTab: 'world' });
     toggleAppMode();
     expect(useTestStore.getState().appMode).toBe('management');
     expect(useTestStore.getState().activeTab).toBe('design');

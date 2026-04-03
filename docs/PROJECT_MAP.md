@@ -65,11 +65,16 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 - **Context:** `src/context/BackupContext.tsx`
 - **Supabase Client:** `src/lib/supabase.ts`
 
-### 11. 🛠️ Common & Utility UI (通用组件)
+### 12. 🛠️ Common & Utility UI (通用组件)
 - **Work Icons:** `src/components/WorkIcon.tsx`, `src/components/WorkIconPicker.tsx`
 - **Inputs & Selects:** `src/components/AutoResizeTextarea.tsx`, `src/components/MultiSelectDropdown.tsx`, `src/components/SearchableSelect.tsx`
 - **Actions:** `src/components/ConfirmDeleteButton.tsx`
 - **Error Handling:** `src/components/ErrorBoundary.tsx`
+
+### 13. 🚇 Metro (故事地铁线)
+- **Main View:** `src/components/MetroTab.tsx`
+- **Board:** `src/components/MetroBoard.tsx`
+- **State Management:** `src/store/stores/slices/metroSlice.ts`
 
 ---
 

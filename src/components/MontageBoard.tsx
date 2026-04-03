@@ -16,11 +16,9 @@ const EVENT_COLORS = {
   purple: 'bg-purple-50 border-purple-200 text-purple-900',
 };
 
-interface MontageBoardProps {
-  onEventDoubleClick?: (eventId: string) => void;
-}
+interface MontageBoardProps {}
 
-export function MontageBoard({ onEventDoubleClick }: MontageBoardProps) {
+export function MontageBoard({}: MontageBoardProps = {}) {
   const { 
     activeWorkId, 
     timelineEvents: allTimelineEvents, 

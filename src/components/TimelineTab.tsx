@@ -6,7 +6,6 @@ import { Plus, Clock, List, LayoutGrid, Tag as TagIcon, Maximize2 } from 'lucide
 import { cn } from '../lib/utils';
 
 import { EventDetailsModal } from './EventDetailsModal';
-import { MontageBoard } from './MontageBoard';
 import { TagManagerModal } from './TagManagerModal';
 import { TagManagerTab } from './TagManagerTab';
 import { AddEventModal } from './AddEventModal';
@@ -14,7 +13,7 @@ import { TimelineTableView } from './timeline/TimelineTableView';
 import { TimelineVisualChronology } from './timeline/TimelineVisualChronology';
 import { EVENT_COLORS } from './timeline/TimelineShared';
 
-export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean, overrideViewMode?: 'chronology' | 'montage' }) {
+export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean, overrideViewMode?: 'chronology' }) {
   const { 
     timelineEvents, 
     locations, 
@@ -28,6 +27,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
     setSelectedEventId,
     setTimelineViewMode,
     updateTimelineEvent,
+    updateTimelineEvents,
     updateTimelineEventCharacterAction,
     addTimelineEvent,
     addTag,
@@ -49,6 +49,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
     setSelectedEventId: state.setSelectedEventId,
     setTimelineViewMode: state.setTimelineViewMode,
     updateTimelineEvent: state.updateTimelineEvent,
+    updateTimelineEvents: state.updateTimelineEvents,
     updateTimelineEventCharacterAction: state.updateTimelineEventCharacterAction,
     addTimelineEvent: state.addTimelineEvent,
     addTag: state.addTag,
@@ -131,16 +132,6 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
                 Chronology
               </button>
               <button
-                onClick={() => setTimelineViewMode('montage')}
-                className={cn(
-                  "px-3 py-1.5 md:px-3.5 md:py-1.5 rounded-md text-xs md:text-sm font-medium flex items-center transition-all duration-200 whitespace-nowrap",
-                  timelineViewMode === 'montage' ? "bg-white text-stone-900 shadow-sm ring-1 ring-black/5" : "text-stone-500 hover:text-stone-700 hover:bg-stone-200/50"
-                )}
-              >
-                <Maximize2 size={14} className={cn("mr-1.5 md:mr-2", timelineViewMode === 'montage' ? "text-emerald-600" : "")} />
-                Montage
-              </button>
-              <button
                 onClick={() => setTimelineViewMode('tags')}
                 className={cn(
                   "px-3 py-1.5 md:px-3.5 md:py-1.5 rounded-md text-xs md:text-sm font-medium flex items-center transition-all duration-200 whitespace-nowrap",
@@ -175,6 +166,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
           highlightedEventId={highlightedEventId}
           setSelectedEventId={handleEventClick}
           updateTimelineEvent={updateTimelineEvent}
+          updateTimelineEvents={updateTimelineEvents}
           deleteTimelineEvent={deleteTimelineEvent}
           addTag={addTag}
           columns={timelineTableColumns}
@@ -186,8 +178,6 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
           characters={characters}
           onEventClick={handleEventClick}
         />
-      ) : timelineViewMode === 'montage' ? (
-        <MontageBoard onEventDoubleClick={handleEventClick} />
       ) : (
         <TagManagerTab />
       )}

@@ -22,6 +22,7 @@ import { cn } from '../../lib/utils';
 import { EditableInput, InlineMultiSelect, getRandomColor } from './TimelineShared';
 import { MultiSelectDropdown } from '../MultiSelectDropdown';
 import { ConfirmDeleteButton } from '../ConfirmDeleteButton';
+import { BatchActionModal } from '../BatchActionModal';
 import { TimelineEvent, Character, Tag, Location } from '../../store/types';
 
 interface TimelineTableViewProps {
@@ -33,6 +34,7 @@ interface TimelineTableViewProps {
   highlightedEventId: string | null;
   setSelectedEventId: (id: string | null) => void;
   updateTimelineEvent: (updates: Partial<TimelineEvent> & { id: string }) => void;
+  updateTimelineEvents: (events: (Partial<TimelineEvent> & { id: string })[]) => void;
   deleteTimelineEvent: (id: string) => void;
   addTag: (tag: Omit<Tag, 'id'>) => string;
   columns?: ColumnConfig[];
@@ -123,6 +125,7 @@ export const TimelineTableView = React.memo(({
   highlightedEventId,
   setSelectedEventId,
   updateTimelineEvent,
+  updateTimelineEvents,
   deleteTimelineEvent,
   addTag,
   columns: propColumns,
@@ -133,8 +136,51 @@ export const TimelineTableView = React.memo(({
   const [showSettings, setShowSettings] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [highlightedIds, setHighlightedIds] = useState<Set<string>>(new Set());
+  const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [invalidInputs, setInvalidInputs] = useState<Record<string, boolean>>({});
   const [sortConfig, setSortConfig] = useState<{ field: ColumnId | null, direction: 'asc' | 'desc' }>({ field: null, direction: 'asc' });
+
+  const toggleSelectAll = () => {
+    if (selectedEventIds.size === sortedEvents.length) {
+      setSelectedEventIds(new Set());
+    } else {
+      setSelectedEventIds(new Set(sortedEvents.map(e => e.id)));
+    }
+  };
+
+  const toggleSelectEvent = (id: string) => {
+    const newSelected = new Set(selectedEventIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedEventIds(newSelected);
+  };
+
+  const batchDelete = () => {
+    selectedEventIds.forEach(id => deleteTimelineEvent(id));
+    setSelectedEventIds(new Set());
+  };
+
+  const batchUpdate = (updates: { characterIds: string[], tagIds: string[] }) => {
+    const eventsToUpdate = sortedEvents
+      .filter(e => selectedEventIds.has(e.id))
+      .map(e => {
+        const newCharacterActions = { ...e.characterActions };
+        updates.characterIds.forEach(charId => {
+          if (!newCharacterActions[charId]) {
+            newCharacterActions[charId] = '';
+          }
+        });
+        const newTagIds = Array.from(new Set([...(e.tagIds || []), ...updates.tagIds]));
+        return { ...e, characterActions: newCharacterActions, tagIds: newTagIds, id: e.id };
+      });
+    
+    updateTimelineEvents(eventsToUpdate);
+    setSelectedEventIds(new Set());
+  };
 
   // 筛选状态
   const [filters, setFilters] = useState({
@@ -674,6 +720,14 @@ export const TimelineTableView = React.memo(({
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-stone-50/80 border-b border-stone-200/80 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-5 py-3 sm:py-3.5 w-10 sticky left-0 bg-stone-50/80 z-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedEventIds.size === sortedEvents.length && sortedEvents.length > 0}
+                    onChange={toggleSelectAll}
+                    className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                </th>
                 {visibleColumns.map(col => (
                   <th 
                     key={col.id} 
@@ -694,7 +748,7 @@ export const TimelineTableView = React.memo(({
             <tbody className="divide-y divide-stone-100/80">
               {sortedEvents.length === 0 ? (
                 <tr>
-                  <td colSpan={visibleColumns.length + 1} className="px-5 py-16 text-center text-stone-400 italic bg-stone-50/30">
+                  <td colSpan={visibleColumns.length + 2} className="px-5 py-16 text-center text-stone-400 italic bg-stone-50/30">
                     No events found matching your filters.
                   </td>
                 </tr>
@@ -708,9 +762,18 @@ export const TimelineTableView = React.memo(({
                           "group transition-colors duration-150",
                           "bg-white",
                           (highlightedEventId === event.id || highlightedIds.has(event.id)) ? "bg-emerald-50/80" : "hover:bg-stone-50/80",
-                          event.startTime === undefined && "opacity-60 grayscale-[0.5]"
+                          event.startTime === undefined && "opacity-60 grayscale-[0.5]",
+                          selectedEventIds.has(event.id) && "bg-emerald-50"
                         )}
                       >
+                        <td className="px-4 sm:px-5 py-3 sm:py-4 sticky left-0 bg-white z-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedEventIds.has(event.id)}
+                            onChange={() => toggleSelectEvent(event.id)}
+                            className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500"
+                          />
+                        </td>
                         {visibleColumns.map(col => (
                           <td key={`${event.id}-${col.id}`} className="px-4 sm:px-5 py-3 sm:py-4 align-top">
                             {renderCell(col.id, event, idx)}
@@ -729,6 +792,24 @@ export const TimelineTableView = React.memo(({
           </table>
         </div>
       </div>
+      {selectedEventIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 z-[100] animate-in slide-in-from-bottom-10">
+          <span className="text-sm font-medium">{selectedEventIds.size} selected</span>
+          <div className="w-px h-4 bg-stone-700" />
+          <button onClick={batchDelete} className="text-sm text-red-400 hover:text-red-300 font-medium">Delete</button>
+          <div className="w-px h-4 bg-stone-700" />
+          <button onClick={() => setIsBatchModalOpen(true)} className="text-sm text-emerald-400 hover:text-emerald-300 font-medium">Assign Characters & Tags</button>
+        </div>
+      )}
+      {isBatchModalOpen && (
+        <BatchActionModal
+          onClose={() => setIsBatchModalOpen(false)}
+          onApply={batchUpdate}
+          characters={characters}
+          tags={tags}
+          activeWorkId={activeWorkId}
+        />
+      )}
     </div>
   );
 });

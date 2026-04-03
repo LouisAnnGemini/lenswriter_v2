@@ -24,7 +24,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
     }
   })),
   toggleAppMode: () => set((state) => {
-    const newMode = state.appMode === 'design' ? 'management' : 'design';
+    const newMode = state.appMode === 'design' ? 'review' : state.appMode === 'review' ? 'management' : 'design';
     let newTab = state.activeTab;
     let newTimelineViewMode = state.timelineViewMode;
 
@@ -32,9 +32,11 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       newTab = 'design';
     } else if (newMode === 'management' && ['world'].includes(state.activeTab)) {
       newTab = 'design';
+    } else if (newMode === 'review' && ['world'].includes(state.activeTab)) {
+      newTab = 'design';
     }
 
-    if (newMode === 'management') {
+    if (newMode === 'management' || newMode === 'review') {
       newTimelineViewMode = 'list';
     }
 

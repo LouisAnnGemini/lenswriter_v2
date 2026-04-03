@@ -7,6 +7,8 @@ import { OutlinePanel } from './components/OutlinePanel';
 import { EditorPanel } from './components/EditorPanel';
 import { LensesTab } from './components/LensesTab';
 import { TimelineTab } from './components/TimelineTab';
+import { MetroTab } from './components/MetroTab';
+import { MontageTab } from './components/MontageTab';
 import { BlockManagementTab } from './components/BlockManagementTab';
 import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
@@ -125,6 +127,8 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         {activeTab === 'blockDescriptions' && <BlockManagementTab />}
         {activeTab === 'lenses' && <LensesTab />}
         {activeTab === 'timelineEvents' && <TimelineTab />}
+        {activeTab === 'montage' && <MontageTab />}
+        {activeTab === 'metro' && <MetroTab />}
         {activeTab === 'world' && <WorldTab />}
         {activeTab === 'deadline' && (
           <DeadlineTab workId={deadlineViewMode === 'local' ? (activeWorkId || undefined) : undefined} />

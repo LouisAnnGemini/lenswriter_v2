@@ -18,8 +18,9 @@ describe('sceneSlice', () => {
       blocks: [
         { id: 'block-1', documentId: 'scene-1', type: 'text', content: 'Block 1', order: 0 },
       ],
+      addBlock: () => {},
       ...createSceneSlice(set, get, api as any),
-    } as StoreState));
+    } as unknown as StoreState));
   });
 
   it('should add a new scene', () => {

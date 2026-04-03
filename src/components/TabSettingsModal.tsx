@@ -101,7 +101,7 @@ export function TabSettingsModal({ onClose }: { onClose: () => void }) {
     updateTabConfig: state.updateTabConfig,
   })));
 
-  const [activeMode, setActiveMode] = useState<'design' | 'management'>('design');
+  const [activeMode, setActiveMode] = useState<'design' | 'review' | 'management'>('design');
   const [items, setItems] = useState<TabConfigItem[]>(tabConfig[activeMode] || []);
 
   // Sync items when mode changes
@@ -160,7 +160,16 @@ export function TabSettingsModal({ onClose }: { onClose: () => void }) {
                 activeMode === 'design' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
               )}
             >
-              Design Mode
+              Design
+            </button>
+            <button
+              onClick={() => setActiveMode('review')}
+              className={cn(
+                "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
+                activeMode === 'review' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
+              )}
+            >
+              Review
             </button>
             <button
               onClick={() => setActiveMode('management')}
@@ -169,7 +178,7 @@ export function TabSettingsModal({ onClose }: { onClose: () => void }) {
                 activeMode === 'management' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
               )}
             >
-              Management Mode
+              Management
             </button>
           </div>
         </div>

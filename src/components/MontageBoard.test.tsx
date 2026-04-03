@@ -19,10 +19,11 @@ describe('MontageBoard', () => {
   const mockStore = {
     activeWorkId: 'w1',
     timelineEvents: [
-      { id: 'e1', workId: 'w1', title: 'Event 1', order: 1, color: 'red' },
-      { id: 'e2', workId: 'w1', title: 'Event 2', order: 2, color: 'blue' },
+      { id: 'e1', workId: 'w1', title: 'Event 1', order: 1, color: 'red', characterActions: {} },
+      { id: 'e2', workId: 'w1', title: 'Event 2', order: 2, color: 'blue', characterActions: {} },
     ],
     tags: [],
+    characters: [],
     chapters: [
       { id: 'c1', workId: 'w1', title: 'Chapter 1', order: 1, archived: false },
       { id: 'c2', workId: 'w1', title: 'Chapter 2', order: 2, archived: true },
@@ -35,6 +36,7 @@ describe('MontageBoard', () => {
     toggleSceneEvent: vi.fn(),
     reorderSceneEvents: vi.fn(),
     setActiveDocument: vi.fn(),
+    updateTimelineEventCharacterAction: vi.fn(),
   };
 
   beforeEach(() => {
@@ -51,18 +53,17 @@ describe('MontageBoard', () => {
     render(<MontageBoard />);
     
     expect(screen.getByTestId('editor-panel')).toBeInTheDocument();
-    expect(screen.getByText('Narrative Flow (Scenes)')).toBeInTheDocument();
-    expect(screen.getByText('Event Pool')).toBeInTheDocument();
+    expect(screen.getByText('Narrative Flow')).toBeInTheDocument();
   });
 
   it('displays active chapters and scenes', () => {
     render(<MontageBoard />);
     
-    expect(screen.getByText('Chapter 1')).toBeInTheDocument();
-    expect(screen.getByText('Scene 1')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Chapter 1/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Scene 1/i })).toBeInTheDocument();
     
     // Archived chapter should not be visible by default
-    expect(screen.queryByText('Chapter 2')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Chapter 2/i })).not.toBeInTheDocument();
   });
 
   it('toggles archived chapters visibility', () => {
@@ -71,18 +72,18 @@ describe('MontageBoard', () => {
     const checkbox = screen.getByLabelText('Show Archived');
     fireEvent.click(checkbox);
     
-    expect(screen.getByText('Chapter 2')).toBeInTheDocument();
-    expect(screen.getByText('Scene 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Chapter 2/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Scene 2/i })).toBeInTheDocument();
   });
 
   it('calls setActiveDocument when clicking a chapter or scene', () => {
     render(<MontageBoard />);
     
-    const chapter1 = screen.getByText('Chapter 1');
+    const chapter1 = screen.getByRole('heading', { name: /Chapter 1/i });
     fireEvent.click(chapter1);
     expect(mockStore.setActiveDocument).toHaveBeenCalledWith('c1');
     
-    const scene1 = screen.getByText('Scene 1');
+    const scene1 = screen.getByRole('heading', { name: /Scene 1/i });
     fireEvent.click(scene1);
     expect(mockStore.setActiveDocument).toHaveBeenCalledWith('s1');
   });
@@ -91,27 +92,7 @@ describe('MontageBoard', () => {
     render(<MontageBoard />);
     
     // Event 1 is linked to Scene 1
-    const linkedEvent = screen.getAllByText('Event 1')[0]; // One in scene, one in pool
+    const linkedEvent = screen.getAllByText('Event 1')[0];
     expect(linkedEvent).toBeInTheDocument();
-  });
-
-  it('displays all events in the event pool', () => {
-    render(<MontageBoard />);
-    
-    // Both events should be in the pool
-    expect(screen.getAllByText('Event 1').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Event 2').length).toBeGreaterThan(0);
-  });
-
-  it('calls onEventDoubleClick when double clicking an event in the pool', () => {
-    const onEventDoubleClick = vi.fn();
-    render(<MontageBoard onEventDoubleClick={onEventDoubleClick} />);
-    
-    // Find the event in the pool (it's the last one rendered)
-    const events = screen.getAllByText('Event 1');
-    const poolEvent = events[events.length - 1].parentElement;
-    
-    fireEvent.doubleClick(poolEvent!);
-    expect(onEventDoubleClick).toHaveBeenCalledWith('e1');
   });
 });

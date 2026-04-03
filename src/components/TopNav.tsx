@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { MobileInboxDrawer } from './MobileInboxDrawer';
@@ -60,6 +60,8 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     { id: 'blockDescriptions', label: 'Block Descriptions', icon: AlignLeft },
     { id: 'lenses', label: 'Lenses', icon: LayoutGrid },
     { id: 'timelineEvents', label: 'Timeline Events', icon: Clock },
+    { id: 'montage', label: 'Montage', icon: Layout },
+    { id: 'metro', label: 'Metro', icon: Network },
     { id: 'world', label: 'World', icon: Users },
     { id: 'deadline', label: 'Deadline', icon: Clock },
     { id: 'compile', label: 'Compile', icon: FileText },

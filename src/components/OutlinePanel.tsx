@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FileText, Folder, GripVertical, Plus, Trash2, Check, X, Archive, RotateCcw, ArrowUpDown } from 'lucide-react';
+import { FileText, Folder, GripVertical, Plus, Trash2, Check, X, Archive, RotateCcw, ArrowUpDown, Files, ChevronDown, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 import { SCENE_STATUS_COLORS } from '../store/constants';
@@ -14,6 +14,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
     chapters: allChapters, 
     scenes: allScenes, 
     activeDocumentId,
+    snapshots,
     reorderChapters,
     reorderScenes,
     moveScene,
@@ -29,6 +30,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
     chapters: state.chapters,
     scenes: state.scenes,
     activeDocumentId: state.activeDocumentId,
+    snapshots: state.snapshots,
     reorderChapters: state.reorderChapters,
     reorderScenes: state.reorderScenes,
     moveScene: state.moveScene,
@@ -44,6 +46,19 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(() => new Set(allChapters.filter(c => c.workId === activeWorkId).map(c => c.id)));
+
+  const toggleChapter = (chapterId: string) => {
+    setCollapsedChapters(prev => {
+      const next = new Set(prev);
+      if (next.has(chapterId)) next.delete(chapterId);
+      else next.add(chapterId);
+      return next;
+    });
+  };
+
+  const expandAll = () => setCollapsedChapters(new Set());
+  const collapseAll = () => setCollapsedChapters(new Set(chapters.map(c => c.id)));
 
   if (focusMode) return null;
 
@@ -137,27 +152,62 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
           
           {/* Header with Edit Toggle */}
           <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-white/50">
-            <span className="font-serif text-sm font-bold text-stone-700 uppercase tracking-wider">Outline</span>
-            <button
-              onClick={() => setIsReorderMode(!isReorderMode)}
-              className={cn(
-                "px-2 py-1.5 rounded-md text-xs font-medium flex items-center transition-colors shadow-sm border",
-                isReorderMode 
-                  ? "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200" 
-                  : "bg-white text-stone-600 border-stone-200 hover:bg-stone-50"
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-sm font-bold text-stone-700 uppercase tracking-wider">Directory</span>
+              {activeDocumentId && allScenes.some(s => s.id === activeDocumentId) && (
+                <button 
+                  onClick={() => {
+                    const scene = allScenes.find(s => s.id === activeDocumentId);
+                    if (scene) setActiveDocument(scene.chapterId);
+                  }}
+                  className="text-[10px] bg-stone-100 hover:bg-stone-200 text-stone-600 px-2 py-1 rounded-md transition-colors"
+                  title="Back to Chapter"
+                >
+                  Back to Chapter
+                </button>
               )}
-              title="Toggle Reorder/Edit Mode"
-            >
-              <ArrowUpDown size={14} className="mr-1.5" />
-              {isReorderMode ? "Done" : "Reorder"}
-            </button>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsReorderMode(!isReorderMode)}
+                className={cn(
+                  "px-2 py-1.5 rounded-md text-xs font-medium flex items-center transition-colors shadow-sm border",
+                  isReorderMode 
+                    ? "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200" 
+                    : "bg-white text-stone-600 border-stone-200 hover:bg-stone-50"
+                )}
+                title="Toggle Reorder/Edit Mode"
+              >
+                <ArrowUpDown size={14} className="mr-1.5" />
+                {isReorderMode ? "Done" : "Reorder"}
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
-            <label className="flex items-center text-xs text-stone-500 mb-3 px-2 cursor-pointer hover:text-stone-700">
-              <input type="checkbox" checked={showArchived} onChange={() => setShowArchived(!showArchived)} className="mr-2 accent-emerald-600" />
-              Show Archived
-            </label>
+            <div className="flex items-center justify-between mb-3 px-2">
+              <label className="flex items-center text-xs text-stone-500 cursor-pointer hover:text-stone-700">
+                <input type="checkbox" checked={showArchived} onChange={() => setShowArchived(!showArchived)} className="mr-2 accent-emerald-600" />
+                Show Archived
+              </label>
+              <button 
+                onClick={collapsedChapters.size === chapters.length ? expandAll : collapseAll} 
+                className="text-[10px] uppercase tracking-wider font-medium text-stone-400 hover:text-stone-600 flex items-center transition-colors"
+                title={collapsedChapters.size === chapters.length ? "Expand All" : "Collapse All"}
+              >
+                {collapsedChapters.size === chapters.length ? (
+                  <>
+                    <Maximize2 size={12} className="mr-1" />
+                    Expand All
+                  </>
+                ) : (
+                  <>
+                    <Minimize2 size={12} className="mr-1" />
+                    Collapse All
+                  </>
+                )}
+              </button>
+            </div>
             
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="chapters" type="chapter" isDropDisabled={!isReorderMode}>
@@ -190,6 +240,9 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                     <GripVertical size={14} />
                                   </div>
                                 )}
+                                <button onClick={(e) => { e.stopPropagation(); toggleChapter(chapter.id); }} className="mr-1 text-stone-400 hover:text-stone-600">
+                                  {collapsedChapters.has(chapter.id) ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                </button>
                                 {chapter.archived && <Archive size={14} className="mr-2 text-stone-400 shrink-0" />}
                                 <Folder size={14} className={cn("mr-2 text-stone-400 shrink-0", chapter.archived && "opacity-50")} />
                                 <span className={cn("whitespace-normal break-words text-xs md:text-sm", chapter.archived && "text-stone-400 italic")}>
@@ -238,7 +291,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                     isReorderMode && "min-h-[24px]" // Ensure empty chapters can receive drops
                                   )}
                                 >
-                                  {allScenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map((scene, index) => (
+                                  {!collapsedChapters.has(chapter.id) && allScenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order).map((scene, index) => (
                                     // @ts-expect-error React 19 key prop issue
                                     <Draggable key={scene.id} draggableId={scene.id} index={index} isDragDisabled={!isReorderMode}>
                                       {(provided, snapshot) => (
@@ -256,10 +309,15 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                           <div className="flex items-center flex-1 min-w-0">
                                             {isReorderMode && (
                                               <div {...provided.dragHandleProps} className="mr-2 text-stone-400 cursor-grab hover:text-stone-600 active:cursor-grabbing">
-                                                <GripVertical size={12} />
+                                                <GripVertical size={14} />
                                               </div>
                                             )}
-                                            <FileText size={12} className="mr-2 text-stone-400 shrink-0" />
+                                            {/* Icon logic */}
+                                            {snapshots && snapshots.some(s => s.sceneId === scene.id) ? (
+                                              <Files size={12} className="mr-2 text-emerald-600 shrink-0" />
+                                            ) : (
+                                              <FileText size={12} className="mr-2 text-stone-400 shrink-0" />
+                                            )}
                                             {scene.statusColor && SCENE_STATUS_COLORS[scene.statusColor] && (
                                               <div className={cn("w-1.5 h-1.5 rounded-full mr-2 shrink-0", SCENE_STATUS_COLORS[scene.statusColor].dot)} />
                                             )}

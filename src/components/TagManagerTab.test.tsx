@@ -53,7 +53,7 @@ describe('TagManagerTab', () => {
     const input = screen.getByPlaceholderText('e.g., Important, Subplot A');
     fireEvent.change(input, { target: { value: 'New Tag' } });
     
-    const addButton = screen.getByText('Add Tag');
+    const addButton = screen.getByText('Create Tag');
     fireEvent.click(addButton);
     
     expect(mockStore.addTag).toHaveBeenCalledWith({

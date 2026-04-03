@@ -66,18 +66,18 @@ export function CharacterAppearanceMatrix({
                 
                 return (
                   <td key={charId} className="border-b border-stone-100 p-2 text-center">
-                    <div className="flex items-center justify-center gap-1">
+                    <div className="relative flex items-center justify-center">
                       <button
                         onClick={() => onTogglePresence(scene.id, charId)}
                         className={cn(
-                          "w-6 h-6 flex items-center justify-center rounded transition-colors",
+                          "w-6 h-6 flex items-center justify-center rounded transition-colors z-10",
                           isPresent ? "bg-emerald-100 text-emerald-600 hover:bg-emerald-200" : "bg-stone-100 text-stone-300 hover:bg-stone-200"
                         )}
                       >
                         <Check size={14} />
                       </button>
                       
-                      <div className="w-6 h-6">
+                      <div className="absolute left-1/2 ml-4">
                         {isPresent && (
                           <button
                             onClick={() => openNoteModal(scene.id, charId, note)}

@@ -14,9 +14,6 @@ vi.mock('../store/stores/useStore', () => ({
 vi.mock('./EventDetailsModal', () => ({
   EventDetailsModal: () => <div data-testid="event-details-modal">Event Details Modal</div>,
 }));
-vi.mock('./MontageBoard', () => ({
-  MontageBoard: () => <div data-testid="montage-board">Montage Board</div>,
-}));
 vi.mock('./TagManagerModal', () => ({
   TagManagerModal: () => <div data-testid="tag-manager-modal">Tag Manager Modal</div>,
 }));
@@ -32,6 +29,9 @@ vi.mock('./timeline/TimelineFilterBar', () => ({
 vi.mock('./timeline/TimelineTableView', () => ({
   TimelineTableView: () => <div data-testid="timeline-table-view">Timeline Table View</div>,
 }));
+vi.mock('./timeline/TimelineVisualChronology', () => ({
+  TimelineVisualChronology: () => <div data-testid="timeline-chronology-view">Timeline Chronology View</div>,
+}));
 vi.mock('./timeline/TimelineChronologyView', () => ({
   TimelineChronologyView: () => <div data-testid="timeline-chronology-view">Timeline Chronology View</div>,
 }));
@@ -44,6 +44,8 @@ describe('TimelineTab', () => {
     tags: [],
     activeWorkId: 'w1',
     selectedEventId: null,
+    timelineViewMode: 'table',
+    timelineTableColumns: ['color', 'title', 'date', 'characters', 'tags', 'locations'],
     setActiveTab: vi.fn(),
     setSelectedEventId: vi.fn(),
     updateTimelineEvent: vi.fn(),
@@ -53,6 +55,8 @@ describe('TimelineTab', () => {
     reorderTimelineEvents: vi.fn(),
     toggleTimelineEventLink: vi.fn(),
     deleteTimelineEvent: vi.fn(),
+    setTimelineViewMode: vi.fn(),
+    setTimelineTableColumns: vi.fn(),
   };
 
   beforeEach(() => {
@@ -76,30 +80,20 @@ describe('TimelineTab', () => {
   it('renders all events view by default', () => {
     render(<TimelineTab />);
     expect(screen.getByTestId('timeline-table-view')).toBeInTheDocument();
-    expect(screen.getByTestId('timeline-filter-bar')).toBeInTheDocument();
   });
 
   it('can switch to chronology view', () => {
     render(<TimelineTab />);
     const chronologyButton = screen.getByText('Chronology');
     fireEvent.click(chronologyButton);
-    expect(screen.getByTestId('timeline-chronology-view')).toBeInTheDocument();
-  });
-
-  it('can switch to montage view', () => {
-    render(<TimelineTab />);
-    const montageButton = screen.getByText('Montage Board');
-    fireEvent.click(montageButton);
-    expect(screen.getByTestId('montage-board')).toBeInTheDocument();
-    expect(screen.queryByTestId('timeline-filter-bar')).not.toBeInTheDocument();
+    expect(mockStore.setTimelineViewMode).toHaveBeenCalledWith('chronology');
   });
 
   it('can switch to tags view', () => {
     render(<TimelineTab />);
-    const tagsButton = screen.getByText('Manage Tags');
+    const tagsButton = screen.getByText('Tags');
     fireEvent.click(tagsButton);
-    expect(screen.getByTestId('tag-manager-tab')).toBeInTheDocument();
-    expect(screen.queryByTestId('timeline-filter-bar')).not.toBeInTheDocument();
+    expect(mockStore.setTimelineViewMode).toHaveBeenCalledWith('tags');
   });
 
   it('opens add event modal', () => {

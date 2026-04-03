@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
+import { SlashCommandMenu } from './SlashCommandMenu';
 import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors, Keyboard, LayoutGrid, GitCompare } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
@@ -56,6 +57,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     toggleDisguiseMode,
     addSnapshot,
     appMode,
+    setAppMode,
     toggleAppMode,
     showDescriptions,
     activeDocumentId: activeDocId,
@@ -108,6 +110,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     lastInspectorTab: state.lastInspectorTab,
     disguiseMode: state.disguiseMode,
     appMode: state.appMode,
+    setAppMode: state.setAppMode,
     toggleAppMode: state.toggleAppMode,
     letterSpacing: state.letterSpacing,
     editorMargin: state.editorMargin
@@ -121,6 +124,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
   const [openMenuBlockId, setOpenMenuBlockId] = useState<string | null>(null);
 
   const [showFindReplace, setShowFindReplace] = useState(false);
+  const [showSlashMenu, setShowSlashMenu] = useState<{ blockId: string, position: { top: number, left: number } } | null>(null);
   const [showSnapshotDialog, setShowSnapshotDialog] = useState(false);
   const [showCreateSnapshotModal, setShowCreateSnapshotModal] = useState(false);
   const [showTabSettings, setShowTabSettings] = useState(false);
@@ -540,6 +544,20 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
 
               return (
               <div key={block.id} id={`block-${block.id}`} className="group relative flex flex-col transition-colors duration-500">
+                {showSlashMenu?.blockId === block.id && (
+                  <SlashCommandMenu
+                    onClose={() => setShowSlashMenu(null)}
+                    onSelect={(action) => {
+                      if (action === 'convert') toggleBlockLens(block.id);
+                      if (action === 'merge') handleMergeUp(block.id);
+                      if (action === 'split') handleSplitScene(block.id);
+                      if (action === 'compare') setComparingBlockId(block.id);
+                      if (action === 'delete') handleDeleteBlock(block.id);
+                      setShowSlashMenu(null);
+                    }}
+                    position={showSlashMenu.position}
+                  />
+                )}
                 {/* Merge Up Button */}
                 {/* Removed floating Merge Up button */}
 
@@ -620,6 +638,18 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                         }}
                         onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                         onKeyDown={(e: React.KeyboardEvent) => {
+                          if (e.key === '/') {
+                            const textarea = e.currentTarget as HTMLTextAreaElement;
+                            const pos = textarea.selectionStart;
+                            const isStartOfBlock = pos === 0;
+                            const isStartOfParagraph = pos > 0 && textarea.value[pos - 1] === '\n';
+                            
+                            if (isStartOfBlock || isStartOfParagraph) {
+                              e.preventDefault();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setShowSlashMenu({ blockId: block.id, position: { top: rect.top + 20, left: rect.left } });
+                            }
+                          }
                           if (e.key === 'Tab') {
                             e.preventDefault();
                             const currentIndex = blocks.findIndex(b => b.id === block.id);
@@ -1299,7 +1329,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
               <label className="text-sm font-medium text-stone-700 mb-2 block">App Mode</label>
               <div className="flex bg-stone-100 rounded-lg p-1">
                 <button
-                  onClick={() => toggleAppMode()}
+                  onClick={() => setAppMode('design')}
                   className={cn(
                     "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
                     appMode === 'design' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
@@ -1308,7 +1338,16 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                   Design
                 </button>
                 <button
-                  onClick={() => toggleAppMode()}
+                  onClick={() => setAppMode('review')}
+                  className={cn(
+                    "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
+                    appMode === 'review' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                  )}
+                >
+                  Review
+                </button>
+                <button
+                  onClick={() => setAppMode('management')}
                   className={cn(
                     "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
                     appMode === 'management' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"

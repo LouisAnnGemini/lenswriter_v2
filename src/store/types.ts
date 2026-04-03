@@ -81,14 +81,36 @@ export type HistoryAction =
   | { type: 'REMOVE_LENS'; blockId: string; originalLensColor?: string }
   | { type: 'RESTORE_SNAPSHOT'; sceneId: string; previousBlocks: Block[]; restoredBlocks: Block[] };
 
+export type MetroBranchDirection = 1 | -1;
+
+export type MetroNode = {
+  id: string;
+  lineId: string;
+  eventId: string;
+  nextId: string | null;
+  branches: {
+    nodeId: string;
+    direction: MetroBranchDirection;
+  }[];
+};
+
+export type MetroLine = {
+  id: string;
+  workId: string;
+  title: string;
+  rootNodeId: string | null;
+  color?: string;
+};
+
 export type TabConfigItem = {
-  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
+  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage';
   label: string;
   visible: boolean;
 };
 
 export type TabConfig = {
   design: TabConfigItem[];
+  review: TabConfigItem[];
   management: TabConfigItem[];
 };
 
@@ -105,12 +127,14 @@ export type State = {
   notes: Note[];
   inboxTags: InboxTag[];
   snapshots: SceneSnapshot[];
+  metroLines: MetroLine[];
+  metroNodes: MetroNode[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents';
-  appMode: 'design' | 'management';
+  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage';
+  appMode: 'design' | 'review' | 'management';
   tabConfig: TabConfig;
-  timelineViewMode: 'list' | 'table' | 'chronology' | 'montage' | 'tags';
+  timelineViewMode: 'list' | 'table' | 'chronology' | 'tags';
   deadlineViewMode: 'global' | 'local';
   activeLensId: string | null;
   selectedEventId: string | null;
@@ -131,19 +155,30 @@ export type State = {
   futureActions?: HistoryAction[];
 };
 
-export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & {
+export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & MetroSlice & {
   importData: (data: Partial<State>) => void;
   syncFromCloud: (data: Partial<State>) => void;
   undo: () => void;
   redo: () => void;
 };
 
+export interface MetroSlice {
+  addMetroLine: (workId: string, title: string) => void;
+  updateMetroLine: (id: string, updates: Partial<MetroLine>) => void;
+  deleteMetroLine: (id: string) => void;
+  addMetroNodeBefore: (nodeId: string) => void;
+  addMetroNodeAfter: (nodeId: string) => void;
+  addMetroBranch: (nodeId: string, direction: MetroBranchDirection) => void;
+  replaceMetroNodeEvent: (nodeId: string, eventId: string) => void;
+  deleteMetroNode: (nodeId: string) => void;
+}
+
 export interface UISlice {
   setActiveDocument: (documentId: string | null) => void;
-  setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents') => void;
-  setAppMode: (mode: 'design' | 'management') => void;
-  updateTabConfig: (mode: 'design' | 'management', config: TabConfigItem[]) => void;
-  setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'montage' | 'tags') => void;
+  setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage') => void;
+  setAppMode: (mode: 'design' | 'review' | 'management') => void;
+  updateTabConfig: (mode: 'design' | 'review' | 'management', config: TabConfigItem[]) => void;
+  setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'tags') => void;
   toggleAppMode: () => void;
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
   setActiveLens: (lensId: string | null) => void;
