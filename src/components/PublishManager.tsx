@@ -132,11 +132,11 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
 
   return (
     <div className={cn(
-      "flex h-full w-full bg-white overflow-hidden",
+      "flex flex-col md:flex-row h-full w-full bg-white overflow-y-auto",
       !isTab && "fixed inset-0 z-[70]"
     )}>
       {/* Left Column: Book Directory & Snapshots */}
-      <div className="w-1/3 min-w-[350px] border-r border-stone-200 flex flex-col bg-stone-50/30">
+      <div className="w-full md:w-1/3 md:min-w-[350px] border-b md:border-b-0 md:border-r border-stone-200 flex flex-col bg-stone-50/30">
         <div className="p-6 border-b border-stone-200 bg-white">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
@@ -222,7 +222,7 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
       </div>
 
       {/* Right Column: Platforms & Status */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white overflow-y-auto">
         <div className="p-6 border-b border-stone-200 flex items-center justify-between bg-white">
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
@@ -240,7 +240,7 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+        <div className="flex-1 p-8 space-y-8">
           {workPlatforms.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-stone-300 space-y-4">
               <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center">

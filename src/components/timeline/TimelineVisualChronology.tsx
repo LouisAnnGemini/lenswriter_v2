@@ -1031,7 +1031,7 @@ export const TimelineVisualChronology = ({ events, characters, onEventClick }: T
       </AnimatePresence>
 
       {/* Minimap */}
-      <div className="absolute bottom-6 right-6 z-50 w-64 h-16 bg-white/90 backdrop-blur-md border border-stone-200 rounded-lg shadow-lg overflow-hidden flex flex-col">
+      <div className="absolute bottom-20 right-6 z-50 w-64 h-16 bg-white/90 backdrop-blur-md border border-stone-200 rounded-lg shadow-lg overflow-hidden flex flex-col">
         <div className="text-[9px] font-bold uppercase tracking-widest text-stone-400 bg-stone-50/80 px-2 py-1 border-b border-stone-200 flex justify-between items-center">
           <span>Minimap</span>
           <span className="font-mono">{Math.round(scrollRatio * 100)}%</span>

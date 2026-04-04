@@ -26,6 +26,7 @@ export function BlockManagementTab() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
+  const [showMainContent, setShowMainContent] = useState(false);
 
   if (!activeWorkId) return null;
 
@@ -67,63 +68,83 @@ export function BlockManagementTab() {
     setExpandedChapters(prev => ({ ...prev, [chapterId]: !prev[chapterId] }));
   };
 
+  const handleSelectDoc = (id: string | null) => {
+    setSelectedDocId(id);
+    setShowMainContent(true);
+  };
+
   return (
     <div className="flex-1 flex h-full bg-stone-50 overflow-hidden">
       {/* Sidebar Tree */}
-      <div className="w-64 border-r border-stone-200 bg-white overflow-y-auto p-4 space-y-1">
-        <button
-          onClick={() => setSelectedDocId(null)}
-          className={cn(
-            "w-full text-left px-2 py-1.5 rounded-md text-sm font-medium transition-colors",
-            !selectedDocId ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-100"
-          )}
-        >
-          All Blocks
-        </button>
-        {workChapters.map(chapter => (
-          <div key={chapter.id}>
-            <div className="flex items-center">
-              <button onClick={() => toggleChapter(chapter.id)} className="p-1 text-stone-400 hover:text-stone-600">
-                {expandedChapters[chapter.id] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </button>
-              <button
-                onClick={() => setSelectedDocId(chapter.id)}
-                className={cn(
-                  "flex-1 text-left px-2 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center",
-                  selectedDocId === chapter.id ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-100"
-                )}
-              >
-                <Folder size={14} className="mr-2" />
-                {chapter.title || 'Untitled Chapter'}
-              </button>
-            </div>
-            {expandedChapters[chapter.id] && (
-              <div className="ml-6 space-y-1">
-                {workScenes.filter(s => s.chapterId === chapter.id).map(scene => (
-                  <button
-                    key={scene.id}
-                    onClick={() => setSelectedDocId(scene.id)}
-                    className={cn(
-                      "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center",
-                      selectedDocId === scene.id ? "bg-emerald-50 text-emerald-700" : "text-stone-500 hover:bg-stone-100"
-                    )}
-                  >
-                    <FileText size={14} className="mr-2" />
-                    {scene.title || 'Untitled Scene'}
-                  </button>
-                ))}
-              </div>
+      <div className={cn(
+        "border-r border-stone-200 bg-white overflow-y-auto p-4 space-y-1 transition-all duration-300",
+        showMainContent ? "hidden md:flex w-64" : "w-full md:w-64 flex"
+      )}>
+        <div className="w-full">
+          <button
+            onClick={() => handleSelectDoc(null)}
+            className={cn(
+              "w-full text-left px-2 py-1.5 rounded-md text-sm font-medium transition-colors",
+              !selectedDocId ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-100"
             )}
-          </div>
-        ))}
+          >
+            All Blocks
+          </button>
+          {workChapters.map(chapter => (
+            <div key={chapter.id}>
+              <div className="flex items-center">
+                <button onClick={() => toggleChapter(chapter.id)} className="p-1 text-stone-400 hover:text-stone-600">
+                  {expandedChapters[chapter.id] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </button>
+                <button
+                  onClick={() => handleSelectDoc(chapter.id)}
+                  className={cn(
+                    "flex-1 text-left px-2 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center",
+                    selectedDocId === chapter.id ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-100"
+                  )}
+                >
+                  <Folder size={14} className="mr-2" />
+                  {chapter.title || 'Untitled Chapter'}
+                </button>
+              </div>
+              {expandedChapters[chapter.id] && (
+                <div className="ml-6 space-y-1">
+                  {workScenes.filter(s => s.chapterId === chapter.id).map(scene => (
+                    <button
+                      key={scene.id}
+                      onClick={() => handleSelectDoc(scene.id)}
+                      className={cn(
+                        "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center",
+                        selectedDocId === scene.id ? "bg-emerald-50 text-emerald-700" : "text-stone-500 hover:bg-stone-100"
+                      )}
+                    >
+                      <FileText size={14} className="mr-2" />
+                      {scene.title || 'Untitled Scene'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className={cn(
+        "flex-1 flex flex-col h-full overflow-hidden transition-all duration-300",
+        showMainContent ? "flex" : "hidden md:flex"
+      )}>
         <div className="p-6 border-b border-stone-200 bg-white shrink-0 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-serif font-semibold text-stone-900">Block Descriptions</h2>
-            <p className="text-stone-500 mt-1">Manage and review all block descriptions across your work.</p>
+          <div className="flex items-center gap-2">
+            {showMainContent && (
+              <button onClick={() => setShowMainContent(false)} className="md:hidden p-2 -ml-2 text-stone-500 hover:text-stone-700">
+                <ChevronRight size={20} className="rotate-180" />
+              </button>
+            )}
+            <div>
+              <h2 className="text-2xl font-serif font-semibold text-stone-900">Block Descriptions</h2>
+              <p className="text-stone-500 mt-1">Manage and review all block descriptions across your work.</p>
+            </div>
           </div>
           
           <div className="w-64 relative">

@@ -163,7 +163,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
       "pb-16 md:pb-0" // Space for mobile bottom nav
     )}>
       {/* Left Panel: Projects, Chapters, and To-Do */}
-      <div className="w-1/4 min-w-[280px] border-r border-stone-200 bg-white flex flex-col h-full overflow-y-auto">
+      <div className="hidden md:flex w-1/4 min-w-[280px] border-r border-stone-200 bg-white flex-col h-full overflow-y-auto">
         <div className="p-4 border-b border-stone-200 flex items-center justify-between">
           <h2 className="text-lg font-serif font-semibold text-stone-800 flex items-center">
             <Target className="mr-2 text-emerald-600" size={20} />

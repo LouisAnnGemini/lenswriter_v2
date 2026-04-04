@@ -1268,7 +1268,8 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
       {/* Floating Back to Top Button */}
       {showBackToTop && (
         <div className={cn(
-          "fixed bottom-20 right-6 z-50 transition-all duration-300",
+          "fixed bottom-32 z-50 transition-all duration-300",
+          rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
           isFocusMode ? "opacity-0 hover:opacity-100" : "opacity-100"
         )}>
           <button
@@ -1283,7 +1284,8 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
 
       {/* Floating View Settings Button */}
       <div className={cn(
-        "fixed bottom-6 right-6 z-50 transition-opacity duration-300 flex items-end justify-end",
+        "fixed bottom-16 z-50 transition-opacity duration-300 flex items-end justify-end",
+        rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
         isFocusMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100"
       )}>
         <button

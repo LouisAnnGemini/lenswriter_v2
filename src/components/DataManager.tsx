@@ -130,9 +130,9 @@ export function DataManager({ onClose, isTab = false }: { onClose?: () => void; 
   };
 
   const content = isTab ? (
-    <div className="flex h-full w-full bg-white overflow-hidden">
+    <div className="flex flex-col md:flex-row h-full w-full bg-white overflow-y-auto">
       {/* Left Column: Full Data */}
-      <div className="w-1/3 min-w-[350px] border-r border-stone-200 flex flex-col bg-stone-50/30">
+      <div className="w-full md:w-1/3 md:min-w-[350px] border-b md:border-b-0 md:border-r border-stone-200 flex flex-col bg-stone-50/30">
         <div className="p-6 border-b border-stone-200 bg-white">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
@@ -169,7 +169,7 @@ export function DataManager({ onClose, isTab = false }: { onClose?: () => void; 
       </div>
 
       {/* Right Column: Incremental Data */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-white overflow-y-auto">
         <div className="p-6 border-b border-stone-200 flex items-center justify-between bg-white">
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
@@ -188,7 +188,7 @@ export function DataManager({ onClose, isTab = false }: { onClose?: () => void; 
           </label>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-4">
+        <div className="flex-1 p-8 space-y-4">
           {workToDelete ? (
             <div className="max-w-md mx-auto mt-8 p-6 bg-red-50 border border-red-100 rounded-2xl text-red-800 shadow-sm">
               <div className="flex items-center mb-4">
