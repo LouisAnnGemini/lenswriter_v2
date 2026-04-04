@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from './store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
+import { TabConfigItem } from './store/types';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { OutlinePanel } from './components/OutlinePanel';
@@ -14,6 +15,8 @@ import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
 import { CompileTab } from './components/CompileTab';
 import { InboxTab } from './components/InboxTab';
+import { DataManager } from './components/DataManager';
+import { PublishManager } from './components/PublishManager';
 import { QuickCapture } from './components/QuickCapture';
 import { BackupProvider } from './context/BackupContext';
 import { SyncManager } from './components/SyncManager';
@@ -35,7 +38,9 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
     toggleFocusMode,
     setRightSidebarMode,
     supabaseSyncEnabled,
-    saveHistoryVersion
+    saveHistoryVersion,
+    tabConfig,
+    updateTabConfig
   } = useStore(useShallow(state => ({
     disguiseMode: state.disguiseMode,
     focusMode: state.focusMode,
@@ -50,8 +55,45 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
     toggleFocusMode: state.toggleFocusMode,
     setRightSidebarMode: state.setRightSidebarMode,
     supabaseSyncEnabled: state.supabaseSyncEnabled,
-    saveHistoryVersion: state.saveHistoryVersion
+    saveHistoryVersion: state.saveHistoryVersion,
+    tabConfig: state.tabConfig,
+    updateTabConfig: state.updateTabConfig
   })));
+
+  // Migration for existing users to add 'dataManagement' tab if missing or rename 'archive'
+  React.useEffect(() => {
+    if (tabConfig) {
+      (['design', 'review', 'management'] as const).forEach(mode => {
+        if (tabConfig[mode]) {
+          const hasArchive = tabConfig[mode].some(t => t.id === 'archive' as any);
+          const hasDataManagement = tabConfig[mode].some(t => t.id === 'dataManagement');
+          
+          if (hasArchive || !hasDataManagement) {
+            const newModeConfig: TabConfigItem[] = tabConfig[mode].map(t => {
+              if (t.id === 'archive' as any) {
+                return { ...t, id: 'dataManagement', label: 'Data Management' } as TabConfigItem;
+              }
+              return t;
+            });
+            
+            if (!newModeConfig.some(t => t.id === 'dataManagement')) {
+              newModeConfig.push({ id: 'dataManagement', label: 'Data Management', visible: mode === 'management' });
+            }
+
+            if (!newModeConfig.some(t => t.id === 'publish')) {
+              newModeConfig.push({ id: 'publish', label: 'Publishing', visible: mode === 'management' });
+            }
+            
+            updateTabConfig(mode, newModeConfig);
+          } else if (!tabConfig[mode].some(t => t.id === 'publish')) {
+             // Ensure publish tab is added even if dataManagement was already there
+             const newModeConfig = [...tabConfig[mode], { id: 'publish' as any, label: 'Publishing', visible: mode === 'management' }];
+             updateTabConfig(mode, newModeConfig);
+          }
+        }
+      });
+    }
+  }, [tabConfig, updateTabConfig]);
 
   const [showShortcutModal, setShowShortcutModal] = React.useState(false);
 
@@ -135,6 +177,8 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         )}
         {activeTab === 'compile' && <CompileTab />}
         {activeTab === 'inbox' && <InboxTab />}
+        {activeTab === 'dataManagement' && <DataManager isTab />}
+        {activeTab === 'publish' && <PublishManager isTab />}
       </div>
 
       {/* Focus mode exit button removed as TopNav now handles focus mode exit */}

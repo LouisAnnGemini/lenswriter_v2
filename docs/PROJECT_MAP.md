@@ -5,7 +5,7 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 ## 🗺️ Core Features & Modules
 
 ### 1. 🎨 Design & Editor (设计与编辑器)
-- **Main Editor:** `src/components/EditorPanel.tsx`
+- **Main Editor:** `src/components/EditorPanel.tsx` (Includes Scroll Mode, Disguise Mode, Focus Mode)
 - **Block Compare & Edit:** `src/components/BlockCompareModal.tsx`
 - **Sidebar (Navigation/Outline):** `src/components/Sidebar.tsx`
 - **Outline Panel:** `src/components/OutlinePanel.tsx`
@@ -60,7 +60,7 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 ### 10. 💾 Data, Backup & Sync (数据、备份与同步)
 - **Backup Manager:** `src/components/BackupManager.tsx`
 - **Sync Manager:** `src/components/SyncManager.tsx`
-- **Snapshots:** `src/components/SnapshotDialog.tsx`
+- **Snapshots:** `src/components/SnapshotTab.tsx`
 - **State Management:** `src/store/stores/slices/snapshotSlice.ts`
 - **Context:** `src/context/BackupContext.tsx`
 - **Supabase Client:** `src/lib/supabase.ts`
@@ -75,6 +75,10 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 - **Main View:** `src/components/MetroTab.tsx`
 - **Board:** `src/components/MetroBoard.tsx`
 - **State Management:** `src/store/stores/slices/metroSlice.ts`
+
+### 14. 📢 Publish Management (发布管理)
+- **Main View:** `src/components/PublishManager.tsx`
+- **State Management:** `src/store/stores/slices/publishSlice.ts`
 
 ---
 

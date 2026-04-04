@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network, Archive, Send } from 'lucide-react';
+import { DataManager } from './DataManager';
 import { cn } from '../lib/utils';
 import { useShallow } from 'zustand/react/shallow';
-import { MobileInboxDrawer } from './MobileInboxDrawer';
 import { toast } from 'sonner';
 
 import { initialState } from '../store/constants';
@@ -48,11 +48,27 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     supabaseSyncEnabled: state.supabaseSyncEnabled,
     saveHistoryVersion: state.saveHistoryVersion
   })));
-  const [isMobileInboxOpen, setIsMobileInboxOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
-  // Remove the early return for focusMode
-  // if (focusMode) return null;
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+
+    if (isMoreMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMoreMenuOpen]);
 
   const allTabs = [
     { id: 'design', label: 'Writing', icon: Edit3 },
@@ -65,9 +81,17 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     { id: 'world', label: 'World', icon: Users },
     { id: 'deadline', label: 'Deadline', icon: Clock },
     { id: 'compile', label: 'Compile', icon: FileText },
+    { id: 'dataManagement', label: 'Data Management', icon: Archive },
+    { id: 'publish', label: 'Publishing', icon: Send },
   ] as const;
 
-  const currentConfig = tabConfig?.[appMode] || [];
+  const currentConfigRaw = tabConfig?.[appMode] || [];
+  
+  // Ensure 'dataManagement' is in the config if missing (for existing users)
+  const currentConfig = [...currentConfigRaw];
+  if (!currentConfig.some(c => c.id === 'dataManagement')) {
+    currentConfig.push({ id: 'dataManagement', label: 'Data Management', visible: appMode === 'management' });
+  }
   
   // Combine config with icons and filter visible
   const tabs = currentConfig
@@ -151,70 +175,48 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
           {supabaseSyncEnabled && (
             <button
-              onClick={async () => {
-                const success = await saveHistoryVersion('Manual Save');
-                if (success) {
-                  toast.success('Version saved successfully');
-                } else {
-                  toast.error('Failed to save version. Please check your connection.');
-                }
+              onClick={() => {
+                saveHistoryVersion('Manual Save');
+                toast.success('Version saved to cloud');
               }}
-              className="p-2 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors"
+              className="p-2 text-stone-500 hover:bg-stone-100 rounded-md transition-colors"
               title="Save Version Now"
             >
               <Save size={20} />
             </button>
           )}
-          {activeTab === 'design' && activeDocumentId && !disguiseMode && (
-            <button
-              onClick={() => {
-                if (rightSidebarMode === 'closed') {
-                  const canShowLastTab = isScene || (lastInspectorTab !== 'info' && lastInspectorTab !== 'macro');
-                  setRightSidebarMode(canShowLastTab ? lastInspectorTab : 'micro');
-                } else {
-                  setRightSidebarMode('closed');
-                }
-              }}
-              className={cn(
-                "p-2 rounded-md transition-colors",
-                rightSidebarMode !== 'closed' ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-500 hover:text-stone-700 hover:bg-stone-100"
-              )}
-              title="Toggle Inspector (Ctrl+I)"
-            >
-              {rightSidebarMode !== 'closed' ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
-            </button>
-          )}
-          
+
           <button
-            onClick={() => setIsMobileInboxOpen(true)}
-            className="md:hidden p-2 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
-            title="Notes"
+            onClick={toggleFocusMode}
+            className={cn(
+              "p-2 rounded-md transition-colors",
+              focusMode ? "text-emerald-600 bg-emerald-50" : "text-stone-500 hover:bg-stone-100"
+            )}
+            title={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
           >
-            <Inbox size={20} />
+            <Maximize2 size={20} />
           </button>
 
           <button
-            onClick={() => toggleFocusMode()}
-            className="p-2 rounded-md text-stone-500 hover:text-stone-700 hover:bg-stone-100 transition-colors"
-            title="Enter Focus Mode"
+            onClick={() => setRightSidebarMode(rightSidebarMode === 'closed' ? (lastInspectorTab || 'inspector' as any) : 'closed')}
+            className={cn(
+              "p-2 rounded-md transition-colors",
+              rightSidebarMode !== 'closed' ? "text-emerald-600 bg-emerald-50" : "text-stone-500 hover:bg-stone-100"
+            )}
+            title={rightSidebarMode !== 'closed' ? "Close Inspector" : "Open Inspector"}
           >
-            <Maximize2 size={20} />
+            {rightSidebarMode !== 'closed' ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
           </button>
         </div>
       </div>
 
-      <MobileInboxDrawer 
-        isOpen={isMobileInboxOpen} 
-        onClose={() => setIsMobileInboxOpen(false)} 
-      />
-
       {/* Mobile Bottom Nav */}
       <div className="md:hidden">
         <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-stone-200 flex items-center justify-around z-30 pb-safe">
-          {tabs.map((tab, index) => (
+          {tabs.slice(0, tabs.length > 5 ? 4 : 5).map((tab, index) => (
             <button
               key={tab.id || `tab-mobile-${index}`}
               onClick={() => {
@@ -234,6 +236,51 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
               <span className="text-[10px] font-medium">{tab.label}</span>
             </button>
           ))}
+          
+          {tabs.length > 5 && (
+            <div className="relative w-full h-full">
+              <button
+                onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                className={cn(
+                  "flex flex-col items-center justify-center w-full h-full space-y-1",
+                  tabs.slice(4).some(t => t.id === activeTab) ? "text-emerald-600" : "text-stone-400"
+                )}
+              >
+                <Menu size={20} />
+                <span className="text-[10px] font-medium">More</span>
+              </button>
+              
+              {isMoreMenuOpen && (
+                <>
+                  <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setIsMoreMenuOpen(false)} />
+                  <div 
+                    ref={moreMenuRef}
+                    className="absolute bottom-full right-0 mb-2 w-48 bg-white border border-stone-200 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-bottom-2"
+                  >
+                    {tabs.slice(4).map((tab, index) => (
+                      <button
+                        key={tab.id || `tab-more-${index}`}
+                        onClick={() => {
+                          setActiveTab(tab.id as any);
+                          if (tab.id === 'deadline') {
+                            setDeadlineViewMode('local');
+                          }
+                          setIsMoreMenuOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center px-4 py-3 space-x-3 transition-colors",
+                          activeTab === tab.id ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-50"
+                        )}
+                      >
+                        <tab.icon size={18} />
+                        <span className="text-sm font-medium">{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>

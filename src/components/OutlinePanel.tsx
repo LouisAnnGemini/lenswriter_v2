@@ -15,6 +15,9 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
     scenes: allScenes, 
     activeDocumentId,
     snapshots,
+    chapterSnapshots,
+    platformTrackings,
+    blocks: allBlocks,
     reorderChapters,
     reorderScenes,
     moveScene,
@@ -31,6 +34,9 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
     scenes: state.scenes,
     activeDocumentId: state.activeDocumentId,
     snapshots: state.snapshots,
+    chapterSnapshots: state.chapterSnapshots,
+    platformTrackings: state.platformTrackings,
+    blocks: state.blocks,
     reorderChapters: state.reorderChapters,
     reorderScenes: state.reorderScenes,
     moveScene: state.moveScene,
@@ -67,6 +73,58 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
   const chapters = allChapters.filter(c => c.workId === activeWorkId && (showArchived || !c.archived)).sort((a, b) => a.order - b.order);
   const scenes = allScenes.filter(s => chapters.some(c => c.id === s.chapterId));
   const isExpanded = isHovered || !activeDocumentId;
+
+  const changedSceneIds = React.useMemo(() => {
+    const sceneIds = new Set<string>();
+    
+    // For each scene, check if it has changed relative to any platform it's published on
+    scenes.forEach(scene => {
+      const platformsTrackingThisChapter = platformTrackings.filter(p => p.workId === activeWorkId && p.chapterStatuses[scene.chapterId]?.lastPublishedSnapshotId);
+      
+      if (platformsTrackingThisChapter.length === 0) return;
+
+      // We only care about the latest snapshot the user has published to ANY platform
+      // to decide if the scene is "Updated" in the UI.
+      const snapshotIds = platformsTrackingThisChapter.map(p => p.chapterStatuses[scene.chapterId].lastPublishedSnapshotId);
+      
+      for (const snapshotId of snapshotIds) {
+        const snapshot = chapterSnapshots.find(s => s.id === snapshotId);
+        if (!snapshot) continue;
+
+        const sceneCurrentBlocks = allBlocks.filter(b => b.documentId === scene.id).sort((a, b) => a.order - b.order);
+        const sceneSnapshotBlocks = snapshot.data.blocks.filter(b => b.documentId === scene.id).sort((a, b) => a.order - b.order);
+
+        if (sceneCurrentBlocks.length !== sceneSnapshotBlocks.length) {
+          sceneIds.add(scene.id);
+          break;
+        }
+
+        let sceneChanged = false;
+        for (let i = 0; i < sceneCurrentBlocks.length; i++) {
+          if (sceneCurrentBlocks[i].content !== sceneSnapshotBlocks[i].content) {
+            sceneChanged = true;
+            break;
+          }
+        }
+
+        if (sceneChanged) {
+          sceneIds.add(scene.id);
+          break;
+        }
+      }
+    });
+
+    return sceneIds;
+  }, [chapterSnapshots, platformTrackings, allBlocks, scenes, activeWorkId]);
+
+  const changedChapterIds = React.useMemo(() => {
+    const chapterIds = new Set<string>();
+    changedSceneIds.forEach(sceneId => {
+      const scene = allScenes.find(s => s.id === sceneId);
+      if (scene) chapterIds.add(scene.chapterId);
+    });
+    return chapterIds;
+  }, [changedSceneIds, allScenes]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -153,7 +211,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
           {/* Header with Edit Toggle */}
           <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-white/50">
             <div className="flex items-center gap-2">
-              <span className="font-serif text-sm font-bold text-stone-700 uppercase tracking-wider">Directory</span>
+              <span className="font-serif text-sm font-bold text-stone-700 uppercase tracking-wider">outline</span>
               {activeDocumentId && allScenes.some(s => s.id === activeDocumentId) && (
                 <button 
                   onClick={() => {
@@ -248,6 +306,9 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                 <span className={cn("whitespace-normal break-words text-xs md:text-sm", chapter.archived && "text-stone-400 italic")}>
                                   {chapter.title}
                                 </span>
+                                {changedChapterIds.has(chapter.id) && (
+                                  <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] font-bold uppercase tracking-wider">Updated</span>
+                                )}
                               </div>
                               
                               {/* Actions */}
@@ -322,6 +383,9 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
                                               <div className={cn("w-1.5 h-1.5 rounded-full mr-2 shrink-0", SCENE_STATUS_COLORS[scene.statusColor].dot)} />
                                             )}
                                             <span className="whitespace-normal break-words text-xs md:text-sm">{scene.title}</span>
+                                            {changedSceneIds.has(scene.id) && (
+                                              <div className="ml-2 w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" title="Content changed since last snapshot" />
+                                            )}
                                           </div>
                                           {renderDeleteButton(scene.id, () => deleteScene(scene.id), 12, isReorderMode ? "opacity-100" : "md:opacity-0 md:group-hover/scene:opacity-100 opacity-100")}
                                         </div>

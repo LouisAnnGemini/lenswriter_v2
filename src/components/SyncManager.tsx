@@ -110,7 +110,7 @@ export function SyncManager() {
 
       // Check if data fields changed (excluding metadata)
       const dataKeys = Object.keys(initialState).filter(k => k !== 'lastModified' && k !== 'syncStatus' && k !== 'syncError');
-      const dataChanged = dataKeys.some(key => (state as any)[key] !== (prevState as any)[key]);
+      const dataChanged = dataKeys.some(key => (state as any)[key] !== (prevState as any)[key]) || state.appMode !== prevState.appMode;
 
       if (dataChanged) {
         // Update lastModified (this will trigger the sync useEffect below)

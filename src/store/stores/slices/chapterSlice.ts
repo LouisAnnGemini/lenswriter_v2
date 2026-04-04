@@ -18,6 +18,12 @@ export const createChapterSlice: StateCreator<StoreState, [], [], ChapterSlice> 
       scenes: state.scenes.filter(s => s.chapterId !== chapterId),
       blocks: state.blocks.filter(b => !scenesToDelete.includes(b.documentId) && b.documentId !== chapterId),
       notes: state.notes.map(n => n.sceneId && scenesToDelete.includes(n.sceneId) ? { ...n, sceneId: null } : n),
+      chapterSnapshots: state.chapterSnapshots ? state.chapterSnapshots.filter(s => s.chapterId !== chapterId) : [],
+      platformTrackings: state.platformTrackings ? state.platformTrackings.map(p => {
+        const newStatuses = { ...p.chapterStatuses };
+        delete newStatuses[chapterId];
+        return { ...p, chapterStatuses: newStatuses };
+      }) : [],
       lastModified: Date.now()
     };
   }),

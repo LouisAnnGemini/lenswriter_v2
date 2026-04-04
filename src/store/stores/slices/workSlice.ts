@@ -15,6 +15,7 @@ export const createWorkSlice: StateCreator<StoreState, [], [], WorkSlice> = (set
     const scenesToDelete = state.scenes.filter(s => chaptersToDelete.includes(s.chapterId)).map(s => s.id);
     const docsToDelete = [...chaptersToDelete, ...scenesToDelete];
     const blocksToDelete = state.blocks.filter(b => docsToDelete.includes(b.documentId)).map(b => b.id);
+    const metroLinesToDelete = state.metroLines.filter(l => l.workId === workId).map(l => l.id);
 
     return {
       works: state.works.filter(w => w.id !== workId),
@@ -25,6 +26,11 @@ export const createWorkSlice: StateCreator<StoreState, [], [], WorkSlice> = (set
       tags: state.tags.filter(t => t.workId !== workId),
       timelineEvents: state.timelineEvents.filter(e => e.workId !== workId),
       deadlines: (state.deadlines || []).filter(d => d.workId !== workId),
+      snapshots: state.snapshots.filter(s => !scenesToDelete.includes(s.sceneId)),
+      chapterSnapshots: state.chapterSnapshots ? state.chapterSnapshots.filter(s => !chaptersToDelete.includes(s.chapterId)) : [],
+      platformTrackings: state.platformTrackings ? state.platformTrackings.filter(p => p.workId !== workId) : [],
+      metroLines: state.metroLines.filter(l => l.workId !== workId),
+      metroNodes: state.metroNodes.filter(n => !metroLinesToDelete.includes(n.lineId)),
       blocks: state.blocks.filter(b => !docsToDelete.includes(b.documentId)).map(b => {
         if (b.linkedLensIds && b.linkedLensIds.some(id => blocksToDelete.includes(id))) {
           return { ...b, linkedLensIds: b.linkedLensIds.filter(id => !blocksToDelete.includes(id)) };

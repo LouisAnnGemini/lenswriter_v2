@@ -309,24 +309,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
           </div>
         )}
         
-        <div className={cn("flex space-x-2", !isExpanded && "flex-col space-x-0")}>
-          {isExpanded && (
-            <>
-              <button
-                onClick={handleExport}
-                className="flex-1 flex items-center justify-center py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors"
-                title="Export Data"
-              >
-                <Upload size={12} className="mr-1.5" />
-                Export
-              </button>
-              <label className="flex-1 flex items-center justify-center py-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors cursor-pointer" title="Import Data">
-                <Download size={12} className="mr-1.5" />
-                Import
-                <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-              </label>
-            </>
-          )}
+        <div className={cn("flex", !isExpanded && "flex-col")}>
           <button
             onClick={() => setShowBackupManager(true)}
             className={cn("flex items-center justify-center bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-md text-xs font-medium transition-colors", isExpanded ? "flex-1 py-1.5" : "p-2 w-full")}

@@ -14,6 +14,7 @@ import { createLocationSlice } from './slices/locationSlice';
 import { createSnapshotSlice } from './slices/snapshotSlice';
 import { createNoteSlice } from './slices/noteSlice';
 import { createMetroSlice } from './slices/metroSlice';
+import { createPublishSlice } from './slices/publishSlice';
 
 export const useStore = create<StoreState>()(
   persist(
@@ -32,7 +33,37 @@ export const useStore = create<StoreState>()(
       ...createSnapshotSlice(set, get, api),
       ...createNoteSlice(set, get, api),
       ...createMetroSlice(set, get, api),
+      ...createPublishSlice(set, get, api),
       importData: (data) => set((state) => ({ ...state, ...data })),
+      mergeData: (data: Partial<StoreState>) => set((state) => {
+        const newState = { ...state };
+        Object.keys(data).forEach((key) => {
+          const k = key as keyof StoreState;
+          if (Array.isArray(data[k])) {
+            // Merge arrays, assuming they have an 'id' property
+            const existingItems = (state[k] as any[]) || [];
+            const newItems = data[k] as any[];
+            const mergedItems = [...existingItems];
+            newItems.forEach(newItem => {
+              // Only merge by ID if the item has an ID, otherwise just append or overwrite if it's a simple array
+              const index = newItem && typeof newItem === 'object' && 'id' in newItem 
+                ? mergedItems.findIndex(item => item.id === newItem.id) 
+                : -1;
+              
+              if (index !== -1) {
+                mergedItems[index] = newItem; // Update existing
+              } else {
+                mergedItems.push(newItem); // Add new
+              }
+            });
+            newState[k] = mergedItems as any;
+          } else {
+            // Overwrite primitives/objects
+            newState[k] = data[k] as any;
+          }
+        });
+        return newState;
+      }),
       syncFromCloud: (data) => set((state) => ({ ...state, ...data })),
       undo: () => set((state) => {
         if (!state.pastActions || state.pastActions.length === 0) return state;

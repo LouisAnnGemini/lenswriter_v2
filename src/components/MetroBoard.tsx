@@ -3,6 +3,7 @@ import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { Plus, Trash2, ArrowLeft, ArrowRight, RefreshCw, GitBranch, X, Search, Edit2, Check, ZoomIn, ZoomOut, LocateFixed } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { MetroNode, MetroBranchDirection } from '../store/types';
 import { EventDetailsModal } from './EventDetailsModal';
@@ -19,6 +20,8 @@ export function MetroBoard({}: MetroBoardProps = {}) {
     metroLines,
     metroNodes,
     timelineEvents,
+    characters,
+    tags,
     addMetroLine,
     updateMetroLine,
     deleteMetroLine,
@@ -32,6 +35,8 @@ export function MetroBoard({}: MetroBoardProps = {}) {
     metroLines: state.metroLines,
     metroNodes: state.metroNodes,
     timelineEvents: state.timelineEvents,
+    characters: state.characters,
+    tags: state.tags,
     addMetroLine: state.addMetroLine,
     updateMetroLine: state.updateMetroLine,
     deleteMetroLine: state.deleteMetroLine,
@@ -44,6 +49,7 @@ export function MetroBoard({}: MetroBoardProps = {}) {
 
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [showReplaceMenu, setShowReplaceMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
@@ -170,7 +176,7 @@ export function MetroBoard({}: MetroBoardProps = {}) {
           style={{
             left: pos.x * X_UNIT * spacingScale,
             top: pos.y * Y_UNIT,
-            zIndex: isSelected ? 50 : 10
+            zIndex: isSelected ? 50 : (hoveredNodeId === node.id ? 60 : 10)
           }}
         >
           {/* Node Popover */}
@@ -249,6 +255,8 @@ export function MetroBoard({}: MetroBoardProps = {}) {
               setSelectedNodeId(isSelected ? null : node.id);
               setShowReplaceMenu(false);
             }}
+            onMouseEnter={() => setHoveredNodeId(node.id)}
+            onMouseLeave={() => setHoveredNodeId(null)}
             onDoubleClick={(e) => {
               e.stopPropagation();
               setEditingEventId(node.eventId);
@@ -262,6 +270,47 @@ export function MetroBoard({}: MetroBoardProps = {}) {
               borderColor: currentLineColor
             }}
           />
+
+          {/* Node Preview */}
+          <AnimatePresence>
+            {hoveredNodeId === node.id && event && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="absolute bottom-full mb-6 z-[9999] w-72 bg-white/95 backdrop-blur-md border border-stone-200/80 rounded-2xl shadow-2xl p-5 pointer-events-none"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <h4 className="font-bold text-stone-900 text-sm tracking-tight pr-4">{event.title}</h4>
+                  <span className="text-[10px] font-bold uppercase tracking-widest bg-stone-100/80 px-2 py-1 rounded-md text-stone-500 shrink-0">
+                    {event.timestamp}
+                  </span>
+                </div>
+                {event.description && (
+                  <p className="text-xs text-stone-500 line-clamp-3 mb-4 leading-relaxed">{event.description}</p>
+                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.keys(event.characterActions || {}).map(id => {
+                    const char = characters.find(c => c.id === id);
+                    return char ? (
+                      <span key={id} className="text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/50 px-2 py-0.5 rounded-md shadow-sm">
+                        {char.name}
+                      </span>
+                    ) : null;
+                  })}
+                  {event.tagIds?.map(tagId => {
+                    const tag = tags.find(t => t.id === tagId);
+                    return tag ? (
+                      <span key={tagId} className="text-[9px] font-bold uppercase tracking-wider bg-stone-100 text-stone-600 border border-stone-200/50 px-2 py-0.5 rounded-md shadow-sm">
+                        {tag.name}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Node Label */}
           <div className={cn(

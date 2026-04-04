@@ -102,8 +102,34 @@ export type MetroLine = {
   color?: string;
 };
 
+export type ChapterSnapshot = {
+  id: string;
+  chapterId: string;
+  versionName: string;
+  data: {
+    chapter: Chapter;
+    scenes: Scene[];
+    blocks: Block[];
+  };
+  timestamp: number;
+  note?: string;
+};
+
+export type PlatformChapterStatus = {
+  chapterId: string;
+  lastPublishedSnapshotId: string | null;
+  status: 'published' | 'to_update' | 'not_published';
+};
+
+export type PlatformTracking = {
+  id: string;
+  workId: string;
+  platformName: string;
+  chapterStatuses: Record<string, PlatformChapterStatus>; // chapterId -> status
+};
+
 export type TabConfigItem = {
-  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage';
+  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish';
   label: string;
   visible: boolean;
 };
@@ -131,7 +157,7 @@ export type State = {
   metroNodes: MetroNode[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage';
+  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish';
   appMode: 'design' | 'review' | 'management';
   tabConfig: TabConfig;
   timelineViewMode: 'list' | 'table' | 'chronology' | 'tags';
@@ -139,9 +165,10 @@ export type State = {
   activeLensId: string | null;
   selectedEventId: string | null;
   focusMode: boolean;
+  scrollMode: boolean;
   disguiseMode: boolean;
-  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes';
-  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info' | 'notes';
+  rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes' | 'snapshots';
+  lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info' | 'notes' | 'snapshots';
   showDescriptions: boolean;
   letterSpacing: number;
   editorMargin: number;
@@ -153,14 +180,26 @@ export type State = {
   lastDevice?: 'Desktop' | 'Mobile';
   pastActions?: HistoryAction[];
   futureActions?: HistoryAction[];
+  chapterSnapshots: ChapterSnapshot[];
+  platformTrackings: PlatformTracking[];
 };
 
-export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & MetroSlice & {
+export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & MetroSlice & PublishSlice & {
   importData: (data: Partial<State>) => void;
+  mergeData: (data: Partial<State>) => void;
   syncFromCloud: (data: Partial<State>) => void;
   undo: () => void;
   redo: () => void;
 };
+
+export interface PublishSlice {
+  createChapterSnapshot: (chapterId: string, versionName: string, note?: string) => void;
+  deleteChapterSnapshot: (snapshotId: string) => void;
+  addPlatformTracking: (workId: string, platformName: string) => void;
+  deletePlatformTracking: (id: string) => void;
+  publishChapterToPlatform: (platformId: string, chapterId: string, snapshotId: string) => void;
+  syncPlatformStatus: (workId: string) => void;
+}
 
 export interface MetroSlice {
   addMetroLine: (workId: string, title: string) => void;
@@ -175,7 +214,7 @@ export interface MetroSlice {
 
 export interface UISlice {
   setActiveDocument: (documentId: string | null) => void;
-  setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage') => void;
+  setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish') => void;
   setAppMode: (mode: 'design' | 'review' | 'management') => void;
   updateTabConfig: (mode: 'design' | 'review' | 'management', config: TabConfigItem[]) => void;
   setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'tags') => void;
@@ -184,8 +223,9 @@ export interface UISlice {
   setActiveLens: (lensId: string | null) => void;
   setSelectedEventId: (eventId: string | null) => void;
   toggleFocusMode: () => void;
+  toggleScrollMode: () => void;
   toggleDisguiseMode: () => void;
-  setRightSidebarMode: (mode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes') => void;
+  setRightSidebarMode: (mode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes' | 'snapshots') => void;
   toggleShowDescriptions: () => void;
   setLetterSpacing: (spacing: number) => void;
   setEditorMargin: (margin: number) => void;

@@ -9,6 +9,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setActiveLens: (lensId) => set({ activeLensId: lensId }),
   setSelectedEventId: (eventId) => set({ selectedEventId: eventId }),
   toggleFocusMode: () => set((state) => ({ focusMode: !state.focusMode })),
+  toggleScrollMode: () => set((state) => ({ scrollMode: !state.scrollMode })),
   toggleDisguiseMode: () => set((state) => ({ disguiseMode: !state.disguiseMode })),
   setRightSidebarMode: (mode) => set({ rightSidebarMode: mode }),
   toggleShowDescriptions: () => set((state) => ({ showDescriptions: !state.showDescriptions })),
@@ -28,11 +29,10 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
     let newTab = state.activeTab;
     let newTimelineViewMode = state.timelineViewMode;
 
-    if (newMode === 'design' && ['deadline', 'compile'].includes(state.activeTab)) {
-      newTab = 'design';
-    } else if (newMode === 'management' && ['world'].includes(state.activeTab)) {
-      newTab = 'design';
-    } else if (newMode === 'review' && ['world'].includes(state.activeTab)) {
+    const newModeConfig = state.tabConfig[newMode];
+    const isTabVisible = newModeConfig.find(t => t.id === state.activeTab)?.visible;
+    
+    if (!isTabVisible) {
       newTab = 'design';
     }
 

@@ -131,7 +131,7 @@ export const TimelineTableView = React.memo(({
   columns: propColumns,
   setColumns
 }: TimelineTableViewProps) => {
-  const columns = propColumns || DEFAULT_COLUMNS;
+  const columns = propColumns && propColumns.length > 0 ? propColumns : DEFAULT_COLUMNS;
 
   const [showSettings, setShowSettings] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -350,12 +350,6 @@ export const TimelineTableView = React.memo(({
     setColumns(newItems);
   };
 
-  const scrollToCenter = () => {
-    const tableElement = document.querySelector('.custom-scrollbar');
-    if (tableElement) {
-      tableElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    }
-  };
 
   const visibleColumns = useMemo(() => columns.filter(c => c.visible), [columns]);
 
@@ -528,6 +522,7 @@ export const TimelineTableView = React.memo(({
               className="w-full pl-10 pr-4 py-2 bg-stone-50/50 rounded-lg border border-stone-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
               value={filters.text}
               onChange={(e) => setFilters(prev => ({ ...prev, text: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setAppliedFilters(filters); } }}
             />
           </div>
           <button 
@@ -656,13 +651,6 @@ export const TimelineTableView = React.memo(({
       </div>
 
       <div className="flex justify-end gap-2 relative w-full max-w-7xl mx-auto shrink-0">
-        <button 
-          onClick={scrollToCenter}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 text-xs font-medium hover:bg-stone-50 hover:border-stone-300 transition-all shadow-sm"
-        >
-          <Maximize2 size={14} />
-          <span className="hidden sm:inline">Scroll to Center</span>
-        </button>
         <button 
           onClick={() => setShowSettings(!showSettings)}
           className={cn(

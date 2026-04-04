@@ -79,13 +79,16 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     };
   }),
   mergeBlockUp: (blockId) => set((state) => {
-    const blockIndex = state.blocks.findIndex(b => b.id === blockId);
-    if (blockIndex <= 0) return state;
+    const block = state.blocks.find(b => b.id === blockId);
+    if (!block || block.isLens) return state;
+
+    const docBlocks = state.blocks.filter(b => b.documentId === block.documentId).sort((a, b) => a.order - b.order);
+    const blockIndexInDoc = docBlocks.findIndex(b => b.id === blockId);
     
-    const block = state.blocks[blockIndex];
-    const prevBlock = state.blocks[blockIndex - 1];
+    if (blockIndexInDoc <= 0) return state;
     
-    if (block.isLens || prevBlock.isLens) return state;
+    const prevBlock = docBlocks[blockIndexInDoc - 1];
+    if (prevBlock.isLens) return state;
     
     const action: HistoryAction = { 
       type: 'MERGE_BLOCK', 
@@ -93,7 +96,7 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
       prevBlockId: prevBlock.id, 
       originalPrevContent: prevBlock.content, 
       deletedBlock: block, 
-      index: blockIndex 
+      index: state.blocks.findIndex(b => b.id === blockId)
     };
     
     const updatedPrevBlock = { ...prevBlock, content: prevBlock.content + (prevBlock.content && block.content ? '\n' : '') + block.content };
