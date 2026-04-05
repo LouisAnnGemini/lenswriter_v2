@@ -185,7 +185,7 @@ export function SnapshotTab({ sceneId }: { sceneId: string }) {
                       <span className="text-xs font-medium text-stone-800 truncate">{snapshot.name}</span>
                       <span className="text-[10px] text-stone-500">{new Date(snapshot.createdAt).toLocaleString()}</span>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

@@ -56,7 +56,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
   const month = currentDate.getMonth();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const firstDayOfMonth = (new Date(year, month, 1).getDay() + 6) % 7;
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -153,23 +153,23 @@ export function DeadlineTab({ workId }: { workId?: string }) {
   };
 
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const filteredWorks = workId ? works.filter(w => w.id === workId) : works;
 
   return (
     <div className={cn(
-      "flex-1 flex overflow-hidden bg-stone-50",
+      "flex-1 flex flex-col md:flex-row overflow-hidden bg-stone-50",
       "pb-16 md:pb-0" // Space for mobile bottom nav
     )}>
       {/* Left Panel: Projects, Chapters, and To-Do */}
-      <div className="hidden md:flex w-1/4 min-w-[280px] border-r border-stone-200 bg-white flex-col h-full overflow-y-auto">
-        <div className="p-4 border-b border-stone-200 flex items-center justify-between">
+      <div className="hidden md:flex w-full md:w-1/4 md:min-w-[280px] border-b md:border-b-0 md:border-r border-stone-200 bg-white flex-col h-1/3 md:h-full overflow-y-auto shrink-0">
+        <div className="p-4 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
           <h2 className="text-lg font-serif font-semibold text-stone-800 flex items-center">
             <Target className="mr-2 text-emerald-600" size={20} />
             Goals & To-Do
           </h2>
-          <div className="flex items-center space-x-1 bg-stone-100 rounded-md p-1">
+          <div className="flex items-center space-x-1 bg-stone-100 rounded-md p-1 self-start sm:self-auto">
             <button
               onClick={() => setDeadlineViewMode('local')}
               className={cn(
@@ -191,7 +191,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
           </div>
         </div>
 
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-6 flex-1 overflow-y-auto">
           {/* To-Do Area */}
           {todoTasks.length > 0 && (
             <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
@@ -425,7 +425,7 @@ export function DeadlineTab({ workId }: { workId?: string }) {
               {dayNames.map((day, i) => (
                 <div key={day} className={cn(
                   "py-2 text-center text-xs font-semibold uppercase tracking-wider",
-                  (i === 0 || i === 6) ? "text-stone-400" : "text-stone-600"
+                  (i === 5 || i === 6) ? "text-stone-400" : "text-stone-600"
                 )}>
                   {day}
                 </div>
@@ -442,8 +442,8 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                 const day = i + 1;
                 const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const isToday = new Date().toISOString().split('T')[0] === dateString;
-                const dayOfWeek = new Date(year, month, day).getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const dayOfWeek = (new Date(year, month, day).getDay() + 6) % 7;
+                const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
                 
                 // Find tasks for this day
                 const dayChapterTasks = chapters

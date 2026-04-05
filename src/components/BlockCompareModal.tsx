@@ -83,9 +83,9 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* Editors */}
           <div style={{ height: topSectionHeight }} className="flex flex-col border-b border-stone-200">
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-col md:flex-row flex-1 min-h-0">
               {/* Original */}
-              <div className="flex-1 flex flex-col border-r border-stone-200">
+              <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-stone-200">
                 <div className="py-1 px-2 bg-stone-50 border-b border-stone-200 font-medium text-stone-700 flex justify-between items-center">
                   <span>Original Version</span>
                   <button 
@@ -99,7 +99,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
                 <textarea
                   value={originalText}
                   onChange={(e) => setOriginalText(e.target.value)}
-                  className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
+                  className="flex-1 p-3 resize-none outline-none font-serif text-base md:text-lg leading-relaxed text-stone-900 bg-white"
                   placeholder="Original content..."
                 />
               </div>
@@ -119,7 +119,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
                 <textarea
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
-                  className="flex-1 p-3 resize-none outline-none font-serif text-lg leading-relaxed text-stone-900 bg-white"
+                  className="flex-1 p-3 resize-none outline-none font-serif text-base md:text-lg leading-relaxed text-stone-900 bg-white"
                   placeholder="Draft content..."
                 />
               </div>

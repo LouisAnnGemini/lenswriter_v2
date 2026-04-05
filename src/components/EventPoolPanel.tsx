@@ -133,7 +133,7 @@ export function EventPoolPanel({ documentId, onClose }: { documentId: string, on
                   <div className="font-medium text-sm text-stone-900 mb-1 pr-12">{event.title}</div>
                   <div className="text-xs text-stone-500 line-clamp-2">{event.description}</div>
 
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setSelectedEventId(event.id)}
                       className="p-1.5 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"

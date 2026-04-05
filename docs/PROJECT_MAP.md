@@ -80,6 +80,10 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 - **Main View:** `src/components/PublishManager.tsx`
 - **State Management:** `src/store/stores/slices/publishSlice.ts`
 
+### 15. 🎭 Script (剧本)
+- **Main View:** `src/components/ScriptTab.tsx`
+- **State Management:** `src/store/stores/slices/scriptSlice.ts`
+
 ---
 
 ## 🏗️ Architecture & State Management

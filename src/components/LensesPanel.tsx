@@ -132,7 +132,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
                 <div className="text-sm font-medium mb-1 flex-1 cursor-pointer line-clamp-2" onClick={() => setExpandedLensId(expandedLensId === lens.id ? null : lens.id)}>
                   {lens.content}
                 </div>
-                <div className="flex items-center ml-2 space-x-1">
+                <div className="flex items-center ml-2 space-x-1 shrink-0">
                   {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
                     <div className="flex items-center text-[10px] font-bold bg-black/5 px-1.5 py-0.5 rounded-full text-black/40" title={`${lens.linkedLensIds.length} linked lenses`}>
                       <LinkIcon size={10} className="mr-1" />

@@ -133,26 +133,26 @@ export function DataManager({ onClose, isTab = false }: { onClose?: () => void; 
     <div className="flex flex-col md:flex-row h-full w-full bg-white overflow-y-auto">
       {/* Left Column: Full Data */}
       <div className="w-full md:w-1/3 md:min-w-[350px] border-b md:border-b-0 md:border-r border-stone-200 flex flex-col bg-stone-50/30">
-        <div className="p-6 border-b border-stone-200 bg-white">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
+        <div className="p-4 md:p-6 border-b border-stone-200 bg-white">
+          <div className="flex items-center justify-between mb-1 md:mb-2">
+            <h2 className="text-lg md:text-xl font-bold text-stone-900 tracking-tight flex items-center">
               <Archive size={20} className="mr-2 text-stone-500" />
               Global Data
             </h2>
           </div>
-          <p className="text-[11px] text-stone-400 uppercase font-bold tracking-widest">Manage All Works</p>
+          <p className="text-[10px] md:text-[11px] text-stone-400 uppercase font-bold tracking-widest">Manage All Works</p>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="grid grid-cols-1 gap-3">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 gap-2 md:gap-3">
             <button
               onClick={handleFullExport}
-              className="flex items-center justify-center px-4 py-3 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-stone-800 transition-all shadow-sm active:scale-95"
+              className="flex items-center justify-center px-4 py-2.5 md:py-3 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-stone-800 transition-all shadow-sm active:scale-95"
             >
               <Download size={18} className="mr-2" />
               Full Export
             </button>
             <label className={cn(
-              "flex items-center justify-center px-4 py-3 border border-stone-200 rounded-xl text-sm font-bold cursor-pointer transition-all shadow-sm",
+              "flex items-center justify-center px-4 py-2.5 md:py-3 border border-stone-200 rounded-xl text-sm font-bold cursor-pointer transition-all shadow-sm",
               isFullImporting ? "bg-stone-50 text-stone-400 cursor-not-allowed" : "bg-white text-stone-700 hover:bg-stone-50 active:scale-95"
             )}>
               <FileInput size={18} className="mr-2" />
@@ -160,7 +160,7 @@ export function DataManager({ onClose, isTab = false }: { onClose?: () => void; 
               <input type="file" accept=".json" onChange={handleFullImport} className="hidden" disabled={isFullImporting} />
             </label>
           </div>
-          <div className="p-4 bg-stone-100/50 rounded-xl border border-stone-200">
+          <div className="p-3 md:p-4 bg-stone-100/50 rounded-xl border border-stone-200">
             <p className="text-xs text-stone-500 leading-relaxed">
               <strong className="text-stone-700">Note:</strong> Full Import will overwrite all current local data. Use with caution. Exporting creates a complete backup of all your works and settings.
             </p>
@@ -170,16 +170,16 @@ export function DataManager({ onClose, isTab = false }: { onClose?: () => void; 
 
       {/* Right Column: Incremental Data */}
       <div className="flex-1 flex flex-col bg-white overflow-y-auto">
-        <div className="p-6 border-b border-stone-200 flex items-center justify-between bg-white">
+        <div className="p-4 md:p-6 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between bg-white gap-4">
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
+            <h2 className="text-lg md:text-xl font-bold text-stone-900 tracking-tight flex items-center">
               <Archive size={20} className="mr-2 text-emerald-600" />
               Incremental Management
             </h2>
-            <p className="text-[11px] text-stone-400 uppercase font-bold tracking-widest">Manage Individual Works</p>
+            <p className="text-[10px] md:text-[11px] text-stone-400 uppercase font-bold tracking-widest">Manage Individual Works</p>
           </div>
           <label className={cn(
-            "flex items-center px-4 py-2 rounded-xl text-sm font-bold cursor-pointer transition-all shadow-sm active:scale-95",
+            "flex items-center justify-center px-4 py-2 rounded-xl text-sm font-bold cursor-pointer transition-all shadow-sm active:scale-95 w-full sm:w-auto",
             isImporting ? "bg-stone-50 text-stone-400 border border-stone-200 cursor-not-allowed" : "bg-stone-900 text-white hover:bg-stone-800"
           )}>
             <FileInput size={18} className="mr-2" />
@@ -188,7 +188,7 @@ export function DataManager({ onClose, isTab = false }: { onClose?: () => void; 
           </label>
         </div>
 
-        <div className="flex-1 p-8 space-y-4">
+        <div className="flex-1 p-4 md:p-8 space-y-4 pb-24 md:pb-8">
           {workToDelete ? (
             <div className="max-w-md mx-auto mt-8 p-6 bg-red-50 border border-red-100 rounded-2xl text-red-800 shadow-sm">
               <div className="flex items-center mb-4">

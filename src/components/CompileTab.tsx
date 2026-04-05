@@ -26,6 +26,7 @@ export function CompileTab() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewText, setPreviewText] = useState('');
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
+  const [showPreview, setShowPreview] = useState(false);
 
   const activeWork = works.find(w => w.id === activeWorkId);
   const workChapters = chapters
@@ -243,11 +244,14 @@ export function CompileTab() {
 
   return (
     <div className={cn(
-      "flex h-full bg-stone-50",
+      "flex flex-col md:flex-row h-full bg-stone-50",
       "pb-16 md:pb-0" // Space for mobile bottom nav
     )}>
       {/* Left Sidebar: Selection */}
-      <div className="w-80 bg-white border-r border-stone-200 flex flex-col">
+      <div className={cn(
+        "bg-white border-b md:border-b-0 md:border-r border-stone-200 flex flex-col shrink-0 md:h-full h-full",
+        showPreview ? "hidden md:flex md:w-80" : "w-full md:w-80"
+      )}>
         <div className="p-4 border-b border-stone-200">
           <h2 className="font-serif text-lg font-medium text-stone-800 mb-4">Compile Selection</h2>
           
@@ -298,7 +302,7 @@ export function CompileTab() {
                       onClick={() => toggleSelection(chapter.id, 'chapter')}
                     >
                       <div className={cn(
-                        "mr-2 w-4 h-4 border rounded flex items-center justify-center transition-colors",
+                        "mr-2 w-4 h-4 border rounded flex items-center justify-center transition-colors shrink-0",
                         isSelected ? "bg-emerald-500 border-emerald-500 text-white" : 
                         (someScenesSelected && !isSelected) ? "bg-emerald-100 border-emerald-300" : "border-stone-300 bg-white"
                       )}>
@@ -318,7 +322,7 @@ export function CompileTab() {
                           onClick={() => toggleSelection(scene.id, 'scene')}
                         >
                           <div className={cn(
-                            "mr-2 w-3 h-3 border rounded flex items-center justify-center transition-colors",
+                            "mr-2 w-3 h-3 border rounded flex items-center justify-center transition-colors shrink-0",
                             selectedIds.has(scene.id) ? "bg-emerald-500 border-emerald-500 text-white" : "border-stone-300 bg-white"
                           )}>
                             {selectedIds.has(scene.id) && <CheckSquare size={10} />}
@@ -333,19 +337,36 @@ export function CompileTab() {
             })}
           </div>
         </div>
+        
+        {/* Mobile Preview Button */}
+        <div className="p-4 border-t border-stone-200 md:hidden">
+          <button
+            onClick={() => setShowPreview(true)}
+            disabled={selectedIds.size === 0}
+            className="w-full flex justify-center items-center px-4 py-2 bg-emerald-600 text-white rounded-md text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50"
+          >
+            See Preview
+          </button>
+        </div>
       </div>
 
       {/* Right: Preview & Actions */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="p-4 border-b border-stone-200 bg-white flex justify-between items-center">
+      <div className={cn(
+        "flex-1 flex flex-col h-full overflow-hidden",
+        !showPreview && "hidden md:flex"
+      )}>
+        <div className="p-4 border-b border-stone-200 bg-white flex flex-col sm:flex-row justify-between sm:items-center gap-4 shrink-0">
           <h3 className="font-medium text-stone-800 flex items-center">
+            <button onClick={() => setShowPreview(false)} className="md:hidden mr-2 p-1 text-stone-500">
+              <ChevronRight size={20} className="rotate-180" />
+            </button>
             <FileText size={18} className="mr-2 text-stone-400" />
             Preview
           </h3>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 w-full sm:w-auto">
             <button
               onClick={copyToClipboard}
-              className="flex items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 rounded-md text-sm hover:bg-stone-50 transition-colors"
+              className="flex-1 sm:flex-none flex justify-center items-center px-3 py-1.5 bg-white border border-stone-300 text-stone-700 rounded-md text-sm hover:bg-stone-50 transition-colors"
             >
               <Copy size={14} className="mr-2" />
               Copy Text
@@ -353,7 +374,7 @@ export function CompileTab() {
             <button
               onClick={handleExport}
               disabled={selectedIds.size === 0}
-              className="flex items-center px-3 py-1.5 bg-emerald-600 text-white rounded-md text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none flex justify-center items-center px-3 py-1.5 bg-emerald-600 text-white rounded-md text-sm hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Upload size={14} className="mr-2" />
               Export .docx
@@ -361,8 +382,8 @@ export function CompileTab() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 bg-stone-100">
-          <div className="max-w-3xl mx-auto bg-white shadow-sm min-h-[800px] p-12">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-stone-100">
+          <div className="max-w-3xl mx-auto bg-white shadow-sm min-h-[800px] p-6 md:p-12">
             {previewText ? (
               <div className="whitespace-pre-wrap font-serif text-lg leading-loose text-stone-900">
                 {previewText.split('\n').map((paragraph, i, arr) => {

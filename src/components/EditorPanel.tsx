@@ -483,8 +483,15 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
             isFocusMode ? "max-w-4xl" : "max-w-4xl"
           )}
         >
-          <div className="flex items-start justify-between mb-4 gap-4">
-            <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-4 gap-4 flex-col md:flex-row">
+            <div className="flex items-center flex-1 min-w-0 gap-2 w-full">
+              <button
+                onClick={() => setActiveDocument(null)}
+                className="md:hidden p-2 -ml-2 text-stone-400 hover:text-stone-600 rounded-md shrink-0"
+                title="Back to Outline"
+              >
+                <ChevronLeft size={24} />
+              </button>
               <input
                 type="text"
                 value={(scrollMode && isScene ? chapter?.title : activeDocument.title) || ''}
@@ -507,7 +514,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                 placeholder="Untitled..."
               />
             </div>
-            <div className="flex items-center flex-wrap justify-end gap-1 md:gap-2 relative shrink-0">
+            <div className="flex items-center flex-wrap justify-end gap-1 md:gap-2 relative shrink-0 w-full md:w-auto">
               <button
                 onClick={() => setShowFindReplace(!showFindReplace)}
                 className={cn("p-2 rounded-md transition-colors", showFindReplace ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
@@ -1286,7 +1293,8 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
       <div className={cn(
         "fixed bottom-16 z-50 transition-opacity duration-300 flex items-end justify-end",
         rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
-        isFocusMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100"
+        isFocusMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100",
+        "md:bottom-16 bottom-24"
       )}>
         <button
           onClick={() => setShowSettings(!showSettings)}

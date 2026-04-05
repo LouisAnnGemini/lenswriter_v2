@@ -329,8 +329,8 @@ export function MetroBoard({}: MetroBoardProps = {}) {
   return (
     <div className="flex-1 flex flex-col h-full bg-stone-50/50 overflow-hidden" onClick={() => { setSelectedNodeId(null); setShowReplaceMenu(false); }}>
       {/* Header / Line Manager */}
-      <div className="h-14 border-b border-stone-200 bg-white flex items-center px-4 shrink-0 gap-4">
-        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar flex-1">
+      <div className="min-h-[56px] py-2 border-b border-stone-200 bg-white flex flex-col sm:flex-row sm:items-center px-4 shrink-0 gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar w-full sm:w-auto sm:flex-1 pb-1 sm:pb-0">
           {workLines.map(line => (
             <div key={line.id} className="flex items-center">
               {editingLineId === line.id ? (
@@ -394,7 +394,7 @@ export function MetroBoard({}: MetroBoardProps = {}) {
           </button>
         </div>
         
-        <div className="flex items-center gap-3 ml-auto shrink-0">
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-stone-500">间距</span>
             <input 
@@ -451,7 +451,7 @@ export function MetroBoard({}: MetroBoardProps = {}) {
           >
             {({ zoomIn, zoomOut, centerView }) => (
               <React.Fragment>
-                <div className="absolute bottom-6 right-6 z-40 flex flex-col gap-2 bg-white p-1.5 rounded-xl shadow-lg border border-stone-200">
+                <div className="absolute bottom-24 sm:bottom-6 right-6 z-40 flex flex-col gap-2 bg-white p-1.5 rounded-xl shadow-lg border border-stone-200">
                   <button onClick={() => centerView(1, 500)} className="p-2 text-stone-600 hover:bg-stone-100 rounded-lg transition-colors" title="Locate Root Node">
                     <LocateFixed size={20} />
                   </button>

@@ -4,6 +4,15 @@ export type Chapter = { id: string; workId: string; title: string; order: number
 export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; characterPresence?: Record<string, { note?: string }>; statusColor?: string; linkedEventIds?: string[]; goalWordCount?: number; deadline?: string };
 export type Block = { id: string; documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; content: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean; draftContent?: string; isComparing?: boolean };
 
+export type ScriptDraft = {
+  id: string;
+  workId: string;
+  title: string;
+  characterIds: string[];
+  content: string;
+  createdAt: number;
+};
+
 export type Location = { id: string; workId: string; name: string; description: string; order: number };
 
 export type Tag = {
@@ -129,7 +138,7 @@ export type PlatformTracking = {
 };
 
 export type TabConfigItem = {
-  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish';
+  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish' | 'script';
   label: string;
   visible: boolean;
 };
@@ -155,9 +164,10 @@ export type State = {
   snapshots: SceneSnapshot[];
   metroLines: MetroLine[];
   metroNodes: MetroNode[];
+  scriptDrafts: ScriptDraft[];
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish';
+  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish' | 'script';
   appMode: 'design' | 'review' | 'management';
   tabConfig: TabConfig;
   timelineViewMode: 'list' | 'table' | 'chronology' | 'tags';
@@ -184,7 +194,7 @@ export type State = {
   platformTrackings: PlatformTracking[];
 };
 
-export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & MetroSlice & PublishSlice & {
+export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & MetroSlice & PublishSlice & ScriptSlice & {
   importData: (data: Partial<State>) => void;
   mergeData: (data: Partial<State>) => void;
   syncFromCloud: (data: Partial<State>) => void;
@@ -324,6 +334,12 @@ export interface WorkSlice {
   updateCharacterField: (workId: string, fieldId: string, updates: Partial<CharacterFieldDef>) => void;
   deleteCharacterField: (workId: string, fieldId: string) => void;
   reorderCharacterFields: (workId: string, startIndex: number, endIndex: number) => void;
+}
+
+export interface ScriptSlice {
+  addScriptDraft: (draft: Omit<ScriptDraft, 'id' | 'createdAt'>) => void;
+  updateScriptDraft: (draft: Partial<ScriptDraft> & { id: string }) => void;
+  deleteScriptDraft: (draftId: string) => void;
 }
 
 export interface LocationSlice {

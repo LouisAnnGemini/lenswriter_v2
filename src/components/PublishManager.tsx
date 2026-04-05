@@ -130,16 +130,45 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
     );
   }
 
+  const [activeMobileTab, setActiveMobileTab] = useState<'directory' | 'platforms'>('directory');
+
   return (
     <div className={cn(
-      "flex flex-col md:flex-row h-full w-full bg-white overflow-y-auto",
+      "flex flex-col h-full w-full bg-white overflow-hidden",
       !isTab && "fixed inset-0 z-[70]"
     )}>
-      {/* Left Column: Book Directory & Snapshots */}
-      <div className="w-full md:w-1/3 md:min-w-[350px] border-b md:border-b-0 md:border-r border-stone-200 flex flex-col bg-stone-50/30">
-        <div className="p-6 border-b border-stone-200 bg-white">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
+      {/* Mobile Tabs */}
+      <div className="flex md:hidden border-b border-stone-200">
+        <button
+          onClick={() => setActiveMobileTab('directory')}
+          className={cn(
+            "flex-1 py-3 text-sm font-bold transition-colors",
+            activeMobileTab === 'directory' ? "text-stone-900 border-b-2 border-stone-900" : "text-stone-400"
+          )}
+        >
+          Directory
+        </button>
+        <button
+          onClick={() => setActiveMobileTab('platforms')}
+          className={cn(
+            "flex-1 py-3 text-sm font-bold transition-colors",
+            activeMobileTab === 'platforms' ? "text-stone-900 border-b-2 border-stone-900" : "text-stone-400"
+          )}
+        >
+          Platforms
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        {/* Left Column: Book Directory & Snapshots */}
+        <div className={cn(
+          "w-full md:w-1/3 md:min-w-[350px] border-r border-stone-200 flex flex-col bg-stone-50/30 overflow-y-auto",
+          "md:flex",
+          activeMobileTab === 'directory' ? "flex" : "hidden"
+        )}>
+        <div className="p-4 md:p-6 border-b border-stone-200 bg-white">
+          <div className="flex items-center justify-between mb-1 md:mb-2">
+            <h2 className="text-lg md:text-xl font-bold text-stone-900 tracking-tight flex items-center">
               <FileText size={20} className="mr-2 text-stone-500" />
               Book Directory
             </h2>
@@ -151,10 +180,10 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
               <Plus size={18} />
             </button>
           </div>
-          <p className="text-[11px] text-stone-400 uppercase font-bold tracking-widest">Manage Version Snapshots</p>
+          <p className="text-[10px] md:text-[11px] text-stone-400 uppercase font-bold tracking-widest">Manage Version Snapshots</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 md:space-y-6 pb-24 md:pb-4">
           {workChapters.map(chapter => {
             const snapshots = chapterSnapshots
               .filter(s => s.chapterId === chapter.id)
@@ -222,25 +251,29 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
       </div>
 
       {/* Right Column: Platforms & Status */}
-      <div className="flex-1 flex flex-col bg-white overflow-y-auto">
-        <div className="p-6 border-b border-stone-200 flex items-center justify-between bg-white">
+      <div className={cn(
+        "flex-1 flex flex-col bg-white overflow-y-auto",
+        "md:flex",
+        activeMobileTab === 'platforms' ? "flex" : "hidden"
+      )}>
+        <div className="p-4 md:p-6 border-b border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between bg-white gap-4">
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center">
+            <h2 className="text-lg md:text-xl font-bold text-stone-900 tracking-tight flex items-center">
               <Send size={20} className="mr-2 text-emerald-600" />
               Publishing Platforms
             </h2>
-            <p className="text-[11px] text-stone-400 uppercase font-bold tracking-widest">Track cross-platform progress</p>
+            <p className="text-[10px] md:text-[11px] text-stone-400 uppercase font-bold tracking-widest">Track cross-platform progress</p>
           </div>
           <button
             onClick={() => setShowNewPlatform(true)}
-            className="flex items-center px-4 py-2 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-stone-800 transition-all shadow-md active:scale-95"
+            className="flex items-center justify-center px-4 py-2 bg-stone-900 text-white rounded-xl text-sm font-bold hover:bg-stone-800 transition-all shadow-md active:scale-95 w-full sm:w-auto"
           >
             <Plus size={18} className="mr-2" />
             Add Platform
           </button>
         </div>
 
-        <div className="flex-1 p-8 space-y-8">
+        <div className="flex-1 p-4 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8">
           {workPlatforms.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-stone-300 space-y-4">
               <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center">
@@ -258,23 +291,23 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
                   {/* Platform Header */}
                   <div 
                     onClick={() => togglePlatformCollapse(platform.id)}
-                    className="p-6 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between cursor-pointer hover:bg-stone-100/50 transition-colors"
+                    className="p-4 md:p-6 border-b border-stone-100 bg-stone-50/50 flex flex-col sm:flex-row sm:items-center justify-between cursor-pointer hover:bg-stone-100/50 transition-colors gap-4"
                   >
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3 md:space-x-4">
                       <div className={cn(
-                        "w-10 h-10 rounded-2xl flex items-center justify-center text-lg font-bold shadow-sm",
+                        "w-10 h-10 rounded-2xl flex items-center justify-center text-lg font-bold shadow-sm shrink-0",
                         needsUpdateCount > 0 ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"
                       )}>
                         {platform.platformName.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-stone-900">{platform.platformName}</h3>
-                        <div className="flex items-center space-x-3 mt-0.5">
-                          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      <div className="min-w-0">
+                        <h3 className="text-base md:text-lg font-bold text-stone-900 truncate">{platform.platformName}</h3>
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 whitespace-nowrap">
                             {Object.values(platform.chapterStatuses).filter(s => s.status === 'published').length} Published
                           </span>
                           {needsUpdateCount > 0 && (
-                            <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-amber-500 px-2 py-0.5 rounded-full shadow-sm animate-pulse flex items-center">
+                            <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-amber-500 px-2 py-0.5 rounded-full shadow-sm animate-pulse flex items-center whitespace-nowrap">
                               <AlertCircle size={10} className="mr-1" />
                               {needsUpdateCount} Needs Update
                             </span>
@@ -282,13 +315,13 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-end space-x-2 sm:space-x-4">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           deletePlatformTracking(platform.id);
                         }}
-                        className="p-2 text-stone-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                        className="p-2 text-stone-300 hover:text-red-500 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -314,15 +347,15 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
 
                           return (
                             <div key={chapter.id} className={cn(
-                              "flex items-center justify-between p-3 rounded-2xl border transition-all",
+                              "flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-2xl border transition-all gap-3 sm:gap-0",
                               needsUpdate ? "bg-amber-50/30 border-amber-100" : "bg-white border-stone-100"
                             )}>
                               <div className="flex-1 min-w-0 mr-4">
                                 <div className="text-xs font-bold text-stone-900 truncate">{chapter.title}</div>
-                                <div className="text-[9px] text-stone-400 mt-0.5 flex items-center space-x-2">
-                                  {isPublished && <span className="text-emerald-600 font-bold">Latest: {chapterSnapshots.find(s => s.id === status.lastPublishedSnapshotId)?.versionName}</span>}
+                                <div className="text-[9px] text-stone-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                  {isPublished && <span className="text-emerald-600 font-bold whitespace-nowrap">Latest: {chapterSnapshots.find(s => s.id === status.lastPublishedSnapshotId)?.versionName}</span>}
                                   {needsUpdate && (
-                                    <span className="text-amber-600 font-bold flex items-center bg-amber-100/50 px-1.5 py-0.5 rounded border border-amber-200">
+                                    <span className="text-amber-600 font-bold flex items-center bg-amber-100/50 px-1.5 py-0.5 rounded border border-amber-200 whitespace-nowrap">
                                       <AlertCircle size={10} className="mr-1" />
                                       UPDATE AVAILABLE
                                     </span>
@@ -331,7 +364,7 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
                                 </div>
                               </div>
 
-                              <div className="flex items-center space-x-1">
+                              <div className="flex items-center justify-end space-x-1 sm:space-x-2">
                                 {needsUpdate && (
                                   <button
                                     onClick={() => setDiffView({ chapterId: chapter.id, snapshotId: status.lastPublishedSnapshotId!, platformId: platform.id })}
@@ -345,7 +378,7 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
                                   disabled={!latestSnapshot}
                                   onClick={() => handlePublish(platform.id, chapter.id, latestSnapshot!.id)}
                                   className={cn(
-                                    "px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
+                                    "px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all w-full sm:w-auto",
                                     needsUpdate || notPublished
                                       ? "bg-stone-900 text-white hover:bg-stone-800 shadow-sm"
                                       : "bg-stone-100 text-stone-400 cursor-default"
@@ -366,11 +399,12 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
           )}
         </div>
       </div>
+    </div>
 
       {/* Diff View Modal */}
       {diffView && (
         <div className="fixed inset-0 bg-stone-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] md:h-[80vh] flex flex-col overflow-hidden">
             <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50">
               <div>
                 <h3 className="font-bold text-stone-900">Change Details</h3>
@@ -382,7 +416,7 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
                 <X size={20} className="text-stone-500" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8">
               {(() => {
                 const diff = getChapterDiff(diffView.chapterId, diffView.snapshotId);
                 if (!diff) return <p>Snapshot data missing.</p>;
@@ -398,18 +432,18 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
                         <h4 className="font-bold text-stone-900">{scene.title}</h4>
                         <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold uppercase">Modified</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <div className="space-y-2 md:space-y-3">
                           <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Snapshot Version</div>
-                          <div className="p-4 bg-stone-50 rounded-lg border border-stone-100 text-sm text-stone-600 space-y-2">
+                          <div className="p-3 md:p-4 bg-stone-50 rounded-lg border border-stone-100 text-sm text-stone-600 space-y-2">
                             {snapshotSceneBlocks.map(b => (
                               <p key={b.id} className="leading-relaxed opacity-60">{b.content}</p>
                             ))}
                           </div>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2 md:space-y-3">
                           <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Current Version</div>
-                          <div className="p-4 bg-white rounded-lg border border-stone-200 text-sm text-stone-900 space-y-2 shadow-sm">
+                          <div className="p-3 md:p-4 bg-white rounded-lg border border-stone-200 text-sm text-stone-900 space-y-2 shadow-sm">
                             {currentSceneBlocks.map(b => {
                               const snapshotBlock = snapshotSceneBlocks.find(sb => sb.id === b.id);
                               const isChanged = snapshotBlock?.content !== b.content;
@@ -442,7 +476,7 @@ export function PublishManager({ isTab = false }: { isTab?: boolean }) {
                     setDiffView(null);
                   }
                 }}
-                className="px-6 py-2 bg-stone-900 text-white rounded-lg text-sm font-bold hover:bg-stone-800 transition-colors shadow-lg flex items-center"
+                className="w-full sm:w-auto px-6 py-2 bg-stone-900 text-white rounded-lg text-sm font-bold hover:bg-stone-800 transition-colors shadow-lg flex items-center justify-center"
               >
                 <CheckCircle size={16} className="mr-2" />
                 Confirm Update on Platform

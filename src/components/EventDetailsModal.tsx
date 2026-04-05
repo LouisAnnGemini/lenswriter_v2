@@ -223,7 +223,7 @@ export function EventDetailsModal({ eventId, initialTab, initialCharacterId, onC
         <div className="p-6 overflow-y-auto flex-1 bg-stone-50/50">
           {activeTab === 'general' && (
             <div className="h-full flex flex-col gap-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
                   <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">Start Time</label>
                   <input

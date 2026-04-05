@@ -51,11 +51,11 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
         </div>
       )}
       
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+        <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
           
           {/* Add Location Form */}
-          <form onSubmit={handleAddLocation} className="bg-white p-4 rounded-lg shadow-sm border border-stone-200 flex gap-4 items-end">
+          <form onSubmit={handleAddLocation} className="bg-white p-3 md:p-4 rounded-lg shadow-sm border border-stone-200 flex flex-col sm:flex-row gap-3 md:gap-4 sm:items-end">
             <div className="flex-1">
               <label className="block text-xs font-medium text-stone-500 mb-1">Location Name</label>
               <input
@@ -63,15 +63,15 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
                 value={newLocationName}
                 onChange={(e) => setNewLocationName(e.target.value)}
                 placeholder="e.g., The Prancing Pony, Neo-Veridia, Mars Base Alpha"
-                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-md text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
             <button
               type="submit"
               disabled={!newLocationName.trim()}
-              className="px-4 py-2 bg-stone-800 text-white rounded-md hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
+              className="px-4 py-2 bg-stone-800 text-white rounded-md hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors w-full sm:w-auto text-sm md:text-base"
             >
-              <Plus size={18} className="mr-2" />
+              <Plus size={16} className="mr-1.5 md:mr-2" />
               Add Location
             </button>
           </form>

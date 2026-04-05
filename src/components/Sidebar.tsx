@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar, Inbox } from 'lucide-react';
+import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '../lib/utils';
 import { WorkIcon } from './WorkIcon';
 import { WorkIconPicker } from './WorkIconPicker';
 import { BackupManager } from './BackupManager';
+import { toast } from 'sonner';
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, setMobileOpen?: (open: boolean) => void }) {
   const { 
@@ -102,11 +103,12 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
           // Preserve current sync state when importing a file
           const currentState = useStore.getState();
           importData({ ...json, supabaseSyncEnabled: currentState.supabaseSyncEnabled });
+          toast.success('Data imported successfully');
         } else {
-          alert('Invalid data format');
+          toast.error('Invalid data format');
         }
       } catch (error) {
-        alert('Error parsing JSON file');
+        toast.error('Error parsing JSON file');
       }
     };
     reader.readAsText(file);
@@ -129,7 +131,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         "fixed md:relative", // Fixed on mobile, relative on desktop
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0" // Slide in on mobile
       )}>
-        <div className="p-4 flex items-center justify-between border-b border-stone-800">
+        <div className="p-4 pt-safe-top flex items-center justify-between border-b border-stone-800">
           {isExpanded && <span className="font-semibold text-stone-100 tracking-wide uppercase text-sm">Works</span>}
           <button 
             onClick={() => setCollapsed(!collapsed)}
@@ -146,24 +148,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
         </div>
 
       <div className="flex-1 overflow-y-auto py-4">
-        <div className="px-2 mb-4">
-          <button
-            onClick={() => {
-              setActiveTab('inbox');
-              setMobileOpen?.(false);
-            }}
-            className={cn(
-              "w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-              activeTab === 'inbox'
-                ? "bg-stone-800 text-stone-100"
-                : "text-stone-400 hover:text-stone-100 hover:bg-stone-800/50"
-            )}
-          >
-            <Inbox size={18} className={cn(isExpanded ? "mr-3" : "mx-auto")} />
-            {isExpanded && <span>Notes</span>}
-          </button>
-        </div>
-
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="works" type="work">
             {(provided) => (

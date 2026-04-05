@@ -15,6 +15,7 @@ import { createSnapshotSlice } from './slices/snapshotSlice';
 import { createNoteSlice } from './slices/noteSlice';
 import { createMetroSlice } from './slices/metroSlice';
 import { createPublishSlice } from './slices/publishSlice';
+import { createScriptSlice } from './slices/scriptSlice';
 
 export const useStore = create<StoreState>()(
   persist(
@@ -34,6 +35,7 @@ export const useStore = create<StoreState>()(
       ...createNoteSlice(set, get, api),
       ...createMetroSlice(set, get, api),
       ...createPublishSlice(set, get, api),
+      ...createScriptSlice(set, get, api),
       importData: (data) => set((state) => ({ ...state, ...data })),
       mergeData: (data: Partial<StoreState>) => set((state) => {
         const newState = { ...state };

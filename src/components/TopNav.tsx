@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network, Archive, Send } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network, Archive, Send, MessageSquare } from 'lucide-react';
 import { DataManager } from './DataManager';
 import { cn } from '../lib/utils';
 import { useShallow } from 'zustand/react/shallow';
@@ -73,6 +73,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
   const allTabs = [
     { id: 'design', label: 'Writing', icon: Edit3 },
     { id: 'inbox', label: 'Notes', icon: Inbox },
+    { id: 'script', label: 'Script', icon: MessageSquare },
     { id: 'blockDescriptions', label: 'Block Descriptions', icon: AlignLeft },
     { id: 'lenses', label: 'Lenses', icon: LayoutGrid },
     { id: 'timelineEvents', label: 'Timeline Events', icon: Clock },
@@ -91,6 +92,9 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
   const currentConfig = [...currentConfigRaw];
   if (!currentConfig.some(c => c.id === 'dataManagement')) {
     currentConfig.push({ id: 'dataManagement', label: 'Data Management', visible: appMode === 'management' });
+  }
+  if (!currentConfig.some(c => c.id === 'script')) {
+    currentConfig.push({ id: 'script', label: 'Script', visible: appMode === 'design' });
   }
   
   // Combine config with icons and filter visible
@@ -233,7 +237,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
               )}
             >
               <tab.icon size={20} />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-[10px] font-medium truncate w-full text-center px-1">{tab.label}</span>
             </button>
           ))}
           
@@ -247,7 +251,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
                 )}
               >
                 <Menu size={20} />
-                <span className="text-[10px] font-medium">More</span>
+                <span className="text-[10px] font-medium truncate w-full text-center px-1">More</span>
               </button>
               
               {isMoreMenuOpen && (
@@ -255,7 +259,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
                   <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setIsMoreMenuOpen(false)} />
                   <div 
                     ref={moreMenuRef}
-                    className="absolute bottom-full right-0 mb-2 w-48 bg-white border border-stone-200 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-bottom-2"
+                    className="absolute bottom-full right-2 mb-2 w-48 bg-white border border-stone-200 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-bottom-2"
                   >
                     {tabs.slice(4).map((tab, index) => (
                       <button

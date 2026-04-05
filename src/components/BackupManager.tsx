@@ -96,7 +96,7 @@ export function BackupManager({ onClose }: { onClose: () => void }) {
       }
     } catch (err) {
       console.error("Error checking cloud state", err);
-      alert("Failed to check cloud state. Please check your Supabase configuration.");
+      toast.error("Failed to check cloud state. Please check your Supabase configuration.");
     } finally {
       setIsCheckingCloud(false);
     }

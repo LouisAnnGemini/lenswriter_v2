@@ -158,7 +158,7 @@ export function NotesTab({ workId, sceneId }: NotesTabProps) {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                     <div className="flex flex-wrap gap-1">
                       {note.tagIds?.map(tagId => {
                         const tag = inboxTags.find(t => t.id === tagId);
@@ -169,7 +169,7 @@ export function NotesTab({ workId, sceneId }: NotesTabProps) {
                         ) : null;
                       })}
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                       <button
                         onClick={() => {
                           setEditingId(note.id);

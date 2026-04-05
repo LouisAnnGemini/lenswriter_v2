@@ -15,6 +15,7 @@ import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
 import { CompileTab } from './components/CompileTab';
 import { InboxTab } from './components/InboxTab';
+import { ScriptTab } from './components/ScriptTab';
 import { DataManager } from './components/DataManager';
 import { PublishManager } from './components/PublishManager';
 import { QuickCapture } from './components/QuickCapture';
@@ -84,11 +85,28 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
               newModeConfig.push({ id: 'publish', label: 'Publishing', visible: mode === 'management' });
             }
             
+            if (!newModeConfig.some(t => t.id === 'script')) {
+              newModeConfig.push({ id: 'script', label: 'Script', visible: mode === 'design' });
+            }
+            
             updateTabConfig(mode, newModeConfig);
-          } else if (!tabConfig[mode].some(t => t.id === 'publish')) {
-             // Ensure publish tab is added even if dataManagement was already there
-             const newModeConfig = [...tabConfig[mode], { id: 'publish' as any, label: 'Publishing', visible: mode === 'management' }];
-             updateTabConfig(mode, newModeConfig);
+          } else {
+            let needsUpdate = false;
+            const newModeConfig = [...tabConfig[mode]];
+            
+            if (!newModeConfig.some(t => t.id === 'publish')) {
+               newModeConfig.push({ id: 'publish' as any, label: 'Publishing', visible: mode === 'management' });
+               needsUpdate = true;
+            }
+            
+            if (!newModeConfig.some(t => t.id === 'script')) {
+               newModeConfig.push({ id: 'script' as any, label: 'Script', visible: mode === 'design' });
+               needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+               updateTabConfig(mode, newModeConfig);
+            }
           }
         }
       });
@@ -177,6 +195,7 @@ function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMo
         )}
         {activeTab === 'compile' && <CompileTab />}
         {activeTab === 'inbox' && <InboxTab />}
+        {activeTab === 'script' && <ScriptTab />}
         {activeTab === 'dataManagement' && <DataManager isTab />}
         {activeTab === 'publish' && <PublishManager isTab />}
       </div>

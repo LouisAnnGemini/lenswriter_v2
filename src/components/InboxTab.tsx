@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Trash2, Edit2, Check, X, Clock, Plus, Inbox, Tag as TagIcon, Settings, Book, FileText, ChevronDown } from 'lucide-react';
+import { Trash2, Edit2, Check, X, Plus, Inbox, Settings, Book, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -130,22 +130,22 @@ export function InboxTab() {
   return (
     <div className="flex-1 overflow-y-auto bg-stone-50 p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-3xl font-bold text-stone-800 flex items-center gap-3">
-            <Inbox size={32} className="text-emerald-600" /> Notes
+            <Inbox size={32} className="text-emerald-600" /> 收件箱
           </h1>
-          <div className="flex bg-stone-200 rounded-lg p-1">
-            <button onClick={() => setActiveSubTab('inbox')} className={cn("px-4 py-2 rounded-md text-sm font-medium", activeSubTab === 'inbox' ? "bg-white shadow" : "text-stone-600")}>Notes</button>
-            <button onClick={() => setActiveSubTab('manageTags')} className={cn("px-4 py-2 rounded-md text-sm font-medium", activeSubTab === 'manageTags' ? "bg-white shadow" : "text-stone-600")}>Manage Tags</button>
+          <div className="flex bg-stone-200 rounded-lg p-1 self-start sm:self-auto">
+            <button onClick={() => setActiveSubTab('inbox')} className={cn("px-4 py-2 rounded-md text-sm font-medium", activeSubTab === 'inbox' ? "bg-white shadow" : "text-stone-600")}>灵感笔记</button>
+            <button onClick={() => setActiveSubTab('manageTags')} className={cn("px-4 py-2 rounded-md text-sm font-medium", activeSubTab === 'manageTags' ? "bg-white shadow" : "text-stone-600")}>标签管理</button>
           </div>
         </div>
 
         {activeSubTab === 'manageTags' ? (
           <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
-            <h2 className="text-lg font-semibold mb-4">Manage Tags</h2>
+            <h2 className="text-lg font-semibold mb-4">管理标签</h2>
             <div className="flex gap-2 mb-4">
               <input 
-                placeholder="New tag name" 
+                placeholder="新标签名称" 
                 onKeyDown={(e) => { if(e.key === 'Enter' && e.currentTarget.value) { addInboxTag({ name: e.currentTarget.value }); e.currentTarget.value = ''; } }}
                 className="flex-1 px-3 py-2 border rounded-lg"
               />
@@ -166,7 +166,7 @@ export function InboxTab() {
           </div>
         ) : (
           <>
-            <div className="flex gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-6">
               <button 
                 onClick={() => setNoteScope('global')}
                 className={cn(
@@ -174,7 +174,7 @@ export function InboxTab() {
                   noteScope === 'global' ? "bg-stone-800 text-white" : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-100"
                 )}
               >
-                <Inbox size={16} /> Global Notes
+                <Inbox size={16} /> 全局笔记
               </button>
               {activeWorkId && (
                 <button 
@@ -184,7 +184,7 @@ export function InboxTab() {
                     noteScope === 'work' ? "bg-emerald-600 text-white" : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-100"
                   )}
                 >
-                  <Book size={16} /> {activeWork?.title || 'Current Work'} Notes
+                  <Book size={16} /> {activeWork?.title || '当前作品'} 笔记
                 </button>
               )}
             </div>
@@ -193,15 +193,17 @@ export function InboxTab() {
               <textarea
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
-                placeholder={noteScope === 'global' ? "Type a new global idea here..." : `Type a note for ${activeWork?.title || 'this work'}...`}
+                placeholder={noteScope === 'global' ? "在这里输入全局灵感..." : `为 ${activeWork?.title || '当前作品'} 记录笔记...`}
                 className="w-full text-base bg-transparent border-none outline-none resize-y min-h-[100px] text-stone-800 placeholder:text-stone-400"
               />
               
               {noteScope === 'work' && (
-                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-stone-100">
-                  <FileText size={14} className="text-stone-400" />
-                  <span className="text-xs text-stone-500">Link to Scene (Optional):</span>
-                  <div className="w-64">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2 pt-2 border-t border-stone-100">
+                  <div className="flex items-center gap-2">
+                    <FileText size={14} className="text-stone-400" />
+                    <span className="text-xs text-stone-500">Link to Scene (Optional):</span>
+                  </div>
+                  <div className="w-full sm:w-64">
                     <SearchableSelect
                       options={sceneOptions}
                       value={newSceneId}
@@ -293,7 +295,7 @@ export function InboxTab() {
                       <div className="text-base text-stone-800 mb-3 whitespace-pre-wrap">{item.content}</div>
                     )}
                     
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
                         {item.sceneId && (
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded text-xs flex items-center gap-1">
@@ -329,7 +331,7 @@ export function InboxTab() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity self-end sm:self-auto">
                         <div className="relative group/scope">
                           <button className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded" title="Change Scope">
                             <Settings size={14} />

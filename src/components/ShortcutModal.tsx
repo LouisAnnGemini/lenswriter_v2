@@ -37,17 +37,17 @@ export function ShortcutModal({ onClose }: ShortcutModalProps) {
             <X size={18} />
           </button>
         </div>
-        <div className="p-6 overflow-y-auto max-h-[70vh]">
+        <div className="p-4 md:p-6 overflow-y-auto max-h-[70vh] pb-24 md:pb-6">
           {shortcuts.map((section) => (
             <div key={section.section} className="mb-6 last:mb-0">
-              <h3 className="text-sm font-bold text-stone-500 uppercase tracking-wider mb-3">{section.section}</h3>
-              <div className="space-y-2">
+              <h3 className="text-xs md:text-sm font-bold text-stone-500 uppercase tracking-wider mb-3">{section.section}</h3>
+              <div className="space-y-3 md:space-y-2">
                 {section.shortcuts.map((shortcut, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                     <span className="text-sm text-stone-700">{shortcut.description}</span>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       {shortcut.keys.map((key, kIdx) => (
-                        <kbd key={kIdx} className="px-2 py-1 bg-stone-100 border border-stone-200 rounded text-xs font-mono text-stone-600">
+                        <kbd key={kIdx} className="px-2 py-1 bg-stone-100 border border-stone-200 rounded text-[10px] md:text-xs font-mono text-stone-600">
                           {key}
                         </kbd>
                       ))}

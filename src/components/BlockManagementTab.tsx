@@ -134,7 +134,7 @@ export function BlockManagementTab() {
         "flex-1 flex flex-col h-full overflow-hidden transition-all duration-300",
         showMainContent ? "flex" : "hidden md:flex"
       )}>
-        <div className="p-6 border-b border-stone-200 bg-white shrink-0 flex items-center justify-between">
+        <div className="p-4 md:p-6 border-b border-stone-200 bg-white shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {showMainContent && (
               <button onClick={() => setShowMainContent(false)} className="md:hidden p-2 -ml-2 text-stone-500 hover:text-stone-700">
@@ -142,12 +142,12 @@ export function BlockManagementTab() {
               </button>
             )}
             <div>
-              <h2 className="text-2xl font-serif font-semibold text-stone-900">Block Descriptions</h2>
-              <p className="text-stone-500 mt-1">Manage and review all block descriptions across your work.</p>
+              <h2 className="text-xl md:text-2xl font-serif font-semibold text-stone-900">Block Descriptions</h2>
+              <p className="hidden md:block text-xs md:text-sm sm:text-base text-stone-500 mt-1">Manage and review all block descriptions across your work.</p>
             </div>
           </div>
           
-          <div className="w-64 relative">
+          <div className="w-full sm:w-64 relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
             <input
               type="text"
@@ -159,8 +159,8 @@ export function BlockManagementTab() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+          <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
             {Object.entries(groupedBlocks).map(([docId, blocks]) => {
               const doc = workChapters.find(c => c.id === docId) || workScenes.find(s => s.id === docId);
               if (!doc) return null;

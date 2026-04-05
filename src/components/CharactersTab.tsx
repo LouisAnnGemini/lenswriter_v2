@@ -148,29 +148,29 @@ export function CharactersTab() {
   return (
     <div className="flex-1 flex overflow-hidden bg-stone-50/50 relative">
       {/* Main Grid View */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-8">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
             <div>
-              <h2 className="text-2xl font-serif font-semibold text-stone-900 flex items-center">
-                <Users className="mr-3 text-stone-400" size={24} />
+              <h2 className="text-xl md:text-2xl font-serif font-semibold text-stone-900 flex items-center">
+                <Users className="mr-2 md:mr-3 text-stone-400" size={20} />
                 Characters
               </h2>
-              <p className="text-sm text-stone-500 mt-1">Manage your story's cast and their attributes.</p>
+              <p className="text-xs md:text-sm text-stone-500 mt-1">Manage your story's cast and their attributes.</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto">
               <button 
                 onClick={() => setShowFieldManager(true)} 
-                className="flex items-center px-3 py-2 bg-white border border-stone-200 text-stone-600 rounded-lg text-sm font-medium hover:bg-stone-50 transition-colors shadow-sm"
+                className="flex-1 sm:flex-none flex items-center justify-center px-3 py-2 bg-white border border-stone-200 text-stone-600 rounded-lg text-xs md:text-sm font-medium hover:bg-stone-50 transition-colors shadow-sm"
               >
-                <Settings size={16} className="mr-2" />
+                <Settings size={14} className="mr-1.5 md:mr-2" />
                 Configure Fields
               </button>
               <button 
                 onClick={handleAddCharacter}
-                className="flex items-center px-4 py-2 bg-stone-900 text-white rounded-lg text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm"
+                className="flex-1 sm:flex-none flex items-center justify-center px-3 md:px-4 py-2 bg-stone-900 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm"
               >
-                <Plus size={16} className="mr-2" />
+                <Plus size={14} className="mr-1.5 md:mr-2" />
                 Add Character
               </button>
             </div>

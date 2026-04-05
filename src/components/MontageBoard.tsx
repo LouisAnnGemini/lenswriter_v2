@@ -158,7 +158,8 @@ export function MontageBoard({}: MontageBoardProps = {}) {
               className="rounded border-stone-300 text-emerald-600 focus:ring-emerald-500 transition-colors"
             />
             <Archive size={14} className={showArchived ? "text-emerald-600" : "text-stone-400"} />
-            <span>Show Archived</span>
+            <span className="hidden sm:inline">Show Archived</span>
+            <span className="sm:hidden">Archived</span>
           </label>
         </div>
 

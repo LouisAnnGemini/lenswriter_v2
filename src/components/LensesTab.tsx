@@ -517,13 +517,13 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                   </h3>
                   <button 
                     onClick={() => setActiveLens(null)}
-                    className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded-md transition-colors"
+                    className="p-2 md:p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded-md transition-colors"
                   >
-                    <X size={16} />
+                    <X size={20} className="md:w-4 md:h-4" />
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8 pb-24 md:pb-6">
                   {/* Color Selection */}
                   <div>
                     <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Color</label>
