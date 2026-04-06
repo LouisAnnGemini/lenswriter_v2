@@ -3,7 +3,8 @@ import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Scene } from '../store/types';
 import { countWords, cn } from '../lib/utils';
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Calendar as CalendarIcon, Target, BookOpen, ChevronDown, ChevronRight as ChevronRightIcon, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Calendar as CalendarIcon, Target, BookOpen, ChevronDown, ChevronRight as ChevronRightIcon, X, BarChart3, Undo } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export function DeadlineTab({ workId }: { workId?: string }) {
   const { 
@@ -11,34 +12,47 @@ export function DeadlineTab({ workId }: { workId?: string }) {
     chapters, 
     scenes, 
     blocks, 
-    deadlines,
     updateChapter,
     updateScene,
-    addDeadline,
-    updateDeadline,
-    deleteDeadline,
     setActiveWork,
     setDeadlineViewMode,
-    deadlineViewMode
+    deadlineViewMode,
+    dailyWordCounts,
+    resetDailyWordCount,
+    updateDailyWordCountManual
   } = useStore(useShallow(state => ({
     works: state.works,
     chapters: state.chapters,
     scenes: state.scenes,
     blocks: state.blocks,
-    deadlines: state.deadlines,
     updateChapter: state.updateChapter,
     updateScene: state.updateScene,
-    addDeadline: state.addDeadline,
-    updateDeadline: state.updateDeadline,
-    deleteDeadline: state.deleteDeadline,
     setActiveWork: state.setActiveWork,
     setDeadlineViewMode: state.setDeadlineViewMode,
-    deadlineViewMode: state.deadlineViewMode
+    deadlineViewMode: state.deadlineViewMode,
+    dailyWordCounts: state.dailyWordCounts,
+    resetDailyWordCount: state.resetDailyWordCount,
+    updateDailyWordCountManual: state.updateDailyWordCountManual
   })));
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [manualWordCount, setManualWordCount] = useState<string>('');
+  
+  const today = new Date().toISOString().split('T')[0];
 
-  // State to track expanded works
+  const chartData = useMemo(() => {
+    return Object.entries(dailyWordCounts || {})
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, stats]) => ({
+        date: date.slice(5), // MM-DD
+        total: stats.total,
+        netChange: stats.netChange
+      }));
+  }, [dailyWordCounts]);
+
   const [expandedWorks, setExpandedWorks] = useState<Record<string, boolean>>({});
+  const [showChart, setShowChart] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Initialize expanded works (first work expanded by default)
   useEffect(() => {
@@ -47,10 +61,6 @@ export function DeadlineTab({ workId }: { workId?: string }) {
       setExpandedWorks({ [sortedWorks[0].id]: true });
     }
   }, [works]);
-
-  const toggleWorkExpanded = (workId: string) => {
-    setExpandedWorks(prev => ({ ...prev, [workId]: !prev[workId] }));
-  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -408,7 +418,32 @@ export function DeadlineTab({ workId }: { workId?: string }) {
             <h2 className="text-xl font-serif font-semibold text-stone-800">
               {monthNames[month]} {year}
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-2">
+              {showResetConfirm ? (
+                <div className="flex items-center gap-2 text-xs mr-2">
+                  <span className="text-red-600 font-medium">Confirm?</span>
+                  <button onClick={() => { resetDailyWordCount(today); setShowResetConfirm(false); }} className="text-red-600 font-bold hover:text-red-800">Yes</button>
+                  <button onClick={() => setShowResetConfirm(false)} className="text-stone-500 hover:text-stone-700">No</button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setShowResetConfirm(true)}
+                  className="flex items-center gap-1 text-red-600 text-xs font-medium hover:text-red-700 transition-colors mr-2"
+                  title="Reset today's word count"
+                >
+                  <Undo size={14} /> Reset
+                </button>
+              )}
+              <button 
+                onClick={() => setShowChart(!showChart)}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors",
+                  showChart ? "bg-emerald-100 text-emerald-700" : "hover:bg-stone-100 text-stone-600"
+                )}
+                title="Toggle chart view"
+              >
+                <BarChart3 size={20} />
+              </button>
               <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-stone-100 text-stone-600 transition-colors">
                 <ChevronLeft size={20} />
               </button>
@@ -417,6 +452,23 @@ export function DeadlineTab({ workId }: { workId?: string }) {
               </button>
             </div>
           </div>
+
+          {/* Chart View */}
+          {showChart && (
+            <div className="h-48 p-4 border-b border-stone-200 bg-stone-50">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="total" stroke="#10b981" name="Total" />
+                  <Line type="monotone" dataKey="netChange" stroke="#f59e0b" name="Net" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           {/* Calendar Grid */}
           <div className="flex-1 flex flex-col min-h-0">
@@ -476,13 +528,25 @@ export function DeadlineTab({ workId }: { workId?: string }) {
                       isToday && "ring-2 ring-inset ring-emerald-500/50"
                     )}
                   >
-                    <div className="flex justify-between items-start mb-1">
+                    <div 
+                      className="flex justify-between items-start mb-1 cursor-pointer"
+                      onClick={() => setSelectedDate(dateString)}
+                    >
                       <span className={cn(
                         "text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full",
                         isToday ? "bg-emerald-500 text-white" : (isWeekend ? "text-stone-400" : "text-stone-700")
                       )}>
                         {day}
                       </span>
+                      {dailyWordCounts[dateString] && (
+                        <div className="text-[10px] text-stone-500 text-right">
+                          {dailyWordCounts[dateString].isManual && <span className="text-amber-500 mr-1">*</span>}
+                          <div>{dailyWordCounts[dateString].total}</div>
+                          <div className={dailyWordCounts[dateString].netChange > 0 ? "text-emerald-600" : "text-red-600"}>
+                            {dailyWordCounts[dateString].netChange > 0 ? '+' : ''}{dailyWordCounts[dateString].netChange}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
@@ -555,6 +619,51 @@ export function DeadlineTab({ workId }: { workId?: string }) {
           </div>
         </div>
       </div>
+
+      {/* Date Edit Modal */}
+      {selectedDate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-80">
+            <h3 className="text-lg font-semibold mb-4">Edit Stats for {selectedDate}</h3>
+            <div className="space-y-4">
+              <input 
+                type="number"
+                value={manualWordCount}
+                onChange={(e) => setManualWordCount(e.target.value)}
+                placeholder="Enter word count"
+                className="w-full p-2 border rounded"
+              />
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    updateDailyWordCountManual(selectedDate, parseInt(manualWordCount) || 0);
+                    setSelectedDate(null);
+                    setManualWordCount('');
+                  }}
+                  className="flex-1 bg-emerald-600 text-white py-2 rounded hover:bg-emerald-700"
+                >
+                  Save
+                </button>
+                <button 
+                  onClick={() => {
+                    resetDailyWordCount(selectedDate);
+                    setSelectedDate(null);
+                  }}
+                  className="flex-1 bg-red-600 text-white py-2 rounded hover:bg-red-700"
+                >
+                  Reset
+                </button>
+                <button 
+                  onClick={() => setSelectedDate(null)}
+                  className="flex-1 bg-stone-200 py-2 rounded hover:bg-stone-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

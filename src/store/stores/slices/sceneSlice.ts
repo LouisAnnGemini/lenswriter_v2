@@ -15,12 +15,15 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
     scenes: state.scenes.map(s => s.id === scene.id ? { ...s, ...scene } : s),
     lastModified: Date.now()
   })),
-  deleteScene: (sceneId) => set((state) => ({
-    scenes: state.scenes.filter(s => s.id !== sceneId),
-    blocks: state.blocks.filter(b => b.documentId !== sceneId),
-    notes: state.notes.map(n => n.sceneId === sceneId ? { ...n, sceneId: null } : n),
-    lastModified: Date.now()
-  })),
+  deleteScene: (sceneId) => {
+    set((state) => ({
+      scenes: state.scenes.filter(s => s.id !== sceneId),
+      blocks: state.blocks.filter(b => b.documentId !== sceneId),
+      notes: state.notes.map(n => n.sceneId === sceneId ? { ...n, sceneId: null } : n),
+      lastModified: Date.now()
+    }));
+    get().removeSceneFromDailyCount(sceneId);
+  },
   reorderScenes: (chapterId, startIndex, endIndex) => set((state) => {
     const scenes = [...state.scenes].filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
     const [removed] = scenes.splice(startIndex, 1);

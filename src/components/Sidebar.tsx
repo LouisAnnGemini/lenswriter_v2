@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Book, Plus, ChevronLeft, ChevronRight, Download, Upload, Trash2, Edit2, GripVertical, Check, X, Menu, Network, Save, Clock, MapPin, Calendar } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Trash2, Edit2, GripVertical, Check, X, Save } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { cn } from '../lib/utils';
 import { WorkIcon } from './WorkIcon';
@@ -21,7 +21,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
     deleteWork,
     reorderWorks,
     setActiveWork,
-    setActiveTab,
     setDeadlineViewMode,
     importData
   } = useStore(useShallow(state => ({
@@ -35,7 +34,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
     deleteWork: state.deleteWork,
     reorderWorks: state.reorderWorks,
     setActiveWork: state.setActiveWork,
-    setActiveTab: state.setActiveTab,
     setDeadlineViewMode: state.setDeadlineViewMode,
     importData: state.importData
   })));
@@ -71,48 +69,6 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     reorderWorks(result.source.index, result.destination.index);
-  };
-
-  const handleExport = () => {
-    // Get current state from store
-    const state = useStore.getState();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { pastActions, futureActions, ...stateToExport } = state;
-    // Filter out functions from stateToExport
-    const dataToExport = Object.fromEntries(
-      Object.entries(stateToExport).filter(([_, v]) => typeof v !== 'function')
-    );
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "story-weaver-data.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  };
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target?.result as string);
-        if (json && typeof json === 'object' && 'works' in json) {
-          // Preserve current sync state when importing a file
-          const currentState = useStore.getState();
-          importData({ ...json, supabaseSyncEnabled: currentState.supabaseSyncEnabled });
-          toast.success('Data imported successfully');
-        } else {
-          toast.error('Invalid data format');
-        }
-      } catch (error) {
-        toast.error('Error parsing JSON file');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = ''; // Reset input
   };
 
   return (

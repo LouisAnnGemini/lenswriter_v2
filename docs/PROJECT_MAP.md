@@ -84,6 +84,11 @@ This file serves as a directory and mapping guide for the AI agent to quickly lo
 - **Main View:** `src/components/ScriptTab.tsx`
 - **State Management:** `src/store/stores/slices/scriptSlice.ts`
 
+### 16. 📊 Word Count Statistics (字数统计)
+- **Main View:** `src/components/DeadlineTab.tsx` (Calendar & Chart)
+- **State Management:** `src/store/stores/slices/statsSlice.ts`
+- **Types:** `src/store/types.ts` (DailyStats)
+
 ---
 
 ## 🏗️ Architecture & State Management

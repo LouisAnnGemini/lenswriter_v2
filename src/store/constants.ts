@@ -47,6 +47,7 @@ export const initialState: State = {
   metroLines: [],
   metroNodes: [],
   scriptDrafts: [],
+  dailyWordCounts: {},
   chapterSnapshots: [],
   platformTrackings: [],
   activeWorkId: initialWorkId,

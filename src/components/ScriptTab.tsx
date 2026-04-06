@@ -66,6 +66,23 @@ export function ScriptTab() {
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
   const [editDraftTitle, setEditDraftTitle] = useState('');
 
+  // Daily word count
+  const [dailyWordCount, setDailyWordCount] = useState(0);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const stored = localStorage.getItem(`wordCount_${today}`);
+    setDailyWordCount(stored ? parseInt(stored) : 0);
+  }, []);
+
+  useEffect(() => {
+    const getWordCount = (text: string) => text.trim().split(/\s+/).filter(w => w.length > 0).length;
+    const totalWords = lines.reduce((acc, line) => acc + getWordCount(line.content), 0);
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem(`wordCount_${today}`, totalWords.toString());
+    setDailyWordCount(totalWords);
+  }, [lines]);
+
   const activeWork = works.find(w => w.id === activeWorkId);
   const workScenes = scenes.filter(s => chapters.some(c => c.id === s.chapterId && c.workId === activeWorkId)).sort((a, b) => a.order - b.order);
   const sceneOptions = workScenes.map(s => ({ id: s.id, title: s.title }));
@@ -313,25 +330,25 @@ export function ScriptTab() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-stone-50">
-      <div className="p-4 md:p-8 pb-0">
+      <div className="p-4 md:px-8 md:pt-4 pb-0">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h1 className="hidden sm:flex text-2xl sm:text-3xl font-bold text-stone-800 items-center gap-3">
-              <MessageSquare size={32} className="text-emerald-600" /> 剧本
+          <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h1 className="hidden sm:flex text-xl sm:text-2xl font-bold text-stone-800 items-center gap-2">
+              <MessageSquare size={24} className="text-emerald-600" /> 剧本
             </h1>
             <div className="flex bg-stone-200 rounded-lg p-1 self-start sm:self-auto w-full sm:w-auto">
-              <button onClick={() => setActiveSubTab('write')} className={cn("flex-1 px-4 py-2 rounded-md text-sm font-medium", activeSubTab === 'write' ? "bg-white shadow" : "text-stone-600")}>写作区</button>
-              <button onClick={() => setActiveSubTab('manage')} className={cn("flex-1 px-4 py-2 rounded-md text-sm font-medium", activeSubTab === 'manage' ? "bg-white shadow" : "text-stone-600")}>管理区</button>
+              <button onClick={() => setActiveSubTab('write')} className={cn("flex-1 px-3 py-1.5 rounded-md text-sm font-medium", activeSubTab === 'write' ? "bg-white shadow" : "text-stone-600")}>写作区</button>
+              <button onClick={() => setActiveSubTab('manage')} className={cn("flex-1 px-3 py-1.5 rounded-md text-sm font-medium", activeSubTab === 'manage' ? "bg-white shadow" : "text-stone-600")}>管理区</button>
             </div>
           </div>
         </div>
       </div>
 
       {activeSubTab === 'write' ? (
-        <div className="flex-1 flex flex-col overflow-hidden max-w-4xl mx-auto w-full px-4 md:px-8 pb-8">
+        <div className="flex-1 flex flex-col overflow-hidden max-w-4xl mx-auto w-full px-4 md:px-8 pb-4">
           <div className="bg-white rounded-2xl shadow-sm w-full flex-1 flex flex-col overflow-hidden border border-stone-200">
             {/* Header */}
-            <div className="px-4 sm:px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between bg-stone-50/50 gap-4">
+            <div className="px-4 sm:px-6 py-3 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between bg-stone-50/50 gap-3">
               <div className="flex items-center gap-4 w-full sm:w-auto flex-1">
                 <input
                   type="text"
@@ -340,6 +357,9 @@ export function ScriptTab() {
                   placeholder="输入剧本标题..."
                   className="w-full bg-transparent border-none focus:ring-0 text-stone-600 placeholder:text-stone-400 font-medium outline-none"
                 />
+                <div className="text-xs text-stone-400 font-mono whitespace-nowrap bg-stone-100 px-2 py-1 rounded">
+                  今日: {dailyWordCount} 字
+                </div>
               </div>
               <div className="flex items-center gap-2 self-end sm:self-auto">
                 <button 

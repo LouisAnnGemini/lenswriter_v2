@@ -149,6 +149,13 @@ export type TabConfig = {
   management: TabConfigItem[];
 };
 
+export type DailyStats = {
+  total: number;
+  netChange: number;
+  sceneCounts: Record<string, number>;
+  isManual?: boolean;
+};
+
 export type State = {
   works: Work[];
   characters: Character[];
@@ -165,6 +172,7 @@ export type State = {
   metroLines: MetroLine[];
   metroNodes: MetroNode[];
   scriptDrafts: ScriptDraft[];
+  dailyWordCounts: Record<string, DailyStats>; // Date string -> Stats
   activeWorkId: string | null;
   activeDocumentId: string | null;
   activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish' | 'script';
@@ -194,13 +202,20 @@ export type State = {
   platformTrackings: PlatformTracking[];
 };
 
-export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & MetroSlice & PublishSlice & ScriptSlice & {
+export type StoreState = State & UISlice & BlockSlice & ChapterSlice & CharacterSlice & SceneSlice & TagSlice & DeadlineSlice & NoteSlice & TimelineSlice & WorkSlice & LocationSlice & SnapshotSlice & MetroSlice & PublishSlice & ScriptSlice & StatsSlice & {
   importData: (data: Partial<State>) => void;
   mergeData: (data: Partial<State>) => void;
   syncFromCloud: (data: Partial<State>) => void;
   undo: () => void;
   redo: () => void;
 };
+
+export interface StatsSlice {
+  updateDailyWordCount: (sceneId: string, newWordCount: number) => void;
+  removeSceneFromDailyCount: (sceneId: string) => void;
+  resetDailyWordCount: (date: string) => void;
+  updateDailyWordCountManual: (date: string, wordCount: number) => void;
+}
 
 export interface PublishSlice {
   createChapterSnapshot: (chapterId: string, versionName: string, note?: string) => void;

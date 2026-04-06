@@ -24,7 +24,7 @@ import { SyncManager } from './components/SyncManager';
 import { ShortcutModal } from './components/ShortcutModal';
 import { Toaster, toast } from 'sonner';
 
-function MainContent({ mobileOpen, setMobileOpen }: { mobileOpen: boolean, setMobileOpen: (open: boolean) => void }) {
+function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void }) {
   const { 
     disguiseMode, 
     focusMode, 
@@ -213,7 +213,7 @@ function Layout() {
     <div className="flex h-[100dvh] w-full overflow-hidden font-sans text-stone-900 bg-stone-900 selection:bg-emerald-200 selection:text-emerald-900">
       <Toaster position="top-right" richColors />
       {!disguiseMode && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
-      <MainContent mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <MainContent setMobileOpen={setMobileOpen} />
       <QuickCapture />
       <SyncManager />
     </div>
