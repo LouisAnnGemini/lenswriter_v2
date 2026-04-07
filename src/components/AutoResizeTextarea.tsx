@@ -24,7 +24,21 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   }, [isFocusedProp]);
 
   useEffect(() => {
-    if (isFocused) {
+    if (isFocused && ref.current) {
+      const actualValue = ref.current.value;
+      const actualCursorPos = ref.current.selectionStart;
+      const actualParagraphs = actualValue.split('\n');
+      let currentPos = 0;
+      let activePIdx = 0;
+      for (let i = 0; i < actualParagraphs.length; i++) {
+          if (actualCursorPos >= currentPos && actualCursorPos <= currentPos + actualParagraphs[i].length) {
+              activePIdx = i;
+              break;
+          }
+          currentPos += actualParagraphs[i].length + 1;
+      }
+      lastActivePIdxRef.current = activePIdx;
+    } else if (isFocused) {
       const paragraphs = (value || '').split('\n');
       let currentPos = 0;
       let activePIdx = 0;
@@ -162,16 +176,29 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   useEffect(() => {
     if (isFocused && lastActionRef.current === 'keyboard_scroll') {
       window.requestAnimationFrame(() => {
-        const paragraphs = (value || '').split('\n');
-        let currentPos = 0;
         let activePIdx = -1;
-
-        for (let i = 0; i < paragraphs.length; i++) {
-            if (cursorPosition >= currentPos && cursorPosition <= currentPos + paragraphs[i].length) {
-                activePIdx = i;
-                break;
-            }
-            currentPos += paragraphs[i].length + 1;
+        if (ref.current) {
+          const actualValue = ref.current.value;
+          const actualCursorPos = ref.current.selectionStart;
+          const actualParagraphs = actualValue.split('\n');
+          let currentPos = 0;
+          for (let i = 0; i < actualParagraphs.length; i++) {
+              if (actualCursorPos >= currentPos && actualCursorPos <= currentPos + actualParagraphs[i].length) {
+                  activePIdx = i;
+                  break;
+              }
+              currentPos += actualParagraphs[i].length + 1;
+          }
+        } else {
+          const paragraphs = (value || '').split('\n');
+          let currentPos = 0;
+          for (let i = 0; i < paragraphs.length; i++) {
+              if (cursorPosition >= currentPos && cursorPosition <= currentPos + paragraphs[i].length) {
+                  activePIdx = i;
+                  break;
+              }
+              currentPos += paragraphs[i].length + 1;
+          }
         }
 
         if (activePIdx !== -1 && blockId) {
@@ -245,18 +272,32 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
     // renderHighlights called, isFocused: isFocused
     if (!value) return null;
 
-    const paragraphs = value.split('\n');
-    let currentPos = 0;
     let activePIdx = -1;
-    
-    for (let i = 0; i < paragraphs.length; i++) {
-        if (cursorPosition >= currentPos && cursorPosition <= currentPos + paragraphs[i].length) {
-            activePIdx = i;
-            break;
-        }
-        currentPos += paragraphs[i].length + 1;
+    if (ref.current) {
+      const actualValue = ref.current.value;
+      const actualCursorPos = ref.current.selectionStart;
+      const actualParagraphs = actualValue.split('\n');
+      let currentPos = 0;
+      for (let i = 0; i < actualParagraphs.length; i++) {
+          if (actualCursorPos >= currentPos && actualCursorPos <= currentPos + actualParagraphs[i].length) {
+              activePIdx = i;
+              break;
+          }
+          currentPos += actualParagraphs[i].length + 1;
+      }
+    } else {
+      const paragraphs = value.split('\n');
+      let currentPos = 0;
+      for (let i = 0; i < paragraphs.length; i++) {
+          if (cursorPosition >= currentPos && cursorPosition <= currentPos + paragraphs[i].length) {
+              activePIdx = i;
+              break;
+          }
+          currentPos += paragraphs[i].length + 1;
+      }
     }
 
+    const paragraphs = value.split('\n');
     const regex = searchTerm ? new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi') : null;
 
     return (
