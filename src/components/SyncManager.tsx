@@ -3,7 +3,6 @@ import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { supabase } from '../lib/supabase';
 import { initialState } from '../store/constants';
-import { getDeviceType } from '../lib/utils';
 
 export function SyncManager() {
   const { 
@@ -17,48 +16,6 @@ export function SyncManager() {
   })));
 
   const historyTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const syncTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isSyncingFromCloud = useRef(false);
-
-  // 0. Real-time subscription
-  useEffect(() => {
-    if (!supabase || !supabaseSyncEnabled) return;
-
-    // Setting up real-time subscription
-    const channel = supabase
-      .channel('app_state_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'app_state',
-          filter: `id=eq.00000000-0000-0000-0000-000000000000`
-        },
-        (payload) => {
-          const newState = payload.new.state;
-          const currentState = useStore.getState();
-
-          if (newState && newState.lastModified > currentState.lastModified) {
-            // Real-time sync: updating local state from cloud
-            
-            const dataKeys = Object.keys(initialState);
-            const updates = Object.fromEntries(
-              Object.entries(newState).filter(([key]) => dataKeys.includes(key))
-            );
-            
-            isSyncingFromCloud.current = true;
-            useStore.setState(updates);
-            isSyncingFromCloud.current = false;
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabaseSyncEnabled]);
 
   // 1. Auto-save history every 10 minutes
   const lastModifiedRef = useRef(lastModified);
@@ -74,8 +31,6 @@ export function SyncManager() {
         if (Date.now() - lastModifiedRef.current < checkWindow) {
           // Auto-saving history version...
           saveHistoryVersion('Auto-Save');
-        } else {
-          // Skipping auto-save: No modifications in the last 11 minutes.
         }
       }, 10 * 60 * 1000);
     } else {
@@ -92,80 +47,30 @@ export function SyncManager() {
     };
   }, [supabaseSyncEnabled, saveHistoryVersion]);
 
-  // 2. Background sync to Supabase
-  // We'll use a subscription to watch for state changes and update lastModified
+  // 2. Track changes to update lastModified
   const prevStateRef = useRef<any>(useStore.getState());
 
   useEffect(() => {
     const unsubscribe = useStore.subscribe((state) => {
-      if (isSyncingFromCloud.current) {
-        prevStateRef.current = state;
-        return;
-      }
-
       const prevState = prevStateRef.current;
       prevStateRef.current = state;
 
-      if (!state.supabaseSyncEnabled || !supabase) return;
+      // If this state update was a sync completion, don't update lastModified
+      if (state.lastSynced !== prevState.lastSynced) {
+        return;
+      }
 
       // Check if data fields changed (excluding metadata)
-      const dataKeys = Object.keys(initialState).filter(k => k !== 'lastModified' && k !== 'syncStatus' && k !== 'syncError');
+      const dataKeys = Object.keys(initialState).filter(k => k !== 'lastModified' && k !== 'lastSynced' && k !== 'syncStatus' && k !== 'syncError');
       const dataChanged = dataKeys.some(key => (state as any)[key] !== (prevState as any)[key]) || state.appMode !== prevState.appMode;
 
       if (dataChanged) {
-        // Update lastModified (this will trigger the sync useEffect below)
         useStore.setState({ lastModified: Date.now() });
       }
     });
 
     return () => unsubscribe();
   }, []);
-
-  // 3. Sync to cloud when lastModified changes
-  useEffect(() => {
-    if (!supabaseSyncEnabled || !supabase) return;
-
-    if (syncTimerRef.current) {
-      clearTimeout(syncTimerRef.current);
-    }
-
-    // Debounce sync to cloud
-    syncTimerRef.current = setTimeout(async () => {
-      // Syncing state to cloud...
-      useStore.setState({ syncStatus: 'syncing' });
-      
-      try {
-        const currentState = useStore.getState();
-        const dataKeys = Object.keys(initialState);
-        const stateToSync = {
-          ...Object.fromEntries(
-            Object.entries(currentState).filter(([key]) => dataKeys.includes(key))
-          ),
-          lastDevice: getDeviceType()
-        };
-
-        const { error } = await supabase
-          .from('app_state')
-          .upsert([{ 
-            id: '00000000-0000-0000-0000-000000000000', 
-            state: stateToSync
-          }]);
-
-        if (error) throw error;
-        useStore.setState({ syncStatus: 'success', syncError: null });
-        // Cloud sync successful.
-      } catch (err: any) {
-        console.error('Cloud sync failed:', err);
-        useStore.setState({ syncStatus: 'error', syncError: err.message });
-      }
-    }, 15000); // 15 second debounce to reduce Realtime/PostgREST egress
-
-    return () => {
-      if (syncTimerRef.current) {
-        clearTimeout(syncTimerRef.current);
-      }
-    };
-  }, [lastModified, supabaseSyncEnabled]);
 
   return null;
 }

@@ -134,6 +134,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
   const [searchTerm, setSearchTerm] = useState('');
   const [collapsedTocSections, setCollapsedTocSections] = useState<Set<string> | null>(null);
   const [comparingBlockId, setComparingBlockId] = useState<string | null>(null);
+  const preventScrollRef = useRef(false);
 
   const activeDocument = scenes.find(s => s.id === activeDocId) || allChapters.find(c => c.id === activeDocId);
   const isScene = scenes.some(s => s.id === activeDocId);
@@ -224,6 +225,10 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
 
   useEffect(() => {
     if (scrollMode && isScene) {
+      if (preventScrollRef.current) {
+        preventScrollRef.current = false;
+        return;
+      }
       const element = document.getElementById(`document-${activeDocId}`);
       if (element) {
         // Add a small delay to ensure rendering is complete
@@ -442,10 +447,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     return chineseChars.length + englishWords.length;
   };
 
-  const totalWords = (scrollMode && isScene 
-    ? allBlocks.filter(b => chapterScenes.some(s => s.id === b.documentId)) 
-    : activeDocBlocks
-  ).reduce((sum, b) => sum + countWords(b.content || ''), 0);
+  const totalWords = activeDocBlocks.reduce((sum, b) => sum + countWords(b.content || ''), 0);
 
   return (
     <div className={cn(
@@ -585,6 +587,12 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                         value={doc.title || ''}
                         disabled={isArchived}
                         onChange={(e) => updateScene({ id: doc.id, title: e.target.value })}
+                        onFocus={() => {
+                          if (doc.id !== activeDocId) {
+                            preventScrollRef.current = true;
+                            setActiveDocument(doc.id);
+                          }
+                        }}
                         className={cn(
                           "flex-1 min-w-0 outline-none placeholder:text-stone-300 bg-transparent whitespace-normal break-words caret-blue-500",
                           disguiseMode 
@@ -707,6 +715,10 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                               onFocus={() => {
                                 setFocusedBlockId(block.id);
                                 setOpenMenuBlockId(null);
+                                if (block.documentId !== activeDocId) {
+                                  preventScrollRef.current = true;
+                                  setActiveDocument(block.documentId);
+                                }
                               }}
                               onBlur={() => {
                                 // Only clear if the focused block is still this one

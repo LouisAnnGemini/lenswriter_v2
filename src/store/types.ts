@@ -195,6 +195,7 @@ export type State = {
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
   lastModified: number;
+  lastSynced?: number;
   lastDevice?: 'Desktop' | 'Mobile';
   pastActions?: HistoryAction[];
   futureActions?: HistoryAction[];
@@ -257,6 +258,8 @@ export interface UISlice {
   setTimelineTableColumns: (columns: any[]) => void;
   toggleSupabaseSync: () => void;
   saveHistoryVersion: (name: string) => Promise<boolean>;
+  pushToCloud: () => Promise<boolean>;
+  pullFromCloud: () => Promise<boolean>;
 }
 
 export interface BlockSlice {

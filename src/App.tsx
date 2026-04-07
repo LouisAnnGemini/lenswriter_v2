@@ -127,19 +127,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
         }
       }
 
-      // Ctrl+S Manual Save
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        if (supabaseSyncEnabled) {
-          e.preventDefault();
-          saveHistoryVersion('Manual Save (Shortcut)').then(success => {
-            if (success) {
-              toast.success('Version saved successfully');
-            } else {
-              toast.error('Failed to save version. Please check your connection.');
-            }
-          });
-        }
-      }
+      // Ctrl+S is now handled in TopNav.tsx
 
       // Ctrl+I toggle Inspector
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {

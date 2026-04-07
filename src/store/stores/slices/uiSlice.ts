@@ -114,4 +114,70 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       return false;
     }
   },
+  pushToCloud: async () => {
+    const state = get();
+    const { supabase } = await import('../../../lib/supabase');
+    const { getDeviceType } = await import('../../../lib/utils');
+    const { initialState } = await import('../../constants');
+    
+    if (!supabase) return false;
+    
+    set({ syncStatus: 'syncing' });
+    try {
+      const dataKeys = Object.keys(initialState);
+      const stateToSync = {
+        ...Object.fromEntries(
+          Object.entries(state).filter(([key]) => dataKeys.includes(key))
+        ),
+        lastDevice: getDeviceType()
+      };
+
+      const { error } = await supabase
+        .from('app_state')
+        .upsert([{ 
+          id: '00000000-0000-0000-0000-000000000000', 
+          state: stateToSync
+        }]);
+
+      if (error) throw error;
+      set({ syncStatus: 'success', syncError: null, lastSynced: Date.now() });
+      return true;
+    } catch (err: any) {
+      console.error('Cloud sync failed:', err);
+      set({ syncStatus: 'error', syncError: err.message });
+      return false;
+    }
+  },
+  pullFromCloud: async () => {
+    const { supabase } = await import('../../../lib/supabase');
+    const { initialState } = await import('../../constants');
+    
+    if (!supabase) return false;
+    
+    set({ syncStatus: 'syncing' });
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state')
+        .eq('id', '00000000-0000-0000-0000-000000000000')
+        .single();
+
+      if (error) throw error;
+      
+      if (data && data.state) {
+        const dataKeys = Object.keys(initialState);
+        const updates = Object.fromEntries(
+          Object.entries(data.state).filter(([key]) => dataKeys.includes(key))
+        );
+        set({ ...updates, syncStatus: 'success', syncError: null, lastSynced: Date.now() });
+        return true;
+      }
+      set({ syncStatus: 'idle' });
+      return false;
+    } catch (err: any) {
+      console.error('Cloud pull failed:', err);
+      set({ syncStatus: 'error', syncError: err.message });
+      return false;
+    }
+  },
 });
