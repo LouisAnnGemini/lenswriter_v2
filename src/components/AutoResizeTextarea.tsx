@@ -1,18 +1,44 @@
 import React, { useRef, useLayoutEffect, useEffect } from 'react';
 import { cn } from '../lib/utils';
 
-export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, enableReadMode = false, isDimmed = false, isFocused: isFocusedProp, ...props }: any) => {
+export const AutoResizeTextarea = ({ value, onChange, className, placeholder, scrollContainerRef, searchTerm, blockId, style, enableReadMode = false, isDimmed = false, isFocused: isFocusedProp, isDisguiseMode = false, ...props }: any) => {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = React.useState(isFocusedProp || false);
   const [cursorPosition, setCursorPosition] = React.useState(0);
   const [clickedPIdx, setClickedPIdx] = React.useState<number | null>(null);
+  const lastActionRef = useRef<'mouse' | 'keyboard_scroll' | 'keyboard_type'>('mouse');
+  const lastActivePIdxRef = useRef<number>(0);
+  const wasFocusedRef = useRef(isFocusedProp || false);
+  const [exactCursorPos, setExactCursorPos] = React.useState<number | null>(null);
+  const clickTargetYRef = useRef<number | null>(null);
+  const blurTargetYRef = useRef<number | null>(null);
+
+  const paragraphsCount = (value || '').split('\n').length;
+  const compensationPadding = paragraphsCount * 16;
+  const combinedStyle = { ...(style || {}), paddingBottom: `${compensationPadding}px` };
 
   useEffect(() => {
     if (isFocusedProp !== undefined && isFocusedProp !== isFocused) {
       setIsFocused(isFocusedProp);
     }
   }, [isFocusedProp]);
-  
+
+  useEffect(() => {
+    if (isFocused) {
+      const paragraphs = (value || '').split('\n');
+      let currentPos = 0;
+      let activePIdx = 0;
+      for (let i = 0; i < paragraphs.length; i++) {
+          if (cursorPosition >= currentPos && cursorPosition <= currentPos + paragraphs[i].length) {
+              activePIdx = i;
+              break;
+          }
+          currentPos += paragraphs[i].length + 1;
+      }
+      lastActivePIdxRef.current = activePIdx;
+    }
+  }, [cursorPosition, isFocused, value]);
+
   const leadingClass = className?.split(' ').find((c: string) => c.startsWith('leading-')) || 'leading-normal';
 
   const adjustHeight = React.useCallback(() => {
@@ -25,9 +51,11 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       
       if (scrollContainer) {
         if (scrollContainer.scrollTop !== currentScrollTop) {
+          console.log(`[adjustHeight] Restoring container scrollTop from ${scrollContainer.scrollTop} back to ${currentScrollTop}`);
           scrollContainer.scrollTop = currentScrollTop;
         }
       } else if (window.scrollY !== currentScrollTop) {
+        console.log(`[adjustHeight] Restoring window scrollY from ${window.scrollY} back to ${currentScrollTop}`);
         window.scrollTo(window.scrollX, currentScrollTop);
       }
     }
@@ -35,7 +63,47 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
   useLayoutEffect(() => {
     adjustHeight();
-  }, [value, className, style?.letterSpacing, adjustHeight, isFocused]);
+
+    if (!wasFocusedRef.current && isFocused) {
+      if (clickedPIdx !== null && lastActionRef.current === 'mouse' && clickTargetYRef.current !== null && blockId) {
+        const pElement = document.getElementById(`block-${blockId}-p-${clickedPIdx}`);
+        if (pElement) {
+          const newTop = pElement.getBoundingClientRect().top;
+          const diff = newTop - clickTargetYRef.current;
+          if (Math.abs(diff) > 0) {
+            const scrollContainer = scrollContainerRef?.current;
+            if (scrollContainer) {
+              scrollContainer.scrollTop += diff;
+            } else {
+              window.scrollBy(0, diff);
+            }
+          }
+        }
+      }
+      clickTargetYRef.current = null;
+    }
+
+    if (wasFocusedRef.current && !isFocused) {
+      if (blurTargetYRef.current !== null && blockId) {
+        const pElement = document.getElementById(`block-${blockId}-read-p-${lastActivePIdxRef.current}`);
+        if (pElement) {
+          const newTop = pElement.getBoundingClientRect().top;
+          const diff = newTop - blurTargetYRef.current;
+          if (Math.abs(diff) > 0) {
+            const scrollContainer = scrollContainerRef?.current;
+            if (scrollContainer) {
+              scrollContainer.scrollTop += diff;
+            } else {
+              window.scrollBy(0, diff);
+            }
+          }
+        }
+      }
+      blurTargetYRef.current = null;
+    }
+
+    wasFocusedRef.current = isFocused;
+  }, [value, className, style?.letterSpacing, adjustHeight, isFocused, clickedPIdx, blockId, scrollContainerRef]);
 
   useEffect(() => {
     const element = ref.current;
@@ -68,10 +136,13 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
   useEffect(() => {
     if (isFocused && ref.current) {
-      ref.current.focus();
+      console.log(`[Focus] Calling focus() with preventScroll: true`);
+      ref.current.focus({ preventScroll: true });
       
       let targetPos = ref.current.value.length;
-      if (clickedPIdx !== null) {
+      if (exactCursorPos !== null) {
+        targetPos = exactCursorPos;
+      } else if (clickedPIdx !== null) {
         const paragraphs = ref.current.value.split('\n');
         let offset = 0;
         for (let i = 0; i < clickedPIdx; i++) {
@@ -86,25 +157,35 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       // Force height adjustment after switching to edit mode
       window.requestAnimationFrame(() => {
         adjustHeight();
-        
-        // Scroll the specific paragraph into view
-        if (clickedPIdx !== null && blockId) {
-          const pElement = document.getElementById(`block-${blockId}-p-${clickedPIdx}`);
+        setExactCursorPos(null);
+      });
+    }
+  }, [isFocused, adjustHeight, clickedPIdx, exactCursorPos]);
+
+  useEffect(() => {
+    if (isFocused && lastActionRef.current === 'keyboard_scroll') {
+      window.requestAnimationFrame(() => {
+        const paragraphs = (value || '').split('\n');
+        let currentPos = 0;
+        let activePIdx = -1;
+
+        for (let i = 0; i < paragraphs.length; i++) {
+            if (cursorPosition >= currentPos && cursorPosition <= currentPos + paragraphs[i].length) {
+                activePIdx = i;
+                break;
+            }
+            currentPos += paragraphs[i].length + 1;
+        }
+
+        if (activePIdx !== -1 && blockId) {
+          const pElement = document.getElementById(`block-${blockId}-p-${activePIdx}`);
           if (pElement) {
             pElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          } else {
-            ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
           }
-        } else {
-          ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
       });
     }
-  }, [isFocused, adjustHeight, clickedPIdx, blockId]);
-
-  useEffect(() => {
-    // isFocused changed: isFocused, 'blockId:', blockId
-  }, [isFocused, blockId]);
+  }, [cursorPosition, isFocused, value, blockId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -112,6 +193,12 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       if (!(target instanceof Node)) return;
       if (ref.current && !ref.current.contains(target)) {
         // Click outside detected, blurring
+        if (blockId && lastActivePIdxRef.current !== null) {
+          const pElement = document.getElementById(`block-${blockId}-p-${lastActivePIdxRef.current}`);
+          if (pElement) {
+            blurTargetYRef.current = pElement.getBoundingClientRect().top;
+          }
+        }
         setIsFocused(false);
         setClickedPIdx(null);
         ref.current.blur();
@@ -119,7 +206,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [blockId]);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     // Focusing, blockId: blockId
@@ -130,6 +217,12 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
   const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     // Blurring, blockId: blockId
+    if (blockId && lastActivePIdxRef.current !== null) {
+      const pElement = document.getElementById(`block-${blockId}-p-${lastActivePIdxRef.current}`);
+      if (pElement) {
+        blurTargetYRef.current = pElement.getBoundingClientRect().top;
+      }
+    }
     setIsFocused(false);
     setClickedPIdx(null);
     props.onBlur?.(e);
@@ -137,10 +230,16 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     setCursorPosition(e.currentTarget.selectionStart);
+    if (['Enter', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      lastActionRef.current = 'keyboard_scroll';
+    } else {
+      lastActionRef.current = 'keyboard_type';
+    }
     props.onKeyUp?.(e);
   };
 
   const handleClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    lastActionRef.current = 'mouse';
     setCursorPosition(e.currentTarget.selectionStart);
     props.onClick?.(e);
   };
@@ -165,8 +264,8 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
     return (
       <div 
-        className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words bg-transparent z-0", isDimmed && "opacity-40")} 
-        style={style}
+        className={cn(className, isDisguiseMode ? "relative" : "absolute inset-0", "pointer-events-none whitespace-pre-wrap break-words bg-transparent z-0", isDimmed && "opacity-40")} 
+        style={combinedStyle}
         aria-hidden="true"
       >
         {paragraphs.map((paragraph: string, pIdx: number) => {
@@ -214,6 +313,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           style={style}
           onClick={() => {
             if (!props.disabled) {
+              lastActionRef.current = 'mouse';
               setClickedPIdx(null);
               setIsFocused(true);
             }
@@ -231,9 +331,21 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       <div 
         className={cn(className, "cursor-text", props.disabled && "cursor-not-allowed", isDimmed && "opacity-40")}
         style={style}
-        onClick={() => {
+        onClick={(e) => {
           if (!props.disabled && !isFocused) {
-            if (clickedPIdx === null) setIsFocused(true);
+            lastActionRef.current = 'mouse';
+            if (clickedPIdx === null) {
+              const paragraphsList = (value || '').split('\n');
+              const lastIdx = Math.max(0, paragraphsList.length - 1);
+              setClickedPIdx(lastIdx);
+              if (blockId) {
+                const pElement = document.getElementById(`block-${blockId}-read-p-${lastIdx}`);
+                if (pElement) {
+                  clickTargetYRef.current = pElement.getBoundingClientRect().top;
+                }
+              }
+              setIsFocused(true);
+            }
           }
         }}
       >
@@ -241,24 +353,58 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           const handlePClick = (e: React.MouseEvent) => {
             e.stopPropagation();
             if (!props.disabled) {
+              lastActionRef.current = 'mouse';
               setClickedPIdx(pIdx);
+              clickTargetYRef.current = e.currentTarget.getBoundingClientRect().top;
+
+              let offsetInP = 0;
+              try {
+                if ((document as any).caretRangeFromPoint) {
+                  const range = (document as any).caretRangeFromPoint(e.clientX, e.clientY);
+                  if (range && range.startContainer) {
+                    const preCaretRange = range.cloneRange();
+                    preCaretRange.selectNodeContents(e.currentTarget);
+                    preCaretRange.setEnd(range.startContainer, range.startOffset);
+                    offsetInP = preCaretRange.toString().length;
+                  }
+                } else if ((document as any).caretPositionFromPoint) {
+                  const pos = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
+                  if (pos && pos.offsetNode) {
+                    const range = document.createRange();
+                    range.setStart(e.currentTarget, 0);
+                    range.setEnd(pos.offsetNode, pos.offset);
+                    offsetInP = range.toString().length;
+                  }
+                }
+              } catch (err) {
+                console.warn("Could not calculate exact caret position", err);
+              }
+
+              const paragraphsList = (value || '').split('\n');
+              let totalOffset = 0;
+              for (let i = 0; i < pIdx; i++) {
+                totalOffset += paragraphsList[i].length + 1;
+              }
+              totalOffset += offsetInP;
+              setExactCursorPos(totalOffset);
+
               setIsFocused(true);
             }
           };
 
           if (!paragraph) {
-            return <p key={pIdx} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} mb-4`}><br /></p>;
+            return <p key={pIdx} id={blockId ? `block-${blockId}-read-p-${pIdx}` : undefined} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} pb-4`}><br /></p>;
           }
 
           if (!searchTerm) {
-            return <p key={pIdx} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} mb-4`}>{paragraph}</p>;
+            return <p key={pIdx} id={blockId ? `block-${blockId}-read-p-${pIdx}` : undefined} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} pb-4`}>{paragraph}</p>;
           }
 
           const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
           const parts = paragraph.split(regex);
 
           return (
-            <p key={pIdx} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} mb-4`}>
+            <p key={pIdx} id={blockId ? `block-${blockId}-read-p-${pIdx}` : undefined} onClick={handlePClick} className={`relative break-words whitespace-pre-wrap transition-all duration-200 ${leadingClass} pb-4`}>
               {parts.map((part: string, i: number) => {
                 if (i % 2 === 1) {
                   const currentMatchIndex = matchCount++;
@@ -306,7 +452,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
           isFocused && "text-transparent",
           className
         )}
-        style={style}
+        style={combinedStyle}
         rows={1}
         {...props}
       />

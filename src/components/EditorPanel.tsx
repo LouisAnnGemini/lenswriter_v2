@@ -608,7 +608,19 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                     const canMergeUp = !block.isLens && prevBlock && !prevBlock.isLens && !disguiseMode;
 
                     return (
-                    <div key={block.id} id={`block-${block.id}`} className="group relative flex flex-col transition-colors duration-500 mb-6 last:mb-0">
+                    <div key={block.id} id={`block-${block.id}`} className={cn(
+                      "group relative flex flex-col transition-colors duration-500",
+                      disguiseMode 
+                        ? "bg-white shadow-md border border-stone-200 p-12 max-w-[800px] mx-auto my-8 min-h-[1000px] relative"
+                        : "mb-6 last:mb-0"
+                    )}>
+                      {disguiseMode && block.description && (
+                        <div className="absolute -right-48 top-0 w-40 bg-yellow-100 border border-yellow-200 p-3 text-xs text-yellow-900 rounded shadow-sm">
+                          <span className="font-bold block mb-1">批注:</span>
+                          {block.description}
+                        </div>
+                      )}
+                      
                       {showSlashMenu?.blockId === block.id && (
                         <SlashCommandMenu
                           onClose={() => setShowSlashMenu(null)}
@@ -625,18 +637,18 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                       )}
 
                       <div className="flex items-start gap-2" style={{
-                        paddingLeft: `${(editorMargin || 0)}rem`,
-                        paddingRight: `${(editorMargin || 0)}rem`,
+                        paddingLeft: `${disguiseMode ? 0 : (editorMargin || 0)}rem`,
+                        paddingRight: `${disguiseMode ? 0 : (editorMargin || 0)}rem`,
                       }}>
                         <div className="flex-1 min-w-0">
                           {/* Block Content */}
                           <div className={cn(
                             "w-full rounded-lg transition-colors relative",
                             block.isComparing && "ring-2 ring-blue-500 shadow-sm",
-                            block.isLens && !disguiseMode 
+                            block.isLens && !disguiseMode
                               ? cn("p-4 border-2", LENS_COLORS[block.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red) 
                               : "px-4 border-2 border-transparent",
-                            disguiseMode && "rounded-none p-0 border-0"
+                            disguiseMode && "rounded-none p-0 border-0 bg-transparent"
                           )}>
                             {block.isComparing && !disguiseMode && (
                               <div 
@@ -691,6 +703,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                               enableReadMode={true}
                               isFocused={focusedBlockId === block.id}
                               isDimmed={focusedBlockId !== null && focusedBlockId !== block.id}
+                              isDisguiseMode={disguiseMode}
                               onFocus={() => {
                                 setFocusedBlockId(block.id);
                                 setOpenMenuBlockId(null);
@@ -911,7 +924,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
             })}
           </div>
           
-          <div className="h-64" /> {/* Bottom padding */}
+          <div className="h-[50vh]" /> {/* Bottom padding for Scroll Past End */}
         </div>
       </div>
       </div>
