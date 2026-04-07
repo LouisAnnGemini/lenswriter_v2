@@ -60,9 +60,17 @@ export function SyncManager() {
         return;
       }
 
-      // Check if data fields changed (excluding metadata)
-      const dataKeys = Object.keys(initialState).filter(k => k !== 'lastModified' && k !== 'lastSynced' && k !== 'syncStatus' && k !== 'syncError');
-      const dataChanged = dataKeys.some(key => (state as any)[key] !== (prevState as any)[key]) || state.appMode !== prevState.appMode;
+      // Check if data fields changed (excluding metadata and UI-only actions)
+      const dataKeys = Object.keys(initialState).filter(k => 
+        k !== 'lastModified' && 
+        k !== 'lastSynced' && 
+        k !== 'syncStatus' && 
+        k !== 'syncError' &&
+        k !== 'rightSidebarMode' && // Inspector toggle
+        k !== 'activeTab'           // Tab switching
+      );
+      const dataChanged = dataKeys.some(key => (state as any)[key] !== (prevState as any)[key]) || 
+                          state.appMode !== prevState.appMode;
 
       if (dataChanged) {
         useStore.setState({ lastModified: Date.now() });
@@ -71,6 +79,34 @@ export function SyncManager() {
 
     return () => unsubscribe();
   }, []);
+
+  // 3. Auto-save to cloud every 5 minutes if there are unsynced changes
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (supabaseSyncEnabled && supabase) {
+      autoSaveTimerRef.current = setInterval(async () => {
+        const state = useStore.getState();
+        const hasUnsyncedChanges = state.lastModified > (state.lastSynced || 0);
+        const hasCloudUpdates = (state.cloudLastModified || 0) > (state.lastSynced || 0);
+        
+        if (hasUnsyncedChanges && !hasCloudUpdates) {
+          // Auto-saving to cloud...
+          await state.pushToCloud();
+        }
+      }, 5 * 60 * 1000);
+    } else {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [supabaseSyncEnabled]);
 
   return null;
 }

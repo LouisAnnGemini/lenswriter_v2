@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network, Archive, Send, MessageSquare, CloudUpload, CloudDownload, Check, Loader2 } from 'lucide-react';
+import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network, Archive, Send, MessageSquare, CloudUpload, CloudDownload, Check, Loader2, RotateCcw, History } from 'lucide-react';
 import { DataManager } from './DataManager';
 import { cn } from '../lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { toast } from 'sonner';
+import { ConfirmationModal } from './ui/ConfirmationModal';
+import { VersionHistoryModal } from './ui/VersionHistoryModal';
 
 import { initialState } from '../store/constants';
 
@@ -30,9 +32,13 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     saveHistoryVersion,
     pushToCloud,
     pullFromCloud,
+    undoPull,
+    checkCloudVersion,
     syncStatus,
     lastSynced,
-    lastModified
+    lastModified,
+    cloudLastModified,
+    isCheckingCloud
   } = useStore(useShallow(state => ({
     focusMode: state.focusMode,
     scenes: state.scenes,
@@ -54,16 +60,48 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     saveHistoryVersion: state.saveHistoryVersion,
     pushToCloud: state.pushToCloud,
     pullFromCloud: state.pullFromCloud,
+    undoPull: state.undoPull,
+    checkCloudVersion: state.checkCloudVersion,
     syncStatus: state.syncStatus,
     lastSynced: state.lastSynced,
-    lastModified: state.lastModified
+    lastModified: state.lastModified,
+    cloudLastModified: state.cloudLastModified,
+    isCheckingCloud: state.isCheckingCloud
   })));
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isSyncingPush, setIsSyncingPush] = useState(false);
   const [isSyncingPull, setIsSyncingPull] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
+  const [showPullConfirm, setShowPullConfirm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [hasSnapshot, setHasSnapshot] = useState(!!localStorage.getItem('prePullSnapshot'));
   const dropdownRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Update snapshot status
+  useEffect(() => {
+    const checkSnapshot = () => setHasSnapshot(!!localStorage.getItem('prePullSnapshot'));
+    window.addEventListener('storage', checkSnapshot);
+    return () => window.removeEventListener('storage', checkSnapshot);
+  }, []);
+
+  const handleUndoPull = () => {
+    if (undoPull()) {
+      setHasSnapshot(false);
+      toast.success('Pull undone');
+    } else {
+      toast.error('No snapshot found');
+    }
+  };
+
+  // Periodically check cloud version
+  useEffect(() => {
+    if (!supabaseSyncEnabled) return;
+    
+    checkCloudVersion();
+    const interval = setInterval(checkCloudVersion, 60000); // Every 1 minute
+    return () => clearInterval(interval);
+  }, [supabaseSyncEnabled, checkCloudVersion]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -135,6 +173,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
   const isScene = scenes.some(s => s.id === activeDocumentId);
 
   const hasUnsyncedChanges = lastModified > (lastSynced || 0);
+  const hasCloudUpdates = (cloudLastModified || 0) > (lastSynced || 0);
 
   const handlePush = React.useCallback(async () => {
     setIsSyncingPush(true);
@@ -144,17 +183,13 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
       setShowSyncSuccess(true);
       setTimeout(() => setShowSyncSuccess(false), 2000);
       toast.success('Saved to cloud');
+      checkCloudVersion(); // Refresh version after push
     } else {
       toast.error('Failed to save to cloud');
     }
-  }, [pushToCloud]);
+  }, [pushToCloud, checkCloudVersion]);
 
   const handlePull = React.useCallback(async () => {
-    if (hasUnsyncedChanges) {
-      if (!window.confirm('You have unsaved local changes. Pulling from the cloud will overwrite them. Are you sure you want to continue?')) {
-        return;
-      }
-    }
     setIsSyncingPull(true);
     const success = await pullFromCloud();
     setIsSyncingPull(false);
@@ -162,10 +197,11 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
       setShowSyncSuccess(true);
       setTimeout(() => setShowSyncSuccess(false), 2000);
       toast.success('Pulled latest from cloud');
+      checkCloudVersion(); // Refresh version after pull
     } else {
       toast.error('Failed to pull from cloud');
     }
-  }, [hasUnsyncedChanges, pullFromCloud]);
+  }, [pullFromCloud, checkCloudVersion]);
 
   // Shortcut for Save to Cloud
   useEffect(() => {
@@ -183,6 +219,18 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
 
   return (
     <>
+      <ConfirmationModal
+        isOpen={showPullConfirm}
+        onClose={() => setShowPullConfirm(false)}
+        onConfirm={handlePull}
+        title="Confirm Pull"
+        message="You have unsaved local changes. Pulling from the cloud will overwrite them. Are you sure you want to continue?"
+        confirmText="Pull and Overwrite"
+      />
+      <VersionHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+      />
       {/* Desktop Top Nav */}
       <div className={cn(
         "h-14 border-b border-stone-200 bg-white flex items-center justify-between px-4 md:px-6 shrink-0 transition-all duration-300 z-[60]",
@@ -242,6 +290,23 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         <div className="flex items-center space-x-1 md:space-x-2">
           {supabaseSyncEnabled && (
             <div className="flex items-center bg-stone-100 rounded-full p-0.5 mr-2 border border-stone-200">
+              {hasSnapshot && (
+                <button
+                  onClick={handleUndoPull}
+                  className="p-1.5 text-stone-500 hover:text-stone-700 hover:bg-white hover:shadow-sm rounded-full transition-all"
+                  title="Undo Pull (Restore Snapshot)"
+                >
+                  <RotateCcw size={16} />
+                </button>
+              )}
+              <button
+                onClick={() => setShowHistory(true)}
+                className="p-1.5 text-stone-500 hover:text-stone-700 hover:bg-white hover:shadow-sm rounded-full transition-all"
+                title="Version History"
+              >
+                <History size={16} />
+              </button>
+              <div className="w-px h-4 bg-stone-300 mx-0.5"></div>
               <button
                 onClick={handlePush}
                 disabled={isSyncingPush || isSyncingPull}
@@ -261,17 +326,21 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
               </button>
               <div className="w-px h-4 bg-stone-300 mx-0.5"></div>
               <button
-                onClick={handlePull}
+                onClick={() => hasCloudUpdates ? setShowPullConfirm(true) : handlePull()}
                 disabled={isSyncingPush || isSyncingPull}
                 className={cn(
-                  "p-1.5 rounded-full transition-all flex items-center justify-center",
-                  isSyncingPull ? "text-blue-600 bg-white shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-white hover:shadow-sm"
+                  "p-1.5 rounded-full transition-all flex items-center justify-center relative",
+                  isSyncingPull ? "text-blue-600 bg-white shadow-sm" : 
+                  hasCloudUpdates ? "text-blue-600 hover:bg-white hover:shadow-sm animate-pulse" : "text-stone-500 hover:text-stone-700 hover:bg-white hover:shadow-sm"
                 )}
                 title="Pull Latest from Cloud"
               >
                 {isSyncingPull ? <Loader2 size={16} className="animate-spin" /> : 
                  showSyncSuccess && !isSyncingPush ? <Check size={16} className="text-blue-500" /> : 
                  <CloudDownload size={16} />}
+                {hasCloudUpdates && !isSyncingPull && !showSyncSuccess && (
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-500 rounded-full border border-white"></span>
+                )}
               </button>
             </div>
           )}

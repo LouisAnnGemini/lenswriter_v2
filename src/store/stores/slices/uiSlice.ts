@@ -148,11 +148,90 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       return false;
     }
   },
+  restoreFromSnapshot: async (snapshotId: string) => {
+    const { supabase } = await import('../../../lib/supabase');
+    if (!supabase) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state')
+        .eq('id', snapshotId)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.state) {
+        set({ ...data.state, syncStatus: 'idle', syncError: null });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to restore snapshot:', err);
+      return false;
+    }
+  },
+  undoPull: () => {
+    const snapshot = localStorage.getItem('prePullSnapshot');
+    if (snapshot) {
+      const state = JSON.parse(snapshot);
+      set({ ...state, syncStatus: 'idle', syncError: null });
+      localStorage.removeItem('prePullSnapshot');
+      return true;
+    }
+    return false;
+  },
+  restoreFromSnapshot: async (snapshotId: string) => {
+    const { supabase } = await import('../../../lib/supabase');
+    if (!supabase) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state')
+        .eq('id', snapshotId)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.state) {
+        set({ ...data.state, syncStatus: 'idle', syncError: null });
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to restore snapshot:', err);
+      return false;
+    }
+  },
+  fetchHistory: async () => {
+    const { supabase } = await import('../../../lib/supabase');
+    if (!supabase) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('id, state->>_timestamp, state->>_isHistory')
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+        .order('state->>_timestamp', { ascending: false })
+        .limit(10);
+        
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Failed to fetch history:', err);
+      return [];
+    }
+  },
   pullFromCloud: async () => {
     const { supabase } = await import('../../../lib/supabase');
     const { initialState } = await import('../../constants');
+    const state = get();
     
     if (!supabase) return false;
+    
+    // Save snapshot before pulling
+    localStorage.setItem('prePullSnapshot', JSON.stringify(state));
     
     set({ syncStatus: 'syncing' });
     try {
@@ -178,6 +257,29 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       console.error('Cloud pull failed:', err);
       set({ syncStatus: 'error', syncError: err.message });
       return false;
+    }
+  },
+  checkCloudVersion: async () => {
+    const { supabase } = await import('../../../lib/supabase');
+    if (!supabase) return;
+    
+    set({ isCheckingCloud: true });
+    try {
+      const { data, error } = await supabase
+        .from('app_state')
+        .select('state->>lastModified')
+        .eq('id', '00000000-0000-0000-0000-000000000000')
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.lastModified) {
+        set({ cloudLastModified: Number(data.lastModified) });
+      }
+    } catch (err) {
+      console.error('Cloud version check failed:', err);
+    } finally {
+      set({ isCheckingCloud: false });
     }
   },
 });

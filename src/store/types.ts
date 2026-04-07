@@ -196,6 +196,8 @@ export type State = {
   syncError: string | null;
   lastModified: number;
   lastSynced?: number;
+  cloudLastModified?: number;
+  isCheckingCloud: boolean;
   lastDevice?: 'Desktop' | 'Mobile';
   pastActions?: HistoryAction[];
   futureActions?: HistoryAction[];
@@ -260,6 +262,10 @@ export interface UISlice {
   saveHistoryVersion: (name: string) => Promise<boolean>;
   pushToCloud: () => Promise<boolean>;
   pullFromCloud: () => Promise<boolean>;
+  undoPull: () => boolean;
+  fetchHistory: () => Promise<any[]>;
+  restoreFromSnapshot: (snapshotId: string) => Promise<boolean>;
+  checkCloudVersion: () => Promise<void>;
 }
 
 export interface BlockSlice {
