@@ -9,7 +9,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
   const lastActionRef = useRef<'mouse' | 'keyboard_scroll' | 'keyboard_type'>('mouse');
   const lastActivePIdxRef = useRef<number>(0);
   const wasFocusedRef = useRef(isFocusedProp || false);
-  const [exactCursorPos, setExactCursorPos] = React.useState<number | null>(null);
+  const exactCursorPosRef = useRef<number | null>(null);
   const clickTargetYRef = useRef<number | null>(null);
   const blurTargetYRef = useRef<number | null>(null);
 
@@ -51,11 +51,9 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       
       if (scrollContainer) {
         if (scrollContainer.scrollTop !== currentScrollTop) {
-          console.log(`[adjustHeight] Restoring container scrollTop from ${scrollContainer.scrollTop} back to ${currentScrollTop}`);
           scrollContainer.scrollTop = currentScrollTop;
         }
       } else if (window.scrollY !== currentScrollTop) {
-        console.log(`[adjustHeight] Restoring window scrollY from ${window.scrollY} back to ${currentScrollTop}`);
         window.scrollTo(window.scrollX, currentScrollTop);
       }
     }
@@ -136,12 +134,11 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
   useEffect(() => {
     if (isFocused && ref.current) {
-      console.log(`[Focus] Calling focus() with preventScroll: true`);
       ref.current.focus({ preventScroll: true });
       
       let targetPos = ref.current.value.length;
-      if (exactCursorPos !== null) {
-        targetPos = exactCursorPos;
+      if (exactCursorPosRef.current !== null) {
+        targetPos = exactCursorPosRef.current;
       } else if (clickedPIdx !== null) {
         const paragraphs = ref.current.value.split('\n');
         let offset = 0;
@@ -157,10 +154,10 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
       // Force height adjustment after switching to edit mode
       window.requestAnimationFrame(() => {
         adjustHeight();
-        setExactCursorPos(null);
+        exactCursorPosRef.current = null;
       });
     }
-  }, [isFocused, adjustHeight, clickedPIdx, exactCursorPos]);
+  }, [isFocused, adjustHeight, clickedPIdx]);
 
   useEffect(() => {
     if (isFocused && lastActionRef.current === 'keyboard_scroll') {
@@ -386,7 +383,7 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
                 totalOffset += paragraphsList[i].length + 1;
               }
               totalOffset += offsetInP;
-              setExactCursorPos(totalOffset);
+              exactCursorPosRef.current = totalOffset;
 
               setIsFocused(true);
             }
