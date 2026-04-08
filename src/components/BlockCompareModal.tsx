@@ -54,6 +54,30 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
   const [topSectionHeight, setTopSectionHeight] = useState<number>(400);
   const [isDragging, setIsDragging] = useState(false);
 
+  const previewRef = useRef<HTMLDivElement>(null);
+  const isSyncingTop = useRef(false);
+  const isSyncingBottom = useRef(false);
+
+  const handlePreviewScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (isSyncingTop.current) {
+      isSyncingTop.current = false;
+      return;
+    }
+    if (!editorRef.current) return;
+
+    const target = e.target as HTMLDivElement;
+    const maxScroll = target.scrollHeight - target.clientHeight;
+    if (maxScroll <= 0) return;
+
+    const percentage = target.scrollTop / maxScroll;
+
+    const modifiedEditor = editorRef.current.getModifiedEditor();
+    const editorMaxScroll = modifiedEditor.getScrollHeight() - modifiedEditor.getLayoutInfo().height;
+
+    isSyncingBottom.current = true;
+    modifiedEditor.setScrollTop(percentage * editorMaxScroll);
+  };
+
   // Suppress cross-origin "Script error." from Monaco workers on unmount
   useEffect(() => {
     const handleError = (e: ErrorEvent) => {
@@ -236,7 +260,28 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
                       }, 300);
                     });
 
-                    disposablesRef.current.push(d1, d2);
+                    const d3 = modifiedEditor.onDidScrollChange((e) => {
+                      if (!e.scrollTopChanged) return;
+                      if (isSyncingBottom.current) {
+                        isSyncingBottom.current = false;
+                        return;
+                      }
+                      if (!previewRef.current) return;
+
+                      const layoutInfo = modifiedEditor.getLayoutInfo();
+                      const maxScrollTop = e.scrollHeight - layoutInfo.height;
+                      if (maxScrollTop <= 0) return;
+
+                      const percentage = e.scrollTop / maxScrollTop;
+
+                      const previewMaxScroll = previewRef.current.scrollHeight - previewRef.current.clientHeight;
+                      if (previewMaxScroll <= 0) return;
+
+                      isSyncingTop.current = true;
+                      previewRef.current.scrollTop = percentage * previewMaxScroll;
+                    });
+
+                    disposablesRef.current.push(d1, d2, d3);
                   }}
                   options={editorOptions}
                 />
@@ -265,7 +310,11 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
                 </div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 font-serif text-lg leading-relaxed whitespace-pre-wrap bg-white">
+            <div 
+              ref={previewRef}
+              onScroll={handlePreviewScroll}
+              className="flex-1 overflow-y-auto p-4 font-serif text-lg leading-relaxed whitespace-pre-wrap bg-white"
+            >
               {diffResult?.map((part, index) => {
                 if (part.added) {
                   return <span key={index} className="bg-[#e6ffe6] text-green-900 font-medium">{part.value}</span>;
