@@ -313,7 +313,8 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
             <div 
               ref={previewRef}
               onScroll={handlePreviewScroll}
-              className="flex-1 overflow-y-auto p-4 font-serif text-lg leading-relaxed whitespace-pre-wrap bg-white"
+              className="flex-1 overflow-y-auto p-4 font-serif text-base leading-[1.5] whitespace-pre-wrap bg-white"
+              style={{ fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' }}
             >
               {diffResult?.map((part, index) => {
                 if (part.added) {
