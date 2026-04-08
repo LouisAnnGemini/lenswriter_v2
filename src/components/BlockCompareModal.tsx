@@ -78,19 +78,6 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
     modifiedEditor.setScrollTop(percentage * editorMaxScroll);
   };
 
-  // Suppress cross-origin "Script error." from Monaco workers on unmount
-  useEffect(() => {
-    const handleError = (e: ErrorEvent) => {
-      if (e.message === 'Script error.') {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        console.warn('[Monaco] Suppressed cross-origin worker crash on unmount.');
-      }
-    };
-    window.addEventListener('error', handleError, true);
-    return () => window.removeEventListener('error', handleError, true);
-  }, []);
-
   // Store disposables to clean up Monaco listeners on unmount
   const disposablesRef = useRef<any[]>([]);
 
