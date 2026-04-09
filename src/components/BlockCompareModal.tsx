@@ -1,16 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '../store/stores/useStore';
-import { X, GitCompare, Check, Save } from 'lucide-react';
+import { X, GitCompare, Check, Save, ArrowLeft, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import * as Diff from 'diff';
 import { DiffEditor } from '@monaco-editor/react';
 
 // Local Error Boundary to swallow Monaco's unmount crashes
 class MonacoErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  constructor(props: {children: React.ReactNode}) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  state = { hasError: false };
 
   static getDerivedStateFromError(error: any) {
     return { hasError: true };
@@ -22,9 +19,9 @@ class MonacoErrorBoundary extends React.Component<{children: React.ReactNode}, {
 
   render() {
     if (this.state.hasError) {
-      return null; // Render nothing if it crashes (usually happens on close anyway)
+      return null;
     }
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 
@@ -39,6 +36,9 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
 
   const [originalText, setOriginalText] = useState(initialOriginal);
   const [draftText, setDraftText] = useState(initialDraft);
+
+  const [isSwapped, setIsSwapped] = useState(false);
+  const isSwappedRef = useRef(false);
 
   useEffect(() => {
     if (block) {
@@ -92,16 +92,16 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
     originalEditable: true,
     wordWrap: 'on' as const,
     lineNumbers: 'off' as const,
-    minimap: { enabled: false },
+    minimap: { enabled: true },
     folding: false,
     renderSideBySide: true,
     scrollBeyondLastLine: false,
     fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
     fontSize: 16,
     padding: { top: 16, bottom: 16 },
-    renderOverviewRuler: false,
-    hideCursorInOverviewRuler: true,
-    renderMarginRevertIcon: false,
+    renderOverviewRuler: true,
+    hideCursorInOverviewRuler: false,
+    renderMarginRevertIcon: true,
     diffWordWrap: 'on',
   }), []);
 
@@ -165,6 +165,23 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
     handleClose();
   };
 
+  const handleSwap = () => {
+    const newSwapped = !isSwapped;
+    setIsSwapped(newSwapped);
+    isSwappedRef.current = newSwapped;
+    
+    if (editorRef.current) {
+      const originalEditor = editorRef.current.getOriginalEditor();
+      const modifiedEditor = editorRef.current.getModifiedEditor();
+      
+      const currentOriginal = originalEditor.getValue();
+      const currentModified = modifiedEditor.getValue();
+      
+      originalEditor.setValue(currentModified);
+      modifiedEditor.setValue(currentOriginal);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-2">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden">
@@ -173,9 +190,19 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
             <GitCompare className="w-5 h-5 text-stone-500" />
             Compare & Edit Block
           </h2>
-          <button onClick={handleClose} className="p-2 hover:bg-stone-100 rounded-lg transition-colors">
-            <X className="w-5 h-5 text-stone-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleSwap} 
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
+              title="Swap Original and Draft views"
+            >
+              <ArrowLeftRight className="w-4 h-4" />
+              Swap Views
+            </button>
+            <button onClick={handleClose} className="p-2 hover:bg-stone-100 rounded-lg transition-colors">
+              <X className="w-5 h-5 text-stone-500" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col">
@@ -183,24 +210,52 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
           <div style={{ height: topSectionHeight }} className="flex flex-col border-b border-stone-200">
             <div className="flex w-full bg-stone-50 border-b border-stone-200">
               <div className="flex-1 flex justify-between items-center py-1 px-2 border-r border-stone-200">
-                <span className="font-medium text-stone-700">Original Version</span>
-                <button 
-                  onClick={handleAcceptOriginal}
-                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
-                >
-                  <Check className="w-3 h-3 text-green-600" />
-                  Accept Original
-                </button>
+                <span className="font-medium text-stone-700">
+                  {isSwapped ? "Draft Version" : "Original Version"}
+                </span>
+                <div className="flex items-center gap-2">
+                  {isSwapped ? (
+                    <button 
+                      onClick={handleAcceptDraft}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+                    >
+                      <Check className="w-3 h-3 text-green-600" />
+                      Accept Draft
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleAcceptOriginal}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+                    >
+                      <Check className="w-3 h-3 text-green-600" />
+                      Accept Original
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex-1 flex justify-between items-center py-1 px-2">
-                <span className="font-medium text-stone-700">Draft Version</span>
-                <button 
-                  onClick={handleAcceptDraft}
-                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
-                >
-                  <Check className="w-3 h-3 text-green-600" />
-                  Accept Draft
-                </button>
+                <span className="font-medium text-stone-700">
+                  {isSwapped ? "Original Version" : "Draft Version"}
+                </span>
+                <div className="flex items-center gap-2">
+                  {isSwapped ? (
+                    <button 
+                      onClick={handleAcceptOriginal}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+                    >
+                      <Check className="w-3 h-3 text-green-600" />
+                      Accept Original
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={handleAcceptDraft}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-stone-700 bg-white border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+                    >
+                      <Check className="w-3 h-3 text-green-600" />
+                      Accept Draft
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex-1 min-h-0 relative">
@@ -235,7 +290,11 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
                     const d1 = originalEditor.onDidChangeModelContent(() => {
                       clearTimeout(originalTimeout);
                       originalTimeout = setTimeout(() => {
-                        setOriginalText(originalEditor.getValue());
+                        if (isSwappedRef.current) {
+                          setDraftText(originalEditor.getValue());
+                        } else {
+                          setOriginalText(originalEditor.getValue());
+                        }
                       }, 300);
                     });
 
@@ -243,7 +302,11 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
                     const d2 = modifiedEditor.onDidChangeModelContent(() => {
                       clearTimeout(modifiedTimeout);
                       modifiedTimeout = setTimeout(() => {
-                        setDraftText(modifiedEditor.getValue());
+                        if (isSwappedRef.current) {
+                          setOriginalText(modifiedEditor.getValue());
+                        } else {
+                          setDraftText(modifiedEditor.getValue());
+                        }
                       }, 300);
                     });
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { ConfirmationModal } from './ConfirmationModal';
+import { toast } from 'sonner';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;

@@ -27,7 +27,7 @@ import { Toaster, toast } from 'sonner';
 function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void }) {
   const { 
     disguiseMode, 
-    focusMode, 
+    fullscreenMode, 
     activeTab, 
     activeDocumentId, 
     rightSidebarMode, 
@@ -36,7 +36,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
     activeWorkId, 
     deadlineViewMode,
     toggleDisguiseMode,
-    toggleFocusMode,
+    toggleFullscreenMode,
     setRightSidebarMode,
     supabaseSyncEnabled,
     saveHistoryVersion,
@@ -44,7 +44,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
     updateTabConfig
   } = useStore(useShallow(state => ({
     disguiseMode: state.disguiseMode,
-    focusMode: state.focusMode,
+    fullscreenMode: state.fullscreenMode,
     activeTab: state.activeTab,
     activeDocumentId: state.activeDocumentId,
     rightSidebarMode: state.rightSidebarMode,
@@ -53,7 +53,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
     activeWorkId: state.activeWorkId,
     deadlineViewMode: state.deadlineViewMode,
     toggleDisguiseMode: state.toggleDisguiseMode,
-    toggleFocusMode: state.toggleFocusMode,
+    toggleFullscreenMode: state.toggleFullscreenMode,
     setRightSidebarMode: state.setRightSidebarMode,
     supabaseSyncEnabled: state.supabaseSyncEnabled,
     saveHistoryVersion: state.saveHistoryVersion,
@@ -121,9 +121,9 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
         if (disguiseMode) {
           e.preventDefault();
           toggleDisguiseMode();
-        } else if (focusMode) {
+        } else if (fullscreenMode) {
           e.preventDefault();
-          toggleFocusMode();
+          toggleFullscreenMode();
         }
       }
 
@@ -159,7 +159,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('toggle-shortcut-modal', handleToggleShortcutModal);
     };
-  }, [disguiseMode, focusMode, activeTab, activeDocumentId, rightSidebarMode, lastInspectorTab, scenes, toggleDisguiseMode, toggleFocusMode, setRightSidebarMode, supabaseSyncEnabled, saveHistoryVersion]);
+  }, [disguiseMode, fullscreenMode, activeTab, activeDocumentId, rightSidebarMode, lastInspectorTab, scenes, toggleDisguiseMode, toggleFullscreenMode, setRightSidebarMode, supabaseSyncEnabled, saveHistoryVersion]);
 
   return (
     <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden bg-white relative">
@@ -168,8 +168,8 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
       <div className="flex-1 flex overflow-hidden relative">
         {activeTab === 'design' && (
           <>
-            {!disguiseMode && !focusMode && <OutlinePanel setMobileOpen={setMobileOpen} />}
-            <EditorPanel focusMode={focusMode} />
+            {!disguiseMode && !fullscreenMode && <OutlinePanel setMobileOpen={setMobileOpen} />}
+            <EditorPanel fullscreenMode={fullscreenMode} />
           </>
         )}
         {activeTab === 'blockDescriptions' && <BlockManagementTab />}

@@ -9,7 +9,7 @@ import { SCENE_STATUS_COLORS } from '../store/constants';
 
 export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
   const { 
-    focusMode, 
+    fullscreenMode, 
     activeWorkId, 
     chapters: allChapters, 
     scenes: allScenes, 
@@ -28,7 +28,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
     deleteChapter,
     deleteScene
   } = useStore(useShallow(state => ({
-    focusMode: state.focusMode,
+    fullscreenMode: state.fullscreenMode,
     activeWorkId: state.activeWorkId,
     chapters: state.chapters,
     scenes: state.scenes,
@@ -66,7 +66,7 @@ export function OutlinePanel({ setMobileOpen }: { setMobileOpen?: (open: boolean
   const expandAll = () => setCollapsedChapters(new Set());
   const collapseAll = () => setCollapsedChapters(new Set(chapters.map(c => c.id)));
 
-  if (focusMode) return null;
+  if (fullscreenMode) return null;
 
   if (!activeWorkId) return <div className="w-full md:w-64 border-r border-stone-200 bg-stone-50 p-4 text-stone-500 text-sm">Select a work</div>;
 

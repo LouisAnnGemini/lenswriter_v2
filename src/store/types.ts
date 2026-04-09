@@ -173,6 +173,7 @@ export type State = {
   metroNodes: MetroNode[];
   scriptDrafts: ScriptDraft[];
   dailyWordCounts: Record<string, DailyStats>; // Date string -> Stats
+  lastSceneCounts: Record<string, number>; // SceneId -> last total word count
   activeWorkId: string | null;
   activeDocumentId: string | null;
   activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish' | 'script';
@@ -182,9 +183,11 @@ export type State = {
   deadlineViewMode: 'global' | 'local';
   activeLensId: string | null;
   selectedEventId: string | null;
-  focusMode: boolean;
+  fullscreenMode: boolean;
   scrollMode: boolean;
+  writingFocusMode: boolean;
   disguiseMode: boolean;
+  disguiseBackgroundText: string;
   rightSidebarMode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes' | 'snapshots';
   lastInspectorTab: 'micro' | 'meso' | 'macro' | 'info' | 'notes' | 'snapshots';
   showDescriptions: boolean;
@@ -250,9 +253,11 @@ export interface UISlice {
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
   setActiveLens: (lensId: string | null) => void;
   setSelectedEventId: (eventId: string | null) => void;
-  toggleFocusMode: () => void;
+  toggleFullscreenMode: () => void;
   toggleScrollMode: () => void;
+  toggleWritingFocusMode: () => void;
   toggleDisguiseMode: () => void;
+  setDisguiseBackgroundText: (text: string) => void;
   setRightSidebarMode: (mode: 'closed' | 'micro' | 'meso' | 'macro' | 'info' | 'notes' | 'snapshots') => void;
   toggleShowDescriptions: () => void;
   setLetterSpacing: (spacing: number) => void;
@@ -361,7 +366,7 @@ export interface WorkSlice {
 }
 
 export interface ScriptSlice {
-  addScriptDraft: (draft: Omit<ScriptDraft, 'id' | 'createdAt'>) => void;
+  addScriptDraft: (draft: Omit<ScriptDraft, 'id' | 'createdAt'>) => string;
   updateScriptDraft: (draft: Partial<ScriptDraft> & { id: string }) => void;
   deleteScriptDraft: (draftId: string) => void;
 }

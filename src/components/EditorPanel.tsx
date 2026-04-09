@@ -20,6 +20,7 @@ import { SnapshotTab } from './SnapshotTab';
 import { NotesTab } from './NotesTab';
 import { TabSettingsModal } from './TabSettingsModal';
 import { BlockCompareModal } from './BlockCompareModal';
+import { WordRibbon, WordStatusBar } from './WordDisguise';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -31,7 +32,7 @@ const LENS_COLORS = {
   black: 'bg-stone-900 border-stone-700 text-stone-100',
 };
 
-export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMode?: boolean }) {
+export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fullscreenMode?: boolean }) {
   const {
     setRightSidebarMode,
     undo,
@@ -67,12 +68,16 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     blocks: allBlocks,
     characters: allCharacters,
     timelineEvents,
-    focusMode: storeFocusMode,
+    fullscreenMode: storeFullscreenMode,
     scrollMode,
     toggleScrollMode,
     rightSidebarMode,
     lastInspectorTab,
     disguiseMode,
+    writingFocusMode,
+    toggleWritingFocusMode,
+    disguiseBackgroundText,
+    setDisguiseBackgroundText,
     letterSpacing,
     editorMargin
   } = useStore(useShallow(state => ({
@@ -98,6 +103,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     setLetterSpacing: state.setLetterSpacing,
     setEditorMargin: state.setEditorMargin,
     toggleDisguiseMode: state.toggleDisguiseMode,
+    setDisguiseBackgroundText: state.setDisguiseBackgroundText,
     addSnapshot: state.addSnapshot,
     showDescriptions: state.showDescriptions,
     activeDocumentId: state.activeDocumentId,
@@ -107,12 +113,15 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     blocks: state.blocks,
     characters: state.characters,
     timelineEvents: state.timelineEvents,
-    focusMode: state.focusMode,
+    fullscreenMode: state.fullscreenMode,
     scrollMode: state.scrollMode,
     toggleScrollMode: state.toggleScrollMode,
+    toggleWritingFocusMode: state.toggleWritingFocusMode,
     rightSidebarMode: state.rightSidebarMode,
     lastInspectorTab: state.lastInspectorTab,
     disguiseMode: state.disguiseMode,
+    writingFocusMode: state.writingFocusMode,
+    disguiseBackgroundText: state.disguiseBackgroundText,
     appMode: state.appMode,
     setAppMode: state.setAppMode,
     toggleAppMode: state.toggleAppMode,
@@ -120,7 +129,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
     editorMargin: state.editorMargin
   })));
 
-  const isFocusMode = focusMode !== undefined ? focusMode : storeFocusMode;
+  const isFullscreenMode = fullscreenMode !== undefined ? fullscreenMode : storeFullscreenMode;
 
   const [copied, setCopied] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -131,9 +140,13 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
   const [showSlashMenu, setShowSlashMenu] = useState<{ blockId: string, position: { top: number, left: number } } | null>(null);
   const [showTabSettings, setShowTabSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDisguiseSettings, setShowDisguiseSettings] = useState(false);
+  const [tempDisguiseText, setTempDisguiseText] = useState(disguiseBackgroundText);
   const [searchTerm, setSearchTerm] = useState('');
   const [collapsedTocSections, setCollapsedTocSections] = useState<Set<string> | null>(null);
   const [comparingBlockId, setComparingBlockId] = useState<string | null>(null);
+  const blocksContainerRef = useRef<HTMLDivElement>(null);
+  const lastMousePosRef = useRef<{clientX: number, clientY: number} | null>(null);
   const preventScrollRef = useRef(false);
 
   const activeDocument = scenes.find(s => s.id === activeDocId) || allChapters.find(c => c.id === activeDocId);
@@ -451,13 +464,25 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
 
   return (
     <div className={cn(
-      "flex-1 flex bg-white overflow-hidden relative transition-all duration-300",
-      !activeDocId ? "hidden md:flex" : "flex"
+      "flex-1 flex overflow-hidden relative transition-all duration-300",
+      !activeDocId ? "hidden md:flex" : "flex",
+      disguiseMode ? "bg-[#F3F2F1]" : "bg-white"
     )}>
       {showTabSettings && (
         <TabSettingsModal onClose={() => setShowTabSettings(false)} />
       )}
+      
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {disguiseMode && (
+          <WordRibbon 
+            title={activeDocument?.title || ''} 
+            onClose={toggleDisguiseMode} 
+            onEdit={() => {
+              setTempDisguiseText(disguiseBackgroundText);
+              setShowDisguiseSettings(true);
+            }}
+          />
+        )}
         {showFindReplace && (
           <div className="absolute top-4 right-4 z-[100] bg-white/90 backdrop-blur-md shadow-xl rounded-xl border border-stone-200/50 p-2 animate-in fade-in slide-in-from-top-4">
             <FindReplaceBar 
@@ -471,21 +496,41 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
         )}
         <div 
           ref={scrollContainerRef}
+          onScroll={() => {
+            if (disguiseMode && lastMousePosRef.current && blocksContainerRef.current) {
+              const rect = blocksContainerRef.current.getBoundingClientRect();
+              const x = lastMousePosRef.current.clientX - rect.left;
+              const y = lastMousePosRef.current.clientY - rect.top;
+              blocksContainerRef.current.style.setProperty('--mouse-x', `${x}px`);
+              blocksContainerRef.current.style.setProperty('--mouse-y', `${y}px`);
+            }
+          }}
         className={cn(
-        "flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-12 transition-all duration-300",
-        isFocusMode 
-          ? "px-6 py-12 md:px-12 md:py-16 lg:px-20 xl:px-24" 
-          : compact
-            ? "px-4 py-6 md:px-8 md:py-10"
-            : "px-6 py-10 md:px-12 md:py-16 lg:px-16 xl:px-20"
+        "flex-1 overflow-y-auto overflow-x-hidden pb-32 md:pb-12 transition-all duration-300 relative",
+        disguiseMode ? "px-4 md:px-8" : (
+          isFullscreenMode 
+            ? "px-6 py-12 md:px-12 md:py-16 lg:px-20 xl:px-24" 
+            : compact
+              ? "px-4 py-6 md:px-8 md:py-10"
+              : "px-6 py-10 md:px-12 md:py-16 lg:px-16 xl:px-20"
+        )
       )}>
         <div 
           className={cn(
             "mx-auto transition-all duration-300",
-            isFocusMode ? "max-w-4xl" : "max-w-4xl"
+            disguiseMode ? "max-w-4xl grid w-full" : "max-w-4xl"
           )}
         >
-          <div className="flex items-start justify-between mb-4 gap-4 flex-col md:flex-row">
+          {disguiseMode && (
+            <div className="col-start-1 row-start-1 pointer-events-none z-0 h-full">
+              <div className="bg-white shadow-md border border-[#E1DFDD] px-8 md:px-16 py-16 w-full max-w-none my-8 min-h-[1056px] h-[calc(100%-4rem)] text-[#323130] font-sans text-[15px] leading-[1.5] whitespace-pre-wrap">
+                {disguiseBackgroundText}
+              </div>
+            </div>
+          )}
+
+          <div className={cn(disguiseMode ? "col-start-1 row-start-1 z-10 flex flex-col w-full" : "flex flex-col")}>
+            <div className={cn("flex items-start justify-between mb-4 gap-4 flex-col md:flex-row", disguiseMode && "hidden")}>
             <div className="flex items-center flex-1 min-w-0 gap-2 w-full">
               <button
                 onClick={() => setActiveDocument(null)}
@@ -573,15 +618,45 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
           )}
 
           {/* Blocks */}
-          <div className={cn("space-y-6", disguiseMode && "space-y-4")}>
+          <div 
+            ref={blocksContainerRef}
+            className={cn(
+            disguiseMode 
+              ? "bg-white shadow-md border border-[#E1DFDD] px-8 md:px-16 py-16 w-full max-w-none my-8 min-h-[1056px] relative" 
+              : "space-y-6"
+          )}
+          onMouseMove={disguiseMode ? (e) => {
+            lastMousePosRef.current = { clientX: e.clientX, clientY: e.clientY };
+            if (blocksContainerRef.current) {
+              const rect = blocksContainerRef.current.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              blocksContainerRef.current.style.setProperty('--mouse-x', `${x}px`);
+              blocksContainerRef.current.style.setProperty('--mouse-y', `${y}px`);
+              blocksContainerRef.current.style.opacity = '1';
+            }
+          } : undefined}
+          onMouseLeave={disguiseMode ? () => {
+            lastMousePosRef.current = null;
+            if (blocksContainerRef.current) {
+              blocksContainerRef.current.style.opacity = '0';
+            }
+          } : undefined}
+          style={disguiseMode ? {
+            WebkitMaskImage: `radial-gradient(circle 250px at var(--mouse-x, -1000px) var(--mouse-y, -1000px), black 40%, transparent 100%)`,
+            maskImage: `radial-gradient(circle 250px at var(--mouse-x, -1000px) var(--mouse-y, -1000px), black 40%, transparent 100%)`,
+            opacity: 0,
+            transition: 'opacity 0.3s ease-out'
+          } : {}}
+          >
             {(!isScene ? [{ id: activeDocId, isChapter: true, title: activeDocument.title }] : (scrollMode ? chapterScenes : [activeDocument as any])).map((doc, docIndex, docArray) => {
               const currentBlocks = doc.isChapter ? activeDocBlocks : allBlocks.filter(b => b.documentId === doc.id).sort((a, b) => a.order - b.order);
               const isLastDoc = docIndex === docArray.length - 1;
               
               return (
-                <div key={doc.id} id={`document-${doc.id}`} className="flex flex-col">
+                <div key={doc.id} id={`document-${doc.id}`} className="flex flex-col w-full">
                   {scrollMode && isScene && (
-                    <div className="mb-6 mt-8 first:mt-0 flex items-center justify-between group/scene-header">
+                    <div className={cn("mb-6 mt-8 first:mt-0 flex items-center justify-between group/scene-header", disguiseMode && "hidden")}>
                       <input
                         type="text"
                         value={doc.title || ''}
@@ -617,9 +692,9 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
 
                     return (
                     <div key={block.id} id={`block-${block.id}`} className={cn(
-                      "group relative flex flex-col transition-colors duration-500",
+                      "group relative flex flex-col transition-colors duration-500 w-full",
                       disguiseMode 
-                        ? "bg-white shadow-md border border-stone-200 p-12 max-w-[800px] mx-auto my-8 min-h-[1000px] relative"
+                        ? "mb-4 last:mb-0 relative"
                         : "mb-6 last:mb-0"
                     )}>
                       {disguiseMode && block.description && (
@@ -629,7 +704,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                         </div>
                       )}
                       
-                      {showSlashMenu?.blockId === block.id && (
+                      {showSlashMenu?.blockId === block.id && !disguiseMode && (
                         <SlashCommandMenu
                           onClose={() => setShowSlashMenu(null)}
                           onSelect={(action) => {
@@ -644,11 +719,11 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                         />
                       )}
 
-                      <div className="flex items-start gap-2" style={{
+                      <div className="flex items-stretch gap-2 w-full" style={{
                         paddingLeft: `${disguiseMode ? 0 : (editorMargin || 0)}rem`,
                         paddingRight: `${disguiseMode ? 0 : (editorMargin || 0)}rem`,
                       }}>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 w-full">
                           {/* Block Content */}
                           <div className={cn(
                             "w-full rounded-lg transition-colors relative",
@@ -659,12 +734,14 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                             disguiseMode && "rounded-none p-0 border-0 bg-transparent"
                           )}>
                             {block.isComparing && !disguiseMode && (
-                              <div 
-                                className="absolute -top-3 -right-3 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 z-10"
-                                onClick={() => setComparingBlockId(block.id)}
-                              >
-                                <GitCompare size={12} />
-                                Comparing
+                              <div className="absolute top-0 bottom-0 -right-3 w-0 z-10 pointer-events-none">
+                                <div 
+                                  className="sticky top-4 -mr-3 float-right bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 pointer-events-auto whitespace-nowrap"
+                                  onClick={() => setComparingBlockId(block.id)}
+                                >
+                                  <GitCompare size={12} />
+                                  Comparing
+                                </div>
                               </div>
                             )}
                             {block.isLens && !disguiseMode && (
@@ -708,9 +785,9 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                               searchTerm={searchTerm}
                               blockId={block.id}
                               disabled={isArchived}
-                              enableReadMode={true}
+                              enableReadMode={!disguiseMode}
                               isFocused={focusedBlockId === block.id}
-                              isDimmed={focusedBlockId !== null && focusedBlockId !== block.id}
+                              isDimmed={!disguiseMode && writingFocusMode && focusedBlockId !== null && focusedBlockId !== block.id}
                               isDisguiseMode={disguiseMode}
                               onFocus={() => {
                                 setFocusedBlockId(block.id);
@@ -726,7 +803,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                               }}
                               onChange={(e: any) => handleBlockChange(block.id, { content: e.target.value })}
                               onKeyDown={(e: React.KeyboardEvent) => {
-                                if (e.key === '/') {
+                                if (e.key === '/' && !disguiseMode) {
                                   const textarea = e.currentTarget as HTMLTextAreaElement;
                                   const pos = textarea.selectionStart;
                                   const isStartOfBlock = pos === 0;
@@ -791,7 +868,7 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                               className={cn(
                                 "w-full outline-none bg-transparent p-0",
                                 disguiseMode 
-                                  ? "font-mono text-base leading-snug text-black" 
+                                  ? "font-sans text-[15px] leading-[1.5] text-[#323130]" 
                                   : (block.isLens 
                                       ? "text-base md:text-sm font-medium leading-relaxed" 
                                       : "text-lg leading-loose tracking-wide text-stone-900 font-serif"
@@ -806,80 +883,82 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
 
                           {/* Block Actions (Hover) */}
                           {!disguiseMode && !isArchived && (
-                            <div className="transition-opacity flex items-center space-x-1 absolute -left-10 top-2 z-10 opacity-0 group-hover:opacity-100">
-                              <button 
-                                onClick={() => handleAddBlock(false, block.id, doc.id)}
-                                className="p-1 text-stone-300 hover:text-emerald-600 hover:bg-stone-100 rounded transition-colors"
-                                title="Add Text Block Below"
-                              >
-                                <Plus size={16} />
-                              </button>
-                              <div className="relative">
+                            <div className="absolute top-0 bottom-0 -left-10 w-10 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="sticky top-4 flex items-center space-x-1 pt-2">
                                 <button 
-                                  onClick={() => setOpenMenuBlockId(openMenuBlockId === block.id ? null : block.id)}
-                                  className={cn("p-1 rounded transition-colors", openMenuBlockId === block.id ? "text-stone-600 bg-stone-100" : "text-stone-300 hover:text-stone-600 hover:bg-stone-100")}
-                                  title="More Actions"
+                                  onClick={() => handleAddBlock(false, block.id, doc.id)}
+                                  className="p-1 text-stone-300 hover:text-emerald-600 hover:bg-stone-100 rounded transition-colors"
+                                  title="Add Text Block Below"
                                 >
-                                  <MoreVertical size={16} />
+                                  <Plus size={16} />
                                 </button>
-                                {openMenuBlockId === block.id && (
-                                  <div className="absolute left-full top-0 ml-1 flex items-center space-x-1 bg-white shadow-sm rounded-md border border-stone-200 p-1 z-20">
-                                    <button 
-                                      onClick={() => {
-                                        handleBlockChange(block.id, { isLens: !block.isLens });
-                                        setOpenMenuBlockId(null);
-                                      }}
-                                      className="p-1 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                                      title={block.isLens ? "Convert to Normal Block" : "Convert to Lens Block"}
-                                    >
-                                      <Highlighter size={14} />
-                                    </button>
-                                    {canMergeUp && (
+                                <div className="relative">
+                                  <button 
+                                    onClick={() => setOpenMenuBlockId(openMenuBlockId === block.id ? null : block.id)}
+                                    className={cn("p-1 rounded transition-colors", openMenuBlockId === block.id ? "text-stone-600 bg-stone-100" : "text-stone-300 hover:text-stone-600 hover:bg-stone-100")}
+                                    title="More Actions"
+                                  >
+                                    <MoreVertical size={16} />
+                                  </button>
+                                  {openMenuBlockId === block.id && (
+                                    <div className="absolute left-full top-0 ml-1 flex items-center space-x-1 bg-white shadow-sm rounded-md border border-stone-200 p-1 z-20">
                                       <button 
                                         onClick={() => {
-                                          handleMergeUp(block.id);
+                                          handleBlockChange(block.id, { isLens: !block.isLens });
                                           setOpenMenuBlockId(null);
                                         }}
-                                        className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
-                                        title="Merge with previous text block"
+                                        className="p-1 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                                        title={block.isLens ? "Convert to Normal Block" : "Convert to Lens Block"}
                                       >
-                                        <ArrowUpToLine size={14} />
+                                        <Highlighter size={14} />
                                       </button>
-                                    )}
-                                    {isScene && (
+                                      {canMergeUp && (
+                                        <button 
+                                          onClick={() => {
+                                            handleMergeUp(block.id);
+                                            setOpenMenuBlockId(null);
+                                          }}
+                                          className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                                          title="Merge with previous text block"
+                                        >
+                                          <ArrowUpToLine size={14} />
+                                        </button>
+                                      )}
+                                      {isScene && (
+                                        <button 
+                                          onClick={() => {
+                                            handleSplitScene(block.id);
+                                            setOpenMenuBlockId(null);
+                                          }}
+                                          className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                                          title="Split Scene After This Block"
+                                        >
+                                          <Scissors size={14} />
+                                        </button>
+                                      )}
                                       <button 
                                         onClick={() => {
-                                          handleSplitScene(block.id);
+                                          setComparingBlockId(block.id);
                                           setOpenMenuBlockId(null);
                                         }}
-                                        className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
-                                        title="Split Scene After This Block"
+                                        className="p-1 text-stone-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                        title="Compare & Edit"
                                       >
-                                        <Scissors size={14} />
+                                        <GitCompare size={14} />
                                       </button>
-                                    )}
-                                    <button 
-                                      onClick={() => {
-                                        setComparingBlockId(block.id);
-                                        setOpenMenuBlockId(null);
-                                      }}
-                                      className="p-1 text-stone-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                      title="Compare & Edit"
-                                    >
-                                      <GitCompare size={14} />
-                                    </button>
-                                    <button 
-                                      onClick={() => {
-                                        handleDeleteBlock(block.id);
-                                        setOpenMenuBlockId(null);
-                                      }}
-                                      className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                      title="Delete Block"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  </div>
-                                )}
+                                      <button 
+                                        onClick={() => {
+                                          handleDeleteBlock(block.id);
+                                          setOpenMenuBlockId(null);
+                                        }}
+                                        className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        title="Delete Block"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
@@ -887,21 +966,23 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
 
                         {/* Right Side Actions for Text Blocks */}
                         {!disguiseMode && !isArchived && (
-                          <div className="flex flex-col items-center space-y-2 transition-opacity pt-2 w-8 shrink-0 opacity-0 group-hover:opacity-100">
-                            <button 
-                              onClick={() => toggleBlockDescription(block)}
-                              className={cn("p-1.5 rounded-md transition-colors", block.description !== undefined ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
-                              title="Block Description"
-                            >
-                              <MessageSquare size={16} />
-                            </button>
-                            <button 
-                              onClick={() => handleBlockChange(block.id, { completed: !block.completed })}
-                              className={cn("p-1.5 rounded-md transition-colors", block.completed ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
-                              title="Toggle Completion"
-                            >
-                              <CheckCircle2 size={16} />
-                            </button>
+                          <div className="relative w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="sticky top-4 flex flex-col items-center space-y-2 pt-2">
+                              <button 
+                                onClick={() => toggleBlockDescription(block)}
+                                className={cn("p-1.5 rounded-md transition-colors", block.description !== undefined ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
+                                title="Block Description"
+                              >
+                                <MessageSquare size={16} />
+                              </button>
+                              <button 
+                                onClick={() => handleBlockChange(block.id, { completed: !block.completed })}
+                                className={cn("p-1.5 rounded-md transition-colors", block.completed ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
+                                title="Toggle Completion"
+                              >
+                                <CheckCircle2 size={16} />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -939,10 +1020,12 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
           <div className="h-[50vh]" /> {/* Bottom padding for Scroll Past End */}
         </div>
       </div>
+      {disguiseMode && <WordStatusBar words={totalWords} />}
+      </div>
       </div>
       
       {/* Inspector Sidebar */}
-      {rightSidebarMode !== 'closed' && !disguiseMode && !isFocusMode && (
+      {rightSidebarMode !== 'closed' && !disguiseMode && !isFullscreenMode && (
         <div className={cn(
           "bg-white border-l border-stone-200 shrink-0 flex transition-all duration-300",
           "fixed inset-0 w-full z-[60] md:relative md:w-80 md:inset-auto md:z-20"
@@ -1297,12 +1380,63 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
         </div>
       )}
 
+      {/* Disguise Settings Modal */}
+      {showDisguiseSettings && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-stone-200 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-stone-50/50">
+              <div className="flex items-center gap-2">
+                <Settings2 size={18} className="text-stone-500" />
+                <h3 className="font-semibold text-stone-900">Edit Disguise Background Text</h3>
+              </div>
+              <button 
+                onClick={() => setShowDisguiseSettings(false)}
+                className="p-1 hover:bg-stone-200 rounded-full transition-colors"
+              >
+                <X size={20} className="text-stone-500" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-stone-500 mb-4">
+                This text will be displayed behind your actual content when Disguise Mode is active. 
+                Use it to make your screen look like a legitimate document or report.
+              </p>
+              <textarea
+                value={tempDisguiseText}
+                onChange={(e) => setTempDisguiseText(e.target.value)}
+                className="w-full h-96 p-4 rounded-lg border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-mono text-sm resize-none bg-stone-50"
+                placeholder="Paste your disguise text here..."
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-stone-50/50 border-t border-stone-100">
+              <button
+                onClick={() => setShowDisguiseSettings(false)}
+                className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setDisguiseBackgroundText(tempDisguiseText);
+                  setShowDisguiseSettings(false);
+                  toast.success('Disguise text updated');
+                }}
+                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-95"
+              >
+                <Check size={16} />
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Back to Top Button */}
-      {showBackToTop && (
+      {showBackToTop && !disguiseMode && (
         <div className={cn(
           "fixed bottom-32 z-50 transition-all duration-300",
           rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
-          isFocusMode ? "opacity-0 hover:opacity-100" : "opacity-100"
+          isFullscreenMode ? "opacity-0 hover:opacity-100" : "opacity-100"
         )}>
           <button
             onClick={scrollToTop}
@@ -1315,21 +1449,22 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
       )}
 
       {/* Floating View Settings Button */}
-      <div className={cn(
-        "fixed bottom-16 z-50 transition-opacity duration-300 flex items-end justify-end",
-        rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
-        isFocusMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100",
-        "md:bottom-16 bottom-24"
-      )}>
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="p-3 bg-stone-900 text-white hover:bg-stone-800 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center"
-          title="View Settings"
-        >
-          <Settings2 size={24} />
-        </button>
-        
-        {showSettings && (
+      {!disguiseMode && (
+        <div className={cn(
+          "fixed bottom-16 z-50 transition-opacity duration-300 flex items-end justify-end",
+          rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
+          isFullscreenMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100",
+          "md:bottom-16 bottom-24"
+        )}>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-3 bg-stone-900 text-white hover:bg-stone-800 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center"
+            title="View Settings"
+          >
+            <Settings2 size={24} />
+          </button>
+          
+          {showSettings && (
           <div className="absolute bottom-full right-0 mb-4 w-72 bg-white rounded-lg shadow-xl border border-stone-200 p-4 z-50 origin-bottom-right animate-in fade-in slide-in-from-bottom-2">
             
             {/* App Mode */}
@@ -1398,6 +1533,23 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
                   <div className={cn(
                     "absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform",
                     disguiseMode ? "translate-x-4" : "translate-x-0"
+                  )} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
+                  <Highlighter size={14} className="text-stone-500" /> Focus Mode
+                </label>
+                <button
+                  onClick={() => toggleWritingFocusMode()}
+                  className={cn(
+                    "w-8 h-4 rounded-full transition-colors relative",
+                    writingFocusMode ? "bg-emerald-500" : "bg-stone-200"
+                  )}
+                >
+                  <div className={cn(
+                    "absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform",
+                    writingFocusMode ? "translate-x-4" : "translate-x-0"
                   )} />
                 </button>
               </div>
@@ -1472,8 +1624,9 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
               )}
             </div>
           </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
       
       {comparingBlockId && (
         <BlockCompareModal
@@ -1481,6 +1634,6 @@ export function EditorPanel({ compact, focusMode }: { compact?: boolean, focusMo
           onClose={() => setComparingBlockId(null)}
         />
       )}
-    </div>
+      </div>
   );
 }

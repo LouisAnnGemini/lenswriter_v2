@@ -302,12 +302,12 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
 
     return (
       <div 
-        className={cn(className, isDisguiseMode ? "relative" : "absolute inset-0", "pointer-events-none whitespace-pre-wrap break-words bg-transparent z-0", isDimmed && "opacity-40")} 
+        className={cn(className, "absolute inset-0 pointer-events-none whitespace-pre-wrap break-words bg-transparent z-0", isDimmed && "opacity-40")} 
         style={combinedStyle}
         aria-hidden="true"
       >
         {paragraphs.map((paragraph: string, pIdx: number) => {
-          const isActiveP = isFocused && pIdx === activePIdx;
+          const isActiveP = isFocused && pIdx === activePIdx && !isDisguiseMode;
           
           if (!searchTerm) {
             return (
@@ -485,9 +485,9 @@ export const AutoResizeTextarea = ({ value, onChange, className, placeholder, sc
         onClick={handleClick}
         placeholder={placeholder}
         className={cn(
-          "overflow-hidden resize-none relative z-10 bg-transparent w-full p-0",
+          "overflow-hidden resize-none relative z-10 bg-transparent w-full p-0 caret-stone-900",
           isDimmed && "opacity-40",
-          isFocused && "text-transparent",
+          (isFocused || isDisguiseMode) && "text-transparent placeholder:text-transparent",
           className
         )}
         style={combinedStyle}

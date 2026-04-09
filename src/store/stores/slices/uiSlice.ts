@@ -8,9 +8,11 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setDeadlineViewMode: (mode) => set({ deadlineViewMode: mode }),
   setActiveLens: (lensId) => set({ activeLensId: lensId }),
   setSelectedEventId: (eventId) => set({ selectedEventId: eventId }),
-  toggleFocusMode: () => set((state) => ({ focusMode: !state.focusMode })),
+  toggleFullscreenMode: () => set((state) => ({ fullscreenMode: !state.fullscreenMode })),
   toggleScrollMode: () => set((state) => ({ scrollMode: !state.scrollMode })),
+  toggleWritingFocusMode: () => set((state) => ({ writingFocusMode: !state.writingFocusMode })),
   toggleDisguiseMode: () => set((state) => ({ disguiseMode: !state.disguiseMode })),
+  setDisguiseBackgroundText: (text) => set({ disguiseBackgroundText: text }),
   setRightSidebarMode: (mode) => set({ rightSidebarMode: mode }),
   toggleShowDescriptions: () => set((state) => ({ showDescriptions: !state.showDescriptions })),
   setLetterSpacing: (spacing) => set({ letterSpacing: spacing }),
@@ -180,29 +182,6 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
       return true;
     }
     return false;
-  },
-  restoreFromSnapshot: async (snapshotId: string) => {
-    const { supabase } = await import('../../../lib/supabase');
-    if (!supabase) return false;
-    
-    try {
-      const { data, error } = await supabase
-        .from('app_state')
-        .select('state')
-        .eq('id', snapshotId)
-        .single();
-        
-      if (error) throw error;
-      
-      if (data && data.state) {
-        set({ ...data.state, syncStatus: 'idle', syncError: null });
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error('Failed to restore snapshot:', err);
-      return false;
-    }
   },
   fetchHistory: async () => {
     const { supabase } = await import('../../../lib/supabase');

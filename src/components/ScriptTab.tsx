@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Trash2, Edit2, Check, X, Clock, MessageSquare, ArrowRight, Save, Play } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { Trash2, Edit2, Check, X, Clock, MessageSquare, ArrowRight, Save, Play, Plus } from 'lucide-react';
+import { cn, countWords } from '../lib/utils';
 import { SearchableSelect } from './SearchableSelect';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
@@ -50,6 +50,7 @@ export function ScriptTab() {
   const [currentInput, setCurrentInput] = useState('');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -76,8 +77,7 @@ export function ScriptTab() {
   }, []);
 
   useEffect(() => {
-    const getWordCount = (text: string) => text.trim().split(/\s+/).filter(w => w.length > 0).length;
-    const totalWords = lines.reduce((acc, line) => acc + getWordCount(line.content), 0);
+    const totalWords = lines.reduce((acc, line) => acc + countWords(line.content), 0);
     const today = new Date().toISOString().split('T')[0];
     localStorage.setItem(`wordCount_${today}`, totalWords.toString());
     setDailyWordCount(totalWords);
@@ -94,12 +94,58 @@ export function ScriptTab() {
 
   // --- Writing Area Logic ---
 
+  const stateRef = useRef({ lines, title, activeWorkId, currentDraftId });
+  useEffect(() => {
+    stateRef.current = { lines, title, activeWorkId, currentDraftId };
+  }, [lines, title, activeWorkId, currentDraftId]);
+
+  useEffect(() => {
+    return () => {
+      const { lines, title, activeWorkId, currentDraftId } = stateRef.current;
+      if (lines.length > 0 && activeWorkId) {
+        let draftTitle = title.trim() || `未命名剧本 ${new Date().toLocaleTimeString()}`;
+        const contentString = JSON.stringify(lines);
+        const characterIds = Array.from(new Set(lines.map(l => l.characterId).filter(Boolean) as string[]));
+        
+        if (currentDraftId) {
+          updateScriptDraft({ 
+            id: currentDraftId,
+            title: draftTitle, 
+            characterIds, 
+            content: contentString 
+          });
+        } else {
+          addScriptDraft({ 
+            workId: activeWorkId, 
+            title: draftTitle, 
+            characterIds, 
+            content: contentString 
+          });
+        }
+      }
+    };
+  }, [addScriptDraft, updateScriptDraft]);
+
   // Auto-scroll to bottom of lines
   useEffect(() => {
     if (!isPlaying && activeSubTab === 'write') {
       linesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [lines, isPlaying, activeSubTab]);
+
+  // Add Ctrl+S listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (activeSubTab === 'write' && lines.length > 0) {
+          handleSaveDraft(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lines, title, activeWorkId, currentDraftId, activeSubTab]);
 
   // Keyboard shortcuts for character selection
   useEffect(() => {
@@ -129,12 +175,26 @@ export function ScriptTab() {
       e.preventDefault();
       setSelectedCharacterId(null);
       if (editingLineId) {
+        const line = lines.find(l => l.id === editingLineId);
+        if (line && line.content === '') {
+          setLines(lines.filter(l => l.id !== editingLineId));
+        }
         setEditingLineId(null);
         setCurrentInput('');
       }
     } else if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!currentInput.trim()) return;
+      if (!currentInput.trim()) {
+        if (editingLineId) {
+          const line = lines.find(l => l.id === editingLineId);
+          if (line && line.content === '') {
+            setLines(lines.filter(l => l.id !== editingLineId));
+            setEditingLineId(null);
+            setCurrentInput('');
+          }
+        }
+        return;
+      }
 
       if (editingLineId) {
         setLines(lines.map(l => l.id === editingLineId ? {
@@ -194,28 +254,38 @@ export function ScriptTab() {
     }
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = (asNew: boolean = false, isSilent: boolean = false) => {
     if (!activeWorkId) {
-      toast.error("请先选择一个作品");
+      if (!isSilent) toast.error("请先选择一个作品");
       return;
     }
     if (lines.length === 0) {
-      toast.error("草稿为空");
+      if (!isSilent) toast.error("草稿为空");
       return;
     }
     
     let draftTitle = title.trim() || `未命名剧本 ${new Date().toLocaleTimeString()}`;
-
     const contentString = JSON.stringify(lines);
-    addScriptDraft({ 
-      workId: activeWorkId, 
-      title: draftTitle, 
-      characterIds: Array.from(new Set(lines.map(l => l.characterId).filter(Boolean) as string[])), 
-      content: contentString 
-    });
-    setLines([]);
-    setTitle('');
-    toast.success("草稿已保存");
+    const characterIds = Array.from(new Set(lines.map(l => l.characterId).filter(Boolean) as string[]));
+
+    if (currentDraftId && !asNew) {
+      updateScriptDraft({ 
+        id: currentDraftId,
+        title: draftTitle, 
+        characterIds, 
+        content: contentString 
+      });
+      if (!isSilent) toast.success("草稿已更新");
+    } else {
+      const newId = addScriptDraft({ 
+        workId: activeWorkId, 
+        title: draftTitle, 
+        characterIds, 
+        content: contentString 
+      });
+      setCurrentDraftId(newId);
+      if (!isSilent) toast.success("已保存为新版本");
+    }
   };
 
   const getCharacterName = (id: string | null) => {
@@ -233,6 +303,7 @@ export function ScriptTab() {
       const draftLines = JSON.parse(draft.content) as ScriptLine[];
       setLines(draftLines);
       setTitle(draft.title);
+      setCurrentDraftId(draftId);
       setActiveSubTab('write');
     } catch (e) {
       console.error("Failed to parse script draft", e);
@@ -365,6 +436,21 @@ export function ScriptTab() {
                 <button 
                   onClick={() => {
                     if (lines.length > 0) {
+                      handleSaveDraft(false, true);
+                    }
+                    setLines([]);
+                    setTitle('');
+                    setCurrentDraftId(null);
+                    toast.success("已开启新草稿");
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors"
+                >
+                  <Plus size={16} />
+                  新建
+                </button>
+                <button 
+                  onClick={() => {
+                    if (lines.length > 0) {
                       setPlaybackIndex(0);
                       setIsPlaying(true);
                     }
@@ -376,14 +462,24 @@ export function ScriptTab() {
                   沉浸播放
                 </button>
                 <div className="w-px h-6 bg-stone-200 mx-2 hidden sm:block"></div>
-                <button 
-                  onClick={handleSaveDraft}
-                  disabled={lines.length === 0}
-                  className="px-4 py-1.5 bg-stone-900 text-white text-sm font-medium rounded-lg hover:bg-stone-800 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Save size={16} />
-                  保存草稿
-                </button>
+                <div className="flex items-center">
+                  <button 
+                    onClick={() => handleSaveDraft(false)}
+                    disabled={lines.length === 0}
+                    className="px-4 py-1.5 bg-stone-900 text-white text-sm font-medium rounded-l-lg hover:bg-stone-800 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border-r border-stone-700"
+                  >
+                    <Save size={16} />
+                    {currentDraftId ? "更新草稿" : "保存草稿"}
+                  </button>
+                  <button 
+                    onClick={() => handleSaveDraft(true)}
+                    disabled={lines.length === 0}
+                    className="px-3 py-1.5 bg-stone-900 text-white text-sm font-medium rounded-r-lg hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="存为新版本"
+                  >
+                    存为新版本
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -455,6 +551,29 @@ export function ScriptTab() {
                           title="删除此行"
                         >
                           <X size={16} />
+                        </button>
+
+                        {/* Insert Line button (shows on hover) */}
+                        <button 
+                          onClick={() => {
+                            const idx = lines.findIndex(l => l.id === line.id);
+                            const newLine: ScriptLine = {
+                              id: uuidv4(),
+                              type: selectedCharacterId ? 'dialogue' : 'narration',
+                              characterId: selectedCharacterId,
+                              content: '',
+                            };
+                            const newLines = [...lines];
+                            newLines.splice(idx + 1, 0, newLine);
+                            setLines(newLines);
+                            setEditingLineId(newLine.id);
+                            setCurrentInput('');
+                            setTimeout(() => inputRef.current?.focus(), 0);
+                          }}
+                          className="absolute -bottom-3 left-1/2 -translate-x-1/2 p-0.5 bg-white border border-stone-200 rounded-full text-stone-400 hover:text-emerald-600 hover:border-emerald-300 opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm"
+                          title="在此行下方插入"
+                        >
+                          <Plus size={14} />
                         </button>
                       </div>
                     </div>

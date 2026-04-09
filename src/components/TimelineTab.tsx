@@ -22,7 +22,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
     activeWorkId, 
     selectedEventId,
     timelineViewMode,
-    focusMode,
+    fullscreenMode,
     setActiveTab,
     setSelectedEventId,
     setTimelineViewMode,
@@ -44,7 +44,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
     activeWorkId: state.activeWorkId,
     selectedEventId: state.selectedEventId,
     timelineViewMode: state.timelineViewMode,
-    focusMode: state.focusMode,
+    fullscreenMode: state.fullscreenMode,
     setActiveTab: state.setActiveTab,
     setSelectedEventId: state.setSelectedEventId,
     setTimelineViewMode: state.setTimelineViewMode,
@@ -106,7 +106,7 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
 
   return (
     <div className="flex-1 flex flex-col h-full bg-stone-50/50 overflow-hidden">
-      {!focusMode && (
+      {!fullscreenMode && (
         <div className={cn("px-4 md:px-6 py-3 md:py-4 border-b border-stone-200 bg-white/80 backdrop-blur-sm shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-4 z-10", isSubTab ? "border-t-0" : "")}>
           <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 min-w-0 w-full md:w-auto">
             {!isSubTab && <h2 className="text-xl md:text-2xl font-bold text-stone-800 tracking-tight truncate">Timeline</h2>}

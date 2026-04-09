@@ -5,8 +5,8 @@ export const createStatsSlice: StateCreator<StoreState, [], [], StatsSlice> = (s
   updateDailyWordCount: (sceneId, newWordCount) => set((state) => {
     const today = new Date().toISOString().split('T')[0];
     const dailyStats = state.dailyWordCounts[today] || { total: 0, netChange: 0, sceneCounts: {} };
-    const oldCount = dailyStats.sceneCounts[sceneId] || 0;
-    const diff = newWordCount - oldCount;
+    const lastCount = state.lastSceneCounts[sceneId] || 0;
+    const diff = newWordCount - lastCount;
     
     return {
       dailyWordCounts: {
@@ -20,6 +20,10 @@ export const createStatsSlice: StateCreator<StoreState, [], [], StatsSlice> = (s
             [sceneId]: newWordCount
           }
         }
+      },
+      lastSceneCounts: {
+        ...state.lastSceneCounts,
+        [sceneId]: newWordCount
       }
     };
   }),

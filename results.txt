@@ -1,0 +1,48 @@
+src/components/DataManager.tsx:            <div className="max-w-md mx-auto mt-8 p-6 bg-red-50 border border-red-100 rounded-2xl text-red-800 shadow-sm">
+src/components/DataManager.tsx:    <div className="w-full max-w-md bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+src/components/AddEventModal.tsx:      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+src/components/DeadlineTab.tsx:                                <span className="truncate max-w-[60px]">{work?.title}</span>
+src/components/ErrorBoundary.tsx:          <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-100 p-6 text-center">
+src/components/TagManagerModal.tsx:      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+src/components/ui/ConfirmationModal.tsx:      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+src/components/ui/VersionHistoryModal.tsx:      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+src/components/LocationsTab.tsx:        <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+src/components/LensesPanel.tsx:                              <span className="truncate max-w-[150px]">
+src/components/LensesPanel.tsx:                              <span className="truncate max-w-[200px]">
+src/components/ScriptTab.tsx:          <div className="w-full max-w-4xl px-8 absolute bottom-24">
+src/components/ScriptTab.tsx:        <div className="max-w-4xl mx-auto">
+src/components/ScriptTab.tsx:        <div className="flex-1 flex flex-col overflow-hidden max-w-4xl mx-auto w-full px-4 md:px-8 pb-4">
+src/components/ScriptTab.tsx:                        "group relative flex flex-col max-w-3xl mx-auto",
+src/components/ScriptTab.tsx:                <div className="max-w-4xl mx-auto">
+src/components/ScriptTab.tsx:          <div className="max-w-4xl mx-auto space-y-4">
+src/components/EditorPanel.tsx:            disguiseMode ? "grid w-full max-w-none" : "mx-auto max-w-4xl"
+src/components/EditorPanel.tsx:              <div className="bg-white shadow-md border border-[#E1DFDD] px-2 md:px-4 py-12 w-full max-w-none my-4 min-h-[1056px] text-[#323130] font-sans text-[15px] leading-[1.5] whitespace-pre-wrap">
+src/components/EditorPanel.tsx:              ? "bg-white shadow-md border border-[#E1DFDD] px-2 md:px-4 py-12 w-full max-w-none my-4 min-h-[1056px] relative" 
+src/components/TagManagerTab.tsx:    <div className="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1 max-w-3xl mx-auto w-full custom-scrollbar">
+src/components/timeline/TimelineTableView.tsx:      <div className="bg-white rounded-xl border border-stone-200/80 shadow-sm w-full max-w-7xl mx-auto shrink-0 overflow-hidden">
+src/components/timeline/TimelineTableView.tsx:      <div className="flex justify-end gap-2 relative w-full max-w-7xl mx-auto shrink-0">
+src/components/timeline/TimelineTableView.tsx:      <div className="bg-white rounded-xl border border-stone-200/80 shadow-sm overflow-hidden w-full max-w-7xl mx-auto shrink-0">
+src/components/BlockCompareModal.tsx:      <div className="bg-white rounded-xl shadow-xl w-full max-w-7xl h-[95vh] flex flex-col overflow-hidden">
+src/components/CompileTab.tsx:          <div className="max-w-3xl mx-auto bg-white shadow-sm min-h-[800px] p-6 md:p-12">
+src/components/CharactersTab.tsx:        <div className="max-w-6xl mx-auto">
+src/components/CharactersTab.tsx:              <p className="text-sm text-stone-500 mb-6 max-w-sm">Create your first character to start building your cast and tracking their appearances.</p>
+src/components/CharactersTab.tsx:          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+src/components/EventPoolPanel.tsx:                            <span className="font-mono text-[10px] bg-stone-200 px-1.5 py-0.5 rounded w-fit truncate max-w-full" title={event.title}>
+src/components/BackupManager.tsx:      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+src/components/MontageBoard.tsx:          <div className="flex-1 w-full sm:max-w-md mx-auto flex items-center gap-2">
+src/components/MontageBoard.tsx:        <div className="space-y-8 sm:space-y-10 max-w-5xl mx-auto">
+src/components/MontageBoard.tsx:                                            "px-2 py-1 rounded text-[9px] sm:text-[10px] font-bold truncate max-w-[140px] sm:max-w-[180px] border",
+src/components/MontageBoard.tsx:                                              "font-semibold block truncate max-w-[90px] sm:max-w-[110px]",
+src/components/BlockManagementTab.tsx:          <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
+src/components/QuickCapture.tsx:        className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200"
+src/components/ShortcutModal.tsx:      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+src/components/TimelineTab.tsx:            <div className="flex bg-stone-100/80 p-1 rounded-lg border border-stone-200/60 shrink-0 overflow-x-auto max-w-full shadow-sm hide-scrollbar">
+src/components/TabSettingsModal.tsx:      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
+src/components/LensesTab.tsx:        <div className="max-w-7xl mx-auto">
+src/components/LensesTab.tsx:            <div className="max-w-2xl">
+src/components/LensesTab.tsx:                                <span className="truncate max-w-[150px]">
+src/components/LensesTab.tsx:                              <span className="truncate max-w-[150px]">
+src/components/PublishManager.tsx:          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] md:h-[80vh] flex flex-col overflow-hidden">
+src/components/PublishManager.tsx:          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+src/components/PublishManager.tsx:          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+src/components/InboxTab.tsx:      <div className="max-w-3xl mx-auto">

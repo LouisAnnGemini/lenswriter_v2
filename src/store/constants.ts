@@ -17,6 +17,7 @@ const initialBlockId1 = uuidv4();
 const initialBlockId2 = uuidv4();
 
 export const initialState: State = {
+  isCheckingCloud: false,
   works: [{ id: initialWorkId, title: 'The Silent Echo', createdAt: Date.now(), order: 0 }],
   characters: [
     { id: initialCharId, workId: initialWorkId, name: 'Elias Thorne', description: 'A detective with a troubled past.', order: 0 },
@@ -48,6 +49,7 @@ export const initialState: State = {
   metroNodes: [],
   scriptDrafts: [],
   dailyWordCounts: {},
+  lastSceneCounts: {},
   chapterSnapshots: [],
   platformTrackings: [],
   activeWorkId: initialWorkId,
@@ -105,9 +107,11 @@ export const initialState: State = {
   deadlineViewMode: 'local',
   activeLensId: null,
   selectedEventId: null,
-  focusMode: false,
+  fullscreenMode: false,
   scrollMode: false,
+  writingFocusMode: false,
   disguiseMode: false,
+  disguiseBackgroundText: "Q3 Financial Performance Overview\n\nExecutive Summary\nThis quarter has demonstrated robust growth across all core verticals, driven by strategic realignments and optimized operational efficiencies. Our synergistic approach to market penetration has yielded a 14% increase in year-over-year revenue, outperforming initial projections.\n\nKey Metrics\n- Revenue: $42.5M (+14% YoY)\n- Operating Margin: 22.4% (+210 bps)\n- Customer Acquisition Cost (CAC): Decreased by 8%\n- Net Retention Rate (NRR): 112%\n\nStrategic Initiatives\n1. Infrastructure Modernization: The migration to cloud-native architectures is 80% complete, expected to reduce server overhead by $1.2M annually.\n2. Market Expansion: Preliminary research into the EMEA region indicates strong product-market fit. A dedicated task force has been assembled to evaluate entry strategies.\n3. Talent Acquisition: We have successfully onboarded 45 key personnel in engineering and product management to accelerate our Q4 roadmap.\n\nRisk Factors\nSupply chain volatility remains a concern, particularly regarding semiconductor availability. We are actively diversifying our vendor base to mitigate potential disruptions. Additionally, shifting regulatory landscapes in data privacy require continuous monitoring and compliance adjustments.\n\nConclusion\nThe current trajectory positions us favorably for a strong year-end finish. Continued focus on execution and cost management will be critical to achieving our revised EBITDA targets.",
   rightSidebarMode: 'closed',
   lastInspectorTab: 'macro',
   showDescriptions: true,

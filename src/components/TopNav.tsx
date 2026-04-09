@@ -12,7 +12,7 @@ import { initialState } from '../store/constants';
 
 export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
   const { 
-    focusMode,
+    fullscreenMode,
     scenes,
     activeDocumentId,
     activeTab,
@@ -24,7 +24,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     setActiveDocument, 
     setActiveTab, 
     setDeadlineViewMode, 
-    toggleFocusMode, 
+    toggleFullscreenMode, 
     setRightSidebarMode,
     appMode,
     tabConfig,
@@ -40,7 +40,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     cloudLastModified,
     isCheckingCloud
   } = useStore(useShallow(state => ({
-    focusMode: state.focusMode,
+    fullscreenMode: state.fullscreenMode,
     scenes: state.scenes,
     activeDocumentId: state.activeDocumentId,
     activeTab: state.activeTab,
@@ -52,7 +52,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     setActiveDocument: state.setActiveDocument,
     setActiveTab: state.setActiveTab,
     setDeadlineViewMode: state.setDeadlineViewMode,
-    toggleFocusMode: state.toggleFocusMode,
+    toggleFullscreenMode: state.toggleFullscreenMode,
     setRightSidebarMode: state.setRightSidebarMode,
     appMode: state.appMode,
     tabConfig: state.tabConfig || initialState.tabConfig, // Fallback for existing users
@@ -234,11 +234,11 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
       {/* Desktop Top Nav */}
       <div className={cn(
         "h-14 border-b border-stone-200 bg-white flex items-center justify-between px-4 md:px-6 shrink-0 transition-all duration-300 z-[60]",
-        focusMode 
+        fullscreenMode 
           ? "fixed top-0 left-0 right-0 opacity-0 hover:opacity-100 shadow-md" 
           : "relative"
       )}>
-        {focusMode && (
+        {fullscreenMode && (
           <div className="absolute top-full left-0 right-0 h-4 bg-transparent" />
         )}
         <div className="flex items-center">
@@ -346,12 +346,12 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
           )}
 
           <button
-            onClick={toggleFocusMode}
+            onClick={toggleFullscreenMode}
             className={cn(
               "p-2 rounded-md transition-colors",
-              focusMode ? "text-emerald-600 bg-emerald-50" : "text-stone-500 hover:bg-stone-100"
+              fullscreenMode ? "text-emerald-600 bg-emerald-50" : "text-stone-500 hover:bg-stone-100"
             )}
-            title={focusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+            title={fullscreenMode ? "Exit Fullscreen Mode" : "Enter Fullscreen Mode"}
           >
             <Maximize2 size={20} />
           </button>

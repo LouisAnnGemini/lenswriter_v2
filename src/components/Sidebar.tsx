@@ -15,7 +15,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
     activeWorkId, 
     activeTab, 
     deadlineViewMode, 
-    focusMode,
+    fullscreenMode,
     addWork,
     updateWork,
     deleteWork,
@@ -28,7 +28,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
     activeWorkId: state.activeWorkId,
     activeTab: state.activeTab,
     deadlineViewMode: state.deadlineViewMode,
-    focusMode: state.focusMode,
+    fullscreenMode: state.fullscreenMode,
     addWork: state.addWork,
     updateWork: state.updateWork,
     deleteWork: state.deleteWork,
@@ -45,7 +45,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, s
   const [deletingWorkId, setDeletingWorkId] = useState<string | null>(null);
   const [showBackupManager, setShowBackupManager] = useState(false);
 
-  if (focusMode) return null;
+  if (fullscreenMode) return null;
 
   const handleAddWork = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newWorkTitle.trim()) {

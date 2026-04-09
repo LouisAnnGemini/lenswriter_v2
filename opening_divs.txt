@@ -1,0 +1,79 @@
+349:      <div className="hidden md:flex flex-1 flex-col items-center justify-center text-stone-400 bg-white">
+456:    <div className={cn(
+465:      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+468:          <div className="absolute top-4 right-4 z-[100] bg-white/90 backdrop-blur-md shadow-xl rounded-xl border border-stone-200/50 p-2 animate-in fade-in slide-in-from-top-4">
+478:        <div 
+488:        <div 
+496:            <div className="col-start-1 row-start-1 pointer-events-none z-0">
+497:              <div className="bg-white shadow-md border border-[#E1DFDD] px-12 md:px-20 py-16 w-full max-w-[816px] mx-auto my-8 min-h-[1056px] text-[#323130] font-sans text-[15px] leading-[1.5] whitespace-pre-wrap">
+503:          <div className={cn(disguiseMode ? "col-start-1 row-start-1 z-10 flex flex-col" : "flex flex-col")}>
+504:            <div className={cn("flex items-start justify-between mb-4 gap-4 flex-col md:flex-row", disguiseMode && "hidden")}>
+505:            <div className="flex items-center flex-1 min-w-0 gap-2 w-full">
+535:            <div className="flex items-center flex-wrap justify-end gap-1 md:gap-2 relative shrink-0 w-full md:w-auto">
+579:            <div className="mb-12 space-y-6">
+592:          <div className={cn(
+614:                <div key={doc.id} id={`document-${doc.id}`} className="flex flex-col">
+616:                    <div className={cn("mb-6 mt-8 first:mt-0 flex items-center justify-between group/scene-header", disguiseMode && "hidden")}>
+651:                    <div key={block.id} id={`block-${block.id}`} className={cn(
+658:                        <div className="absolute -right-48 top-0 w-40 bg-yellow-100 border border-yellow-200 p-3 text-xs text-yellow-900 rounded shadow-sm">
+679:                      <div className="flex items-start gap-2" style={{
+683:                        <div className="flex-1 min-w-0">
+685:                          <div className={cn(
+694:                              <div 
+703:                              <div className="flex justify-between items-center mb-2">
+704:                                <div className="flex space-x-1">
+841:                            <div className="transition-opacity flex items-center space-x-1 absolute -left-10 top-2 z-10 opacity-0 group-hover:opacity-100">
+849:                              <div className="relative">
+858:                                  <div className="absolute left-full top-0 ml-1 flex items-center space-x-1 bg-white shadow-sm rounded-md border border-stone-200 p-1 z-20">
+922:                          <div className="flex flex-col items-center space-y-2 transition-opacity pt-2 w-8 shrink-0 opacity-0 group-hover:opacity-100">
+945:                    <div className="flex space-x-4 mt-8">
+971:          <div className="h-[50vh]" /> {/* Bottom padding for Scroll Past End */}
+979:        <div className={cn(
+984:          <div className="w-12 border-r border-stone-100 bg-stone-50 flex flex-col items-center py-4 space-y-4 shrink-0">
+1033:            <div className="flex-1" />
+1044:          <div className="flex-1 flex flex-col overflow-hidden bg-white">
+1045:            <div className="p-4 border-b border-stone-100 flex items-center justify-between shrink-0 bg-white">
+1046:              <div className="flex items-center gap-2">
+1073:            <div className="flex-1 overflow-y-auto">
+1081:              <div className="p-2 space-y-2">
+1083:                  <div className="flex justify-between items-center">
+1102:                  <div className="text-center text-xs text-stone-500 py-4">No blocks found.</div>
+1110:                    <div key={`${section.documentId}-${idx}`} className={cn(
+1114:                      <div 
+1121:                        {statusColor && <div className={cn("w-2 h-2 rounded-full mr-2", statusColor.dot)} />}
+1128:                        <div className="space-y-0.5">
+1130:                            <div key={entry.id} className={cn(
+1134:                              <div className="flex justify-between items-start">
+1170:              <div className="p-4 space-y-6">
+1172:                <div className="space-y-4">
+1173:                  <div>
+1188:                  <div>
+1190:                    <div className="grid grid-cols-2 gap-1">
+1251:                <div className="space-y-4 pt-4 border-t border-stone-200">
+1252:                  <div>
+1254:                    <div className="relative h-9 overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+1255:                      <div className="flex items-center gap-2 px-2 h-full">
+1256:                        <div className="text-xs font-bold text-stone-900 shrink-0">{totalWords}</div>
+1257:                        <div className="text-stone-300 font-light text-xs">/</div>
+1272:                        <div className="absolute bottom-0 left-0 h-0.5 w-full bg-stone-100">
+1273:                          <div 
+1284:                  <div>
+1300:                <div className="pt-4 border-t border-stone-200">
+1302:                  <div className="flex flex-wrap gap-1">
+1335:        <div className={cn(
+1352:        <div className={cn(
+1367:          <div className="absolute bottom-full right-0 mb-4 w-72 bg-white rounded-lg shadow-xl border border-stone-200 p-4 z-50 origin-bottom-right animate-in fade-in slide-in-from-bottom-2">
+1370:            <div className="mb-4">
+1371:              <div className="flex bg-stone-100 rounded-lg p-1">
+1403:            <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-stone-100">
+1404:              <div className="flex items-center justify-between">
+1415:                  <div className={cn(
+1421:              <div className="flex items-center justify-between">
+1432:                  <div className={cn(
+1441:            <div className="space-y-3 mb-4 pb-4 border-b border-stone-100">
+1442:              <div>
+1443:                <div className="flex justify-between items-center mb-1">
+1456:              <div>
+1457:                <div className="flex justify-between items-center mb-1">
+1459:                  <div className="flex items-center gap-2">
+1481:            <div className="space-y-1">

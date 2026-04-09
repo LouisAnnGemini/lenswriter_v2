@@ -27,17 +27,17 @@ describe('uiSlice', () => {
     expect(useTestStore.getState().activeTab).toBe('world');
   });
 
-  it('should toggle focus mode', () => {
-    const { toggleFocusMode } = useTestStore.getState();
+  it('should toggle fullscreen mode', () => {
+    const { toggleFullscreenMode } = useTestStore.getState();
     
     // Initial state should be false
-    expect(useTestStore.getState().focusMode).toBe(false);
+    expect(useTestStore.getState().fullscreenMode).toBe(false);
     
-    toggleFocusMode();
-    expect(useTestStore.getState().focusMode).toBe(true);
+    toggleFullscreenMode();
+    expect(useTestStore.getState().fullscreenMode).toBe(true);
     
-    toggleFocusMode();
-    expect(useTestStore.getState().focusMode).toBe(false);
+    toggleFullscreenMode();
+    expect(useTestStore.getState().fullscreenMode).toBe(false);
   });
 
   it('should toggle disguise mode', () => {
