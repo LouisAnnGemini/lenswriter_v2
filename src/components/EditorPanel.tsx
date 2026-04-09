@@ -734,9 +734,9 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                             disguiseMode && "rounded-none p-0 border-0 bg-transparent"
                           )}>
                             {block.isComparing && !disguiseMode && (
-                              <div className="absolute top-0 bottom-0 -right-3 w-0 z-10 pointer-events-none">
+                              <div className="absolute -top-8 bottom-0 -right-3 w-0 z-10 pointer-events-none">
                                 <div 
-                                  className="sticky top-4 -mr-3 float-right bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 pointer-events-auto whitespace-nowrap"
+                                  className="sticky top-0 -mr-3 float-right bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 pointer-events-auto whitespace-nowrap"
                                   onClick={() => setComparingBlockId(block.id)}
                                 >
                                   <GitCompare size={12} />
@@ -884,7 +884,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                           {/* Block Actions (Hover) */}
                           {!disguiseMode && !isArchived && (
                             <div className="absolute top-0 bottom-0 -left-10 w-10 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="sticky top-4 flex items-center space-x-1 pt-2">
+                              <div className="sticky top-8 flex items-center space-x-1">
                                 <button 
                                   onClick={() => handleAddBlock(false, block.id, doc.id)}
                                   className="p-1 text-stone-300 hover:text-emerald-600 hover:bg-stone-100 rounded transition-colors"
@@ -967,7 +967,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                         {/* Right Side Actions for Text Blocks */}
                         {!disguiseMode && !isArchived && (
                           <div className="relative w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="sticky top-4 flex flex-col items-center space-y-2 pt-2">
+                            <div className="sticky top-8 flex flex-col items-center space-y-2">
                               <button 
                                 onClick={() => toggleBlockDescription(block)}
                                 className={cn("p-1.5 rounded-md transition-colors", block.description !== undefined ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
