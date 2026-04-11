@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { X, GitCompare, Check, Save, ArrowLeft, ArrowRight, ArrowLeftRight } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, stripHtml } from '../lib/utils';
 import * as Diff from 'diff';
 import { DiffEditor } from '@monaco-editor/react';
 
@@ -31,8 +31,8 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
   
   const block = blocks.find(b => b.id === blockId);
   
-  const initialOriginal = useRef(block?.content || '').current;
-  const initialDraft = useRef(block?.draftContent ?? block?.content ?? '').current;
+  const initialOriginal = useRef(stripHtml(block?.content || '')).current;
+  const initialDraft = useRef(stripHtml(block?.draftContent ?? block?.content ?? '')).current;
 
   const [originalText, setOriginalText] = useState(initialOriginal);
   const [draftText, setDraftText] = useState(initialDraft);
@@ -42,8 +42,8 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
 
   useEffect(() => {
     if (block) {
-      setOriginalText(block.content);
-      setDraftText(block.draftContent ?? block.content);
+      setOriginalText(stripHtml(block.content));
+      setDraftText(stripHtml(block.draftContent ?? block.content));
     }
   }, [block?.id]);
 
@@ -102,7 +102,7 @@ export function BlockCompareModal({ blockId, onClose }: { blockId: string, onClo
     renderOverviewRuler: true,
     hideCursorInOverviewRuler: false,
     renderMarginRevertIcon: true,
-    diffWordWrap: 'on',
+    diffWordWrap: 'on' as const,
   }), []);
 
   useEffect(() => {

@@ -28,7 +28,6 @@ export function WordRibbon({ title, onClose, onEdit }: { title: string, onClose?
                 size={16} 
                 className="cursor-pointer hover:opacity-100" 
                 onClick={onEdit}
-                title="Edit Disguise Text"
               />
             )}
             <div className="w-3 h-[1px] bg-white"></div>

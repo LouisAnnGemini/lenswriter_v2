@@ -82,7 +82,6 @@ export function LocationsTab({ isSubTab }: { isSubTab?: boolean }) {
               {(provided) => (
                 <div {...provided.droppableProps} ref={provided.innerRef} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {locations.map((location, index) => (
-                    // @ts-expect-error React 19 key prop issue
                     <Draggable key={location.id} draggableId={location.id} index={index}>
                       {(provided, snapshot) => (
                         <div

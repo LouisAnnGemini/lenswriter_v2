@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Maximize2, ArrowRightToLine, X, Settings2, GripVertical, Eye, EyeOff, Network, AlertCircle, Filter, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Maximize2, ArrowRightToLine, X, Settings2, GripVertical, Eye, EyeOff, Network, AlertCircle, Filter, Search, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
   DndContext, 
@@ -651,6 +651,14 @@ export const TimelineTableView = React.memo(({
       </div>
 
       <div className="flex justify-end gap-2 relative w-full max-w-7xl mx-auto shrink-0">
+        <button 
+          onClick={() => window.dispatchEvent(new CustomEvent('open-add-event-modal'))}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-600 bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-all shadow-sm"
+        >
+          <Plus size={14} />
+          <span className="hidden sm:inline">New Event</span>
+          <span className="sm:hidden">New</span>
+        </button>
         <button 
           onClick={() => setShowSettings(!showSettings)}
           className={cn(

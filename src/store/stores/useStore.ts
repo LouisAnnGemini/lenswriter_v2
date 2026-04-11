@@ -160,41 +160,11 @@ export const useStore = create<StoreState>()(
       name: 'app-storage',
       storage: createJSONStorage(() => localStorage),
       merge: (persistedState: any, currentState: StoreState) => {
-        // Merge tabConfig to ensure new tabs are available
-        const mergedTabConfig = { ...currentState.tabConfig };
-        
-        if (persistedState.tabConfig) {
-          ['design', 'review', 'management'].forEach(mode => {
-            const persistedTabs = persistedState.tabConfig[mode] || [];
-            const currentTabs = currentState.tabConfig[mode as 'design' | 'review' | 'management'];
-            
-            // Start with persisted tabs, removing duplicates
-            const mergedTabs = persistedTabs
-              .filter((t: any, index: number, self: any[]) => 
-                index === self.findIndex((inner: any) => inner.id === t.id)
-              );
-            
-            // Add any missing tabs from current state
-            currentTabs.forEach(currentTab => {
-              if (!mergedTabs.some((t: any) => t.id === currentTab.id)) {
-                mergedTabs.push(currentTab);
-              }
-            });
-            
-            mergedTabConfig[mode as 'design' | 'review' | 'management'] = mergedTabs;
-          });
-        }
-
         return {
           ...currentState,
           ...persistedState,
-          tabConfig: persistedState.tabConfig ? mergedTabConfig : currentState.tabConfig
+          sidebarConfig: persistedState.sidebarConfig || currentState.sidebarConfig
         };
-      },
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.appMode = 'design';
-        }
       }
     }
   )

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { AlignLeft, Search, CheckCircle2, Circle, ChevronRight, ChevronDown, Folder, FileText, ExternalLink } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, stripHtml } from '../lib/utils';
 
 export function BlockManagementTab() {
   const { 
@@ -202,7 +202,7 @@ export function BlockManagementTab() {
                           />
                           <div className="text-sm text-stone-500 bg-stone-50 p-2 rounded border border-stone-100 flex items-start gap-2 group/block">
                             <div className="flex-1 line-clamp-2">
-                              {block.content || <span className="italic text-stone-400">Empty block</span>}
+                              {stripHtml(block.content) || <span className="italic text-stone-400">Empty block</span>}
                             </div>
                             <button
                               onClick={() => {

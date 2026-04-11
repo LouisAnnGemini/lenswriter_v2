@@ -300,4 +300,5 @@ export const createTimelineSlice: StateCreator<StoreState, [], [], TimelineSlice
 
     return state;
   }),
+  setTimelineSearchQuery: (query) => set({ timelineSearchQuery: query }),
 });

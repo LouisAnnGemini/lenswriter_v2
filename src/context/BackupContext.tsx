@@ -94,7 +94,7 @@ export const BackupProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       // 3. Rotate backups (keep last 30)
       const backups: { name: string, handle: FileSystemFileHandle }[] = [];
-      for await (const entry of directoryHandle.values()) {
+      for await (const entry of (directoryHandle as any).values()) {
         if (entry.kind === 'file' && entry.name.startsWith('lenswriter_backup_') && entry.name.endsWith('.json')) {
           backups.push({ name: entry.name, handle: entry as FileSystemFileHandle });
         }

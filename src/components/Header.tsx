@@ -1,82 +1,68 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
-import { Edit3, Layers, Users, Menu, ChevronLeft, FileText, Clock, Maximize2, AlignLeft, LayoutGrid, Layout, ChevronDown, PanelRightOpen, PanelRightClose, Inbox, Save, Network, Archive, Send, MessageSquare, CloudUpload, CloudDownload, Check, Loader2, RotateCcw, History } from 'lucide-react';
-import { DataManager } from './DataManager';
+import { Menu, ChevronLeft, Maximize2, PanelRightOpen, PanelRightClose, CloudUpload, CloudDownload, Check, Loader2, RotateCcw, History } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { toast } from 'sonner';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { VersionHistoryModal } from './ui/VersionHistoryModal';
 
-import { initialState } from '../store/constants';
-
-export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
+export function Header({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
   const { 
     fullscreenMode,
     scenes,
+    chapters,
     activeDocumentId,
     activeTab,
+    timelineViewMode,
+    worldViewMode,
     works,
     activeWorkId,
     rightSidebarMode,
-    disguiseMode,
     lastInspectorTab,
+    setActiveTab,
     setActiveDocument, 
-    setActiveTab, 
-    setDeadlineViewMode, 
     toggleFullscreenMode, 
     setRightSidebarMode,
-    appMode,
-    tabConfig,
     supabaseSyncEnabled,
-    saveHistoryVersion,
     pushToCloud,
     pullFromCloud,
     undoPull,
     checkCloudVersion,
-    syncStatus,
     lastSynced,
     lastModified,
     cloudLastModified,
-    isCheckingCloud
   } = useStore(useShallow(state => ({
     fullscreenMode: state.fullscreenMode,
     scenes: state.scenes,
+    chapters: state.chapters,
     activeDocumentId: state.activeDocumentId,
     activeTab: state.activeTab,
+    timelineViewMode: state.timelineViewMode,
+    worldViewMode: state.worldViewMode,
     works: state.works,
     activeWorkId: state.activeWorkId,
     rightSidebarMode: state.rightSidebarMode,
-    disguiseMode: state.disguiseMode,
     lastInspectorTab: state.lastInspectorTab,
-    setActiveDocument: state.setActiveDocument,
     setActiveTab: state.setActiveTab,
-    setDeadlineViewMode: state.setDeadlineViewMode,
+    setActiveDocument: state.setActiveDocument,
     toggleFullscreenMode: state.toggleFullscreenMode,
     setRightSidebarMode: state.setRightSidebarMode,
-    appMode: state.appMode,
-    tabConfig: state.tabConfig || initialState.tabConfig, // Fallback for existing users
     supabaseSyncEnabled: state.supabaseSyncEnabled,
-    saveHistoryVersion: state.saveHistoryVersion,
     pushToCloud: state.pushToCloud,
     pullFromCloud: state.pullFromCloud,
     undoPull: state.undoPull,
     checkCloudVersion: state.checkCloudVersion,
-    syncStatus: state.syncStatus,
     lastSynced: state.lastSynced,
     lastModified: state.lastModified,
     cloudLastModified: state.cloudLastModified,
-    isCheckingCloud: state.isCheckingCloud
   })));
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isSyncingPush, setIsSyncingPush] = useState(false);
   const [isSyncingPull, setIsSyncingPull] = useState(false);
   const [showSyncSuccess, setShowSyncSuccess] = useState(false);
   const [showPullConfirm, setShowPullConfirm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [hasSnapshot, setHasSnapshot] = useState(!!localStorage.getItem('prePullSnapshot'));
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const moreMenuRef = useRef<HTMLDivElement>(null);
 
   // Update snapshot status
   useEffect(() => {
@@ -103,73 +89,6 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
     return () => clearInterval(interval);
   }, [supabaseSyncEnabled, checkCloudVersion]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
-        setIsMoreMenuOpen(false);
-      }
-    };
-
-    if (isMoreMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isMoreMenuOpen]);
-
-  const allTabs = [
-    { id: 'design', label: 'Writing', icon: Edit3 },
-    { id: 'inbox', label: 'Notes', icon: Inbox },
-    { id: 'script', label: 'Script', icon: MessageSquare },
-    { id: 'blockDescriptions', label: 'Block Descriptions', icon: AlignLeft },
-    { id: 'lenses', label: 'Lenses', icon: LayoutGrid },
-    { id: 'timelineEvents', label: 'Timeline Events', icon: Clock },
-    { id: 'montage', label: 'Montage', icon: Layout },
-    { id: 'metro', label: 'Metro', icon: Network },
-    { id: 'world', label: 'World', icon: Users },
-    { id: 'deadline', label: 'Deadline', icon: Clock },
-    { id: 'compile', label: 'Compile', icon: FileText },
-    { id: 'dataManagement', label: 'Data Management', icon: Archive },
-    { id: 'publish', label: 'Publishing', icon: Send },
-  ] as const;
-
-  const currentConfigRaw = tabConfig?.[appMode] || [];
-  
-  // Ensure 'dataManagement' is in the config if missing (for existing users)
-  const currentConfig = [...currentConfigRaw];
-  if (!currentConfig.some(c => c.id === 'dataManagement')) {
-    currentConfig.push({ id: 'dataManagement', label: 'Data Management', visible: appMode === 'management' });
-  }
-  if (!currentConfig.some(c => c.id === 'script')) {
-    currentConfig.push({ id: 'script', label: 'Script', visible: appMode === 'design' });
-  }
-  
-  // Combine config with icons and filter visible
-  const tabs = currentConfig
-    .filter(configItem => configItem.visible)
-    .map(configItem => {
-      const baseTab = allTabs.find(t => t.id === configItem.id);
-      return {
-        ...baseTab,
-        id: configItem.id,
-        label: configItem.label || baseTab?.label || 'Untitled',
-        icon: baseTab?.icon || Edit3 // Fallback icon
-      };
-    });
-  
-  const tabIds = tabs.map(t => t.id).join(',');
-  
-  // Reset activeTab if it's no longer visible in the current mode
-  useEffect(() => {
-    if (!tabIds.split(',').includes(activeTab)) {
-      setActiveTab('design');
-    }
-  }, [tabIds, activeTab, setActiveTab]);
-  
   const isScene = scenes.some(s => s.id === activeDocumentId);
 
   const hasUnsyncedChanges = lastModified > (lastSynced || 0);
@@ -231,7 +150,7 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
       />
-      {/* Desktop Top Nav */}
+      {/* Desktop Header */}
       <div className={cn(
         "h-14 border-b border-stone-200 bg-white flex items-center justify-between px-4 md:px-6 shrink-0 transition-all duration-300 z-[60]",
         fullscreenMode 
@@ -258,32 +177,82 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
             </button>
           )}
           
-          <div className="hidden md:flex space-x-8 h-full">
-            {tabs.map((tab, index) => (
-              <button
-                key={tab.id || `tab-desktop-${index}`}
-                onClick={() => {
-                  setActiveTab(tab.id as any);
-                  if (tab.id === 'deadline') {
-                    setDeadlineViewMode('local');
+          <div className="font-semibold text-stone-900 capitalize flex items-center space-x-2 overflow-hidden">
+            <button 
+              onClick={() => {
+                setActiveTab('design');
+                setActiveDocument(null);
+              }}
+              className="text-stone-400 hover:text-stone-600 transition-colors shrink-0"
+            >
+              {works.find(w => w.id === activeWorkId)?.title || 'LensWriter'}
+            </button>
+            
+            {(activeTab !== 'design' || !activeDocumentId) && (
+              <>
+                <span className="text-stone-300 shrink-0">/</span>
+                <button
+                  onClick={() => setActiveDocument(null)}
+                  className={cn(
+                    "transition-colors shrink-0",
+                    activeTab === 'design' && !activeDocumentId ? "text-stone-900" : "text-stone-400 hover:text-stone-600"
+                  )}
+                >
+                  {activeTab === 'timelineEvents' ? 'Timeline' : activeTab === 'world' ? 'World' : activeTab.replace(/([A-Z])/g, ' $1').trim()}
+                </button>
+              </>
+            )}
+            
+            {activeTab === 'timelineEvents' && (
+              <>
+                <span className="text-stone-300 shrink-0">/</span>
+                <span className="text-stone-900 capitalize shrink-0">{timelineViewMode}</span>
+              </>
+            )}
+            
+            {activeTab === 'world' && (
+              <>
+                <span className="text-stone-300 shrink-0">/</span>
+                <span className="text-stone-900 capitalize shrink-0">{worldViewMode}</span>
+              </>
+            )}
+
+            {activeTab === 'design' && activeDocumentId && (
+              <>
+                {(() => {
+                  const scene = scenes.find(s => s.id === activeDocumentId);
+                  const chapter = scene ? chapters.find(c => c.id === scene.chapterId) : chapters.find(c => c.id === activeDocumentId);
+                  
+                  if (scene && chapter) {
+                    return (
+                      <>
+                        <span className="text-stone-300 shrink-0">/</span>
+                        <button 
+                          onClick={() => setActiveDocument(chapter.id)}
+                          className="text-stone-400 hover:text-stone-600 transition-colors truncate max-w-[80px] md:max-w-[150px]"
+                        >
+                          {chapter.title}
+                        </button>
+                        <span className="text-stone-300 shrink-0">/</span>
+                        <span className="text-stone-900 truncate max-w-[80px] md:max-w-[150px]">
+                          {scene.title}
+                        </span>
+                      </>
+                    );
+                  } else if (chapter) {
+                    return (
+                      <>
+                        <span className="text-stone-300 shrink-0">/</span>
+                        <span className="text-stone-900 truncate max-w-[100px] md:max-w-[200px]">
+                          {chapter.title}
+                        </span>
+                      </>
+                    );
                   }
-                }}
-                className={cn(
-                  "flex items-center space-x-2 h-full px-1 border-b-2 text-sm font-medium transition-colors",
-                  activeTab === tab.id
-                    ? "border-emerald-500 text-stone-900"
-                    : "border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300"
-                )}
-              >
-                <tab.icon size={16} />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="hidden md:flex items-center ml-8">
-          </div>
-          <div className="md:hidden font-semibold text-stone-900">
-            {works.find(w => w.id === activeWorkId)?.title || 'LensWriter'}
+                  return null;
+                })()}
+              </>
+            )}
           </div>
         </div>
 
@@ -366,77 +335,6 @@ export function TopNav({ setMobileOpen }: { setMobileOpen?: (open: boolean) => v
           >
             {rightSidebarMode !== 'closed' ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
           </button>
-        </div>
-      </div>
-
-      {/* Mobile Bottom Nav */}
-      <div className="md:hidden">
-        <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-stone-200 flex items-center justify-around z-30 pb-safe">
-          {tabs.slice(0, tabs.length > 5 ? 4 : 5).map((tab, index) => (
-            <button
-              key={tab.id || `tab-mobile-${index}`}
-              onClick={() => {
-                setActiveTab(tab.id as any);
-                if (tab.id === 'deadline') {
-                  setDeadlineViewMode('local');
-                }
-              }}
-              className={cn(
-                "flex flex-col items-center justify-center w-full h-full space-y-1",
-                activeTab === tab.id
-                  ? "text-emerald-600"
-                  : "text-stone-400"
-              )}
-            >
-              <tab.icon size={20} />
-              <span className="text-[10px] font-medium truncate w-full text-center px-1">{tab.label}</span>
-            </button>
-          ))}
-          
-          {tabs.length > 5 && (
-            <div className="relative w-full h-full">
-              <button
-                onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                className={cn(
-                  "flex flex-col items-center justify-center w-full h-full space-y-1",
-                  tabs.slice(4).some(t => t.id === activeTab) ? "text-emerald-600" : "text-stone-400"
-                )}
-              >
-                <Menu size={20} />
-                <span className="text-[10px] font-medium truncate w-full text-center px-1">More</span>
-              </button>
-              
-              {isMoreMenuOpen && (
-                <>
-                  <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setIsMoreMenuOpen(false)} />
-                  <div 
-                    ref={moreMenuRef}
-                    className="absolute bottom-full right-2 mb-2 w-48 bg-white border border-stone-200 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-bottom-2"
-                  >
-                    {tabs.slice(4).map((tab, index) => (
-                      <button
-                        key={tab.id || `tab-more-${index}`}
-                        onClick={() => {
-                          setActiveTab(tab.id as any);
-                          if (tab.id === 'deadline') {
-                            setDeadlineViewMode('local');
-                          }
-                          setIsMoreMenuOpen(false);
-                        }}
-                        className={cn(
-                          "w-full flex items-center px-4 py-3 space-x-3 transition-colors",
-                          activeTab === tab.id ? "bg-emerald-50 text-emerald-700" : "text-stone-600 hover:bg-stone-50"
-                        )}
-                      >
-                        <tab.icon size={18} />
-                        <span className="text-sm font-medium">{tab.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </>

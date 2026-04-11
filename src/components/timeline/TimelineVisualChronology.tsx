@@ -15,11 +15,12 @@ interface TimelineVisualChronologyProps {
 
 export const TimelineVisualChronology = ({ events, characters, onEventClick }: TimelineVisualChronologyProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { updateTimelineEvent, updateTimelineEvents, locations, tags } = useStore(useShallow(state => ({
+  const { updateTimelineEvent, updateTimelineEvents, locations, tags, searchQuery } = useStore(useShallow(state => ({
     updateTimelineEvent: state.updateTimelineEvent,
     updateTimelineEvents: state.updateTimelineEvents,
     locations: state.locations,
-    tags: state.tags
+    tags: state.tags,
+    searchQuery: state.timelineSearchQuery
   })));
 
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -93,9 +94,13 @@ export const TimelineVisualChronology = ({ events, characters, onEventClick }: T
         }
       }
 
+      if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+
       return true;
     });
-  }, [events, selectedLocationIds, tagFilter]);
+  }, [events, selectedLocationIds, tagFilter, searchQuery]);
 
   // Calculate time range and positions based on duration and dependencies
   const processedEvents = useMemo(() => {

@@ -15,14 +15,38 @@
     @apply caret-emerald-600;
   }
 
+  .tiptap-wrapper .ProseMirror {
+    outline: none;
+    @apply caret-emerald-600;
+  }
+  .tiptap-wrapper .ProseMirror p {
+    margin-bottom: 1rem;
+  }
+  .tiptap-wrapper .ProseMirror p:last-child {
+    margin-bottom: 0;
+  }
+  .tiptap-wrapper .ProseMirror p.is-editor-empty:first-child::before {
+    color: #a8a29e;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     @apply bg-transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-stone-200 rounded-full hover:bg-stone-300 transition-colors;
+    @apply bg-transparent rounded-full transition-colors;
+  }
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    @apply bg-stone-300/50;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-stone-400/70;
   }
 }

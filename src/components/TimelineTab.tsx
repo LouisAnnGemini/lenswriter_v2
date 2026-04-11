@@ -13,6 +13,9 @@ import { TimelineTableView } from './timeline/TimelineTableView';
 import { TimelineVisualChronology } from './timeline/TimelineVisualChronology';
 import { EVENT_COLORS } from './timeline/TimelineShared';
 
+import { MetroTab } from './MetroTab';
+import { MontageTab } from './MontageTab';
+
 export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean, overrideViewMode?: 'chronology' }) {
   const { 
     timelineEvents, 
@@ -67,6 +70,13 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
   }, [overrideViewMode, setTimelineViewMode]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenAddModal = () => setIsAddModalOpen(true);
+    window.addEventListener('open-add-event-modal', handleOpenAddModal);
+    return () => window.removeEventListener('open-add-event-modal', handleOpenAddModal);
+  }, []);
+
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null);
 
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
@@ -106,55 +116,6 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
 
   return (
     <div className="flex-1 flex flex-col h-full bg-stone-50/50 overflow-hidden">
-      {!fullscreenMode && (
-        <div className={cn("px-4 md:px-6 py-3 md:py-4 border-b border-stone-200 bg-white/80 backdrop-blur-sm shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-4 z-10", isSubTab ? "border-t-0" : "")}>
-          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 min-w-0 w-full md:w-auto">
-            {!isSubTab && <h2 className="text-xl md:text-2xl font-bold text-stone-800 tracking-tight truncate">Timeline</h2>}
-            <div className="flex bg-stone-100/80 p-1 rounded-lg border border-stone-200/60 shrink-0 overflow-x-auto max-w-full shadow-sm hide-scrollbar">
-              <button
-                onClick={() => setTimelineViewMode('table')}
-                className={cn(
-                  "px-3 py-1.5 md:px-3.5 md:py-1.5 rounded-md text-xs md:text-sm font-medium flex items-center transition-all duration-200 whitespace-nowrap",
-                  timelineViewMode === 'table' ? "bg-white text-stone-900 shadow-sm ring-1 ring-black/5" : "text-stone-500 hover:text-stone-700 hover:bg-stone-200/50"
-                )}
-              >
-                <List size={14} className={cn("mr-1.5 md:mr-2", timelineViewMode === 'table' ? "text-emerald-600" : "")} />
-                Table
-              </button>
-              <button
-                onClick={() => setTimelineViewMode('chronology')}
-                className={cn(
-                  "px-3 py-1.5 md:px-3.5 md:py-1.5 rounded-md text-xs md:text-sm font-medium flex items-center transition-all duration-200 whitespace-nowrap",
-                  timelineViewMode === 'chronology' ? "bg-white text-stone-900 shadow-sm ring-1 ring-black/5" : "text-stone-500 hover:text-stone-700 hover:bg-stone-200/50"
-                )}
-              >
-                <LayoutGrid size={14} className={cn("mr-1.5 md:mr-2", timelineViewMode === 'chronology' ? "text-emerald-600" : "")} />
-                Chronology
-              </button>
-              <button
-                onClick={() => setTimelineViewMode('tags')}
-                className={cn(
-                  "px-3 py-1.5 md:px-3.5 md:py-1.5 rounded-md text-xs md:text-sm font-medium flex items-center transition-all duration-200 whitespace-nowrap",
-                  timelineViewMode === 'tags' ? "bg-white text-stone-900 shadow-sm ring-1 ring-black/5" : "text-stone-500 hover:text-stone-700 hover:bg-stone-200/50"
-                )}
-              >
-                <TagIcon size={14} className={cn("mr-1.5 md:mr-2", timelineViewMode === 'tags' ? "text-emerald-600" : "")} />
-                Tags
-              </button>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setIsAddModalOpen(true);
-            }}
-            className="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-stone-800 transition-all shadow-sm hover:shadow w-full md:w-auto justify-center active:scale-95 shrink-0"
-          >
-            <Plus size={16} className="mr-2" />
-            New Event
-          </button>
-        </div>
-      )}
-      
       {/* Search and Filter UI - Visible for table */}
       {timelineViewMode === 'table' ? (
         <TimelineTableView
@@ -178,6 +139,10 @@ export function TimelineTab({ isSubTab, overrideViewMode }: { isSubTab?: boolean
           characters={characters}
           onEventClick={handleEventClick}
         />
+      ) : timelineViewMode === 'metro' ? (
+        <MetroTab />
+      ) : timelineViewMode === 'montage' ? (
+        <MontageTab />
       ) : (
         <TagManagerTab />
       )}

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { Check, Copy, Pencil, RotateCcw, Trash2, Plus } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, stripHtml } from '../lib/utils';
 import * as Diff from 'diff';
 
 export function SnapshotTab({ sceneId }: { sceneId: string }) {
@@ -43,7 +43,7 @@ export function SnapshotTab({ sceneId }: { sceneId: string }) {
 
   const handleCopy = () => {
     if (!selectedSnapshot) return;
-    const text = selectedSnapshot.blocks.map(b => b.content).join('\n\n');
+    const text = selectedSnapshot.blocks.map(b => stripHtml(b.content)).join('\n\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -73,8 +73,8 @@ export function SnapshotTab({ sceneId }: { sceneId: string }) {
   const diffResult = useMemo(() => {
     if (!selectedSnapshot) return null;
     
-    const oldText = selectedSnapshot.blocks.map(b => b.content).join('\n\n');
-    const newText = currentSceneBlocks.map(b => b.content).join('\n\n');
+    const oldText = selectedSnapshot.blocks.map(b => stripHtml(b.content)).join('\n\n');
+    const newText = currentSceneBlocks.map(b => stripHtml(b.content)).join('\n\n');
     
     return Diff.diffWords(oldText, newText);
   }, [selectedSnapshot, currentSceneBlocks]);

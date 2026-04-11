@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Highlighter, ArrowUpToLine, Scissors, GitCompare, Trash2 } from 'lucide-react';
+import { Highlighter, ArrowUpToLine, Scissors, GitCompare, Trash2, Archive } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface SlashCommandMenuProps {
@@ -12,6 +12,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({ onClose, onS
   const [selectedIndex, setSelectedIndex] = useState(0);
   const actions = [
     { name: 'Convert Block', icon: Highlighter, action: 'convert' },
+    { name: 'Stash Block', icon: Archive, action: 'stash' },
     { name: 'Merge Up', icon: ArrowUpToLine, action: 'merge' },
     { name: 'Split Scene', icon: Scissors, action: 'split' },
     { name: 'Compare', icon: GitCompare, action: 'compare' },

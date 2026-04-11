@@ -4,7 +4,7 @@ import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import { AlignLeft, Highlighter, Trash2, Maximize2, Minimize2, MoreVertical, Link as LinkIcon, Copy, Check, ChevronLeft, ArrowUpToLine, MessageSquare, CheckCircle2, Circle, List, PanelRightClose, PanelRightOpen, MessageSquareOff, Search, ExternalLink, Eye, FileText, ChevronRight, ChevronDown, Settings2, Plus, Folder, Info, X, RotateCcw, Clock, ArrowRight, ArrowLeft, Camera, Scissors, Keyboard, LayoutGrid, GitCompare } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, stripHtml } from '../lib/utils';
 import { FindReplaceBar } from './FindReplaceBar';
 import { ConfirmDeleteButton } from './ConfirmDeleteButton';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
@@ -18,9 +18,14 @@ import { SCENE_STATUS_COLORS } from '../store/constants';
 import { CharacterAppearanceMatrix } from './CharacterAppearanceMatrix';
 import { SnapshotTab } from './SnapshotTab';
 import { NotesTab } from './NotesTab';
-import { TabSettingsModal } from './TabSettingsModal';
 import { BlockCompareModal } from './BlockCompareModal';
 import { WordRibbon, WordStatusBar } from './WordDisguise';
+import { InspectorSidebar } from './InspectorSidebar';
+import { ViewSettingsMenu } from './ViewSettingsMenu';
+import { DisguiseSettingsModal } from './DisguiseSettingsModal';
+import { FloatingBackToTop } from './FloatingBackToTop';
+import { BlockHoverMenu } from './BlockHoverMenu';
+import { BlockRightActions } from './BlockRightActions';
 
 const LENS_COLORS = {
   red: 'bg-red-50 border-red-200 text-red-900',
@@ -57,9 +62,6 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
     setEditorMargin,
     toggleDisguiseMode,
     addSnapshot,
-    appMode,
-    setAppMode,
-    toggleAppMode,
     showDescriptions,
     activeDocumentId: activeDocId,
     activeWorkId,
@@ -122,9 +124,6 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
     disguiseMode: state.disguiseMode,
     writingFocusMode: state.writingFocusMode,
     disguiseBackgroundText: state.disguiseBackgroundText,
-    appMode: state.appMode,
-    setAppMode: state.setAppMode,
-    toggleAppMode: state.toggleAppMode,
     letterSpacing: state.letterSpacing,
     editorMargin: state.editorMargin
   })));
@@ -138,10 +137,8 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
 
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState<{ blockId: string, position: { top: number, left: number } } | null>(null);
-  const [showTabSettings, setShowTabSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showDisguiseSettings, setShowDisguiseSettings] = useState(false);
-  const [tempDisguiseText, setTempDisguiseText] = useState(disguiseBackgroundText);
   const [searchTerm, setSearchTerm] = useState('');
   const [collapsedTocSections, setCollapsedTocSections] = useState<Set<string> | null>(null);
   const [comparingBlockId, setComparingBlockId] = useState<string | null>(null);
@@ -154,7 +151,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
   const chapterId = isScene ? (activeDocument as any).chapterId : activeDocId;
   const chapter = allChapters.find(c => c.id === chapterId);
   const isArchived = chapter?.archived;
-  const activeDocBlocks = allBlocks.filter(b => b.documentId === activeDocId).sort((a, b) => a.order - b.order);
+  const activeDocBlocks = allBlocks.filter(b => b.documentId === activeDocId && !b.isStashed).sort((a, b) => a.order - b.order);
   const characters = allCharacters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   const chapters = allChapters.filter(c => c.workId === activeWorkId).sort((a, b) => a.order - b.order);
   
@@ -168,7 +165,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
     const chapter = allChapters.find(c => c.id === chapterId);
     
     if (chapter) {
-      const chapterBlocks = allBlocks.filter(b => b.documentId === chapterId && b.description !== undefined).sort((a, b) => a.order - b.order);
+      const chapterBlocks = allBlocks.filter(b => b.documentId === chapterId && b.description !== undefined && !b.isStashed).sort((a, b) => a.order - b.order);
       if (chapterBlocks.length > 0) {
         tocSections.push({
           title: chapter.title || 'Untitled Chapter',
@@ -179,7 +176,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
       
       const chapterScenes = scenes.filter(s => s.chapterId === chapterId).sort((a, b) => a.order - b.order);
       for (const scene of chapterScenes) {
-        const sceneBlocks = allBlocks.filter(b => b.documentId === scene.id && b.description !== undefined).sort((a, b) => a.order - b.order);
+        const sceneBlocks = allBlocks.filter(b => b.documentId === scene.id && b.description !== undefined && !b.isStashed).sort((a, b) => a.order - b.order);
         if (sceneBlocks.length > 0) {
           tocSections.push({
             title: scene.title || 'Untitled Scene',
@@ -310,12 +307,6 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
       const target = e.target as HTMLElement;
       const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-      // Ctrl+Shift+M Toggle App Mode
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'm') {
-        e.preventDefault();
-        toggleAppMode();
-      }
-
       // Ctrl+/ Toggle Block/Lens
       if ((e.ctrlKey || e.metaKey) && e.key === '/') {
         e.preventDefault();
@@ -352,7 +343,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, toggleAppMode, handleAddBlock, focusedBlockId, toggleBlockLens]);
+  }, [undo, redo, handleAddBlock, focusedBlockId, toggleBlockLens]);
 
   if (!activeDocument) {
     return (
@@ -434,10 +425,10 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
 
   const handleCopyScene = (sceneId?: string | React.MouseEvent) => {
     const targetId = typeof sceneId === 'string' ? sceneId : activeDocId;
-    const sceneBlocks = allBlocks.filter(b => b.documentId === targetId).sort((a, b) => a.order - b.order);
+    const sceneBlocks = allBlocks.filter(b => b.documentId === targetId && !b.isStashed).sort((a, b) => a.order - b.order);
     const text = sceneBlocks
       .filter(b => !(b.isLens && b.lensColor?.toLowerCase() === 'black'))
-      .map(b => b.content)
+      .map(b => stripHtml(b.content))
       .join('\n\n');
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
@@ -468,17 +459,12 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
       !activeDocId ? "hidden md:flex" : "flex",
       disguiseMode ? "bg-[#F3F2F1]" : "bg-white"
     )}>
-      {showTabSettings && (
-        <TabSettingsModal onClose={() => setShowTabSettings(false)} />
-      )}
-      
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {disguiseMode && (
           <WordRibbon 
             title={activeDocument?.title || ''} 
             onClose={toggleDisguiseMode} 
             onEdit={() => {
-              setTempDisguiseText(disguiseBackgroundText);
               setShowDisguiseSettings(true);
             }}
           />
@@ -650,7 +636,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
           } : {}}
           >
             {(!isScene ? [{ id: activeDocId, isChapter: true, title: activeDocument.title }] : (scrollMode ? chapterScenes : [activeDocument as any])).map((doc, docIndex, docArray) => {
-              const currentBlocks = doc.isChapter ? activeDocBlocks : allBlocks.filter(b => b.documentId === doc.id).sort((a, b) => a.order - b.order);
+              const currentBlocks = doc.isChapter ? activeDocBlocks : allBlocks.filter(b => b.documentId === doc.id && !b.isStashed).sort((a, b) => a.order - b.order);
               const isLastDoc = docIndex === docArray.length - 1;
               
               return (
@@ -709,6 +695,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                           onClose={() => setShowSlashMenu(null)}
                           onSelect={(action) => {
                             if (action === 'convert') toggleBlockLens(block.id);
+                            if (action === 'stash') handleBlockChange(block.id, { isStashed: true });
                             if (action === 'merge') handleMergeUp(block.id);
                             if (action === 'split') handleSplitScene(block.id);
                             if (action === 'compare') setComparingBlockId(block.id);
@@ -734,9 +721,9 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                             disguiseMode && "rounded-none p-0 border-0 bg-transparent"
                           )}>
                             {block.isComparing && !disguiseMode && (
-                              <div className="absolute -top-8 bottom-0 -right-3 w-0 z-10 pointer-events-none">
+                              <div className="absolute -top-8 bottom-0 right-4 w-0 z-10 pointer-events-none">
                                 <div 
-                                  className="sticky top-0 -mr-3 float-right bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 pointer-events-auto whitespace-nowrap"
+                                  className="sticky top-2 float-right bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 pointer-events-auto whitespace-nowrap"
                                   onClick={() => setComparingBlockId(block.id)}
                                 >
                                   <GitCompare size={12} />
@@ -883,107 +870,31 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
 
                           {/* Block Actions (Hover) */}
                           {!disguiseMode && !isArchived && (
-                            <div className="absolute top-0 bottom-0 -left-10 w-10 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="sticky top-8 flex items-center space-x-1">
-                                <button 
-                                  onClick={() => handleAddBlock(false, block.id, doc.id)}
-                                  className="p-1 text-stone-300 hover:text-emerald-600 hover:bg-stone-100 rounded transition-colors"
-                                  title="Add Text Block Below"
-                                >
-                                  <Plus size={16} />
-                                </button>
-                                <div className="relative">
-                                  <button 
-                                    onClick={() => setOpenMenuBlockId(openMenuBlockId === block.id ? null : block.id)}
-                                    className={cn("p-1 rounded transition-colors", openMenuBlockId === block.id ? "text-stone-600 bg-stone-100" : "text-stone-300 hover:text-stone-600 hover:bg-stone-100")}
-                                    title="More Actions"
-                                  >
-                                    <MoreVertical size={16} />
-                                  </button>
-                                  {openMenuBlockId === block.id && (
-                                    <div className="absolute left-full top-0 ml-1 flex items-center space-x-1 bg-white shadow-sm rounded-md border border-stone-200 p-1 z-20">
-                                      <button 
-                                        onClick={() => {
-                                          handleBlockChange(block.id, { isLens: !block.isLens });
-                                          setOpenMenuBlockId(null);
-                                        }}
-                                        className="p-1 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                                        title={block.isLens ? "Convert to Normal Block" : "Convert to Lens Block"}
-                                      >
-                                        <Highlighter size={14} />
-                                      </button>
-                                      {canMergeUp && (
-                                        <button 
-                                          onClick={() => {
-                                            handleMergeUp(block.id);
-                                            setOpenMenuBlockId(null);
-                                          }}
-                                          className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
-                                          title="Merge with previous text block"
-                                        >
-                                          <ArrowUpToLine size={14} />
-                                        </button>
-                                      )}
-                                      {isScene && (
-                                        <button 
-                                          onClick={() => {
-                                            handleSplitScene(block.id);
-                                            setOpenMenuBlockId(null);
-                                          }}
-                                          className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
-                                          title="Split Scene After This Block"
-                                        >
-                                          <Scissors size={14} />
-                                        </button>
-                                      )}
-                                      <button 
-                                        onClick={() => {
-                                          setComparingBlockId(block.id);
-                                          setOpenMenuBlockId(null);
-                                        }}
-                                        className="p-1 text-stone-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                        title="Compare & Edit"
-                                      >
-                                        <GitCompare size={14} />
-                                      </button>
-                                      <button 
-                                        onClick={() => {
-                                          handleDeleteBlock(block.id);
-                                          setOpenMenuBlockId(null);
-                                        }}
-                                        className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                        title="Delete Block"
-                                      >
-                                        <Trash2 size={14} />
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                            <BlockHoverMenu
+                              blockId={block.id}
+                              docId={doc.id}
+                              isLens={block.isLens}
+                              canMergeUp={canMergeUp}
+                              isScene={isScene}
+                              openMenuBlockId={openMenuBlockId}
+                              setOpenMenuBlockId={setOpenMenuBlockId}
+                              handleAddBlock={handleAddBlock}
+                              handleBlockChange={handleBlockChange}
+                              handleMergeUp={handleMergeUp}
+                              handleSplitScene={handleSplitScene}
+                              setComparingBlockId={setComparingBlockId}
+                              handleDeleteBlock={handleDeleteBlock}
+                            />
                           )}
                         </div>
 
                         {/* Right Side Actions for Text Blocks */}
                         {!disguiseMode && !isArchived && (
-                          <div className="relative w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="sticky top-8 flex flex-col items-center space-y-2">
-                              <button 
-                                onClick={() => toggleBlockDescription(block)}
-                                className={cn("p-1.5 rounded-md transition-colors", block.description !== undefined ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
-                                title="Block Description"
-                              >
-                                <MessageSquare size={16} />
-                              </button>
-                              <button 
-                                onClick={() => handleBlockChange(block.id, { completed: !block.completed })}
-                                className={cn("p-1.5 rounded-md transition-colors", block.completed ? "text-emerald-600 bg-emerald-50" : "text-stone-400 hover:text-stone-600 hover:bg-stone-100")}
-                                title="Toggle Completion"
-                              >
-                                <CheckCircle2 size={16} />
-                              </button>
-                            </div>
-                          </div>
+                          <BlockRightActions
+                            block={block}
+                            toggleBlockDescription={toggleBlockDescription}
+                            handleBlockChange={handleBlockChange}
+                          />
                         )}
                       </div>
                     </div>
@@ -1024,609 +935,63 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
       </div>
       </div>
       
-      {/* Inspector Sidebar */}
-      {rightSidebarMode !== 'closed' && !disguiseMode && !isFullscreenMode && (
-        <div className={cn(
-          "bg-white border-l border-stone-200 shrink-0 flex transition-all duration-300",
-          "fixed inset-0 w-full z-[60] md:relative md:w-80 md:inset-auto md:z-20"
-        )}>
-          {/* Vertical Tab Bar */}
-          <div className="w-12 border-r border-stone-100 bg-stone-50 flex flex-col items-center py-4 space-y-4 shrink-0">
-            {isScene && (
-              <button
-                onClick={() => setRightSidebarMode('info')}
-                className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'info' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
-                title="Scene Info"
-              >
-                <Info size={18} />
-              </button>
-            )}
-            <button
-              onClick={() => setRightSidebarMode('micro')}
-              className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'micro' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
-              title="Directory"
-            >
-              <List size={18} />
-            </button>
-            <button
-              onClick={() => setRightSidebarMode('meso')}
-              className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'meso' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
-              title="Lenses"
-            >
-              <LayoutGrid size={18} />
-            </button>
-            {isScene && (
-              <button
-                onClick={() => setRightSidebarMode('macro')}
-                className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'macro' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
-                title="Events"
-              >
-                <Clock size={18} />
-              </button>
-            )}
-            {isScene && (
-              <button
-                onClick={() => setRightSidebarMode('snapshots')}
-                className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'snapshots' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
-                title="Snapshots"
-              >
-                <Camera size={18} />
-              </button>
-            )}
-            <button
-              onClick={() => setRightSidebarMode('notes')}
-              className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'notes' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
-              title="Notes"
-            >
-              <FileText size={18} />
-            </button>
-            <div className="flex-1" />
-            <button
-              onClick={() => setRightSidebarMode('closed')}
-              className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-200/50 rounded-xl transition-colors"
-              title="Close Inspector"
-            >
-              <PanelRightClose size={18} />
-            </button>
-          </div>
+      <InspectorSidebar
+        rightSidebarMode={rightSidebarMode}
+        setRightSidebarMode={setRightSidebarMode}
+        isScene={isScene}
+        activeDocId={activeDocId}
+        activeDocument={activeDocument}
+        chapters={chapters}
+        scenes={scenes}
+        tocSections={tocSections}
+        collapsedTocSections={collapsedTocSections}
+        setCollapsedTocSections={setCollapsedTocSections}
+        isSectionCollapsed={isSectionCollapsed}
+        toggleTocSection={toggleTocSection}
+        updateBlock={updateBlock}
+        navigateToBlock={navigateToBlock}
+        moveScene={moveScene}
+        updateScene={updateScene}
+        totalWords={totalWords}
+        characters={characters}
+        activeWorkId={activeWorkId}
+        setActiveDocument={setActiveDocument}
+        isFullscreenMode={isFullscreenMode}
+        disguiseMode={disguiseMode}
+      />
 
-          {/* Content Area */}
-          <div className="flex-1 flex flex-col overflow-hidden bg-white">
-            <div className="p-4 border-b border-stone-100 flex items-center justify-between shrink-0 bg-white">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-stone-800">
-                  {rightSidebarMode === 'info' && 'Scene Info'}
-                  {rightSidebarMode === 'micro' && 'Directory'}
-                  {rightSidebarMode === 'meso' && 'Lenses'}
-                  {rightSidebarMode === 'macro' && 'Events'}
-                  {rightSidebarMode === 'snapshots' && 'Snapshots'}
-                  {rightSidebarMode === 'notes' && 'Notes'}
-                </h3>
-                {rightSidebarMode === 'micro' && isScene && (activeDocument as any)?.chapterId && (
-                  <button
-                    onClick={() => setActiveDocument((activeDocument as any).chapterId)}
-                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded transition-colors"
-                    title="Back to Chapter"
-                  >
-                    <ArrowLeft size={10} />
-                    <span>Back to Chapter</span>
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={() => setRightSidebarMode('closed')}
-                className="md:hidden p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-md transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-            {rightSidebarMode === 'notes' && (
-              <NotesTab workId={activeWorkId} sceneId={isScene ? activeDocId : null} />
-            )}
-            {rightSidebarMode === 'snapshots' && activeDocId && isScene && (
-              <SnapshotTab sceneId={activeDocId} />
-            )}
-            {rightSidebarMode === 'micro' && (
-              <div className="p-2 space-y-2">
-                {tocSections.length > 0 && (
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">Table of Contents</h3>
-                    <button
-                      onClick={() => {
-                        const current = collapsedTocSections === null ? new Set(tocSections.map(s => s.documentId)) : collapsedTocSections;
-                        const allCollapsed = tocSections.every(s => current.has(s.documentId));
-                        if (allCollapsed) {
-                          setCollapsedTocSections(new Set());
-                        } else {
-                          setCollapsedTocSections(new Set(tocSections.map(s => s.documentId)));
-                        }
-                      }}
-                      className="text-[10px] font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
-                    >
-                      {tocSections.every(s => isSectionCollapsed(s.documentId)) ? 'Expand All' : 'Collapse All'}
-                    </button>
-                  </div>
-                )}
-                {tocSections.length === 0 ? (
-                  <div className="text-center text-xs text-stone-500 py-4">No blocks found.</div>
-                ) : (
-                  tocSections.map((section, idx) => {
-                    const isCollapsed = isSectionCollapsed(section.documentId);
-                    const scene = scenes.find(s => s.id === section.documentId);
-                    const statusColor = scene && scene.statusColor ? SCENE_STATUS_COLORS[scene.statusColor as keyof typeof SCENE_STATUS_COLORS] : null;
-                    const isActive = section.documentId === activeDocId;
-                    return (
-                    <div key={`${section.documentId}-${idx}`} className={cn(
-                      "rounded-lg border transition-colors",
-                      isActive ? "border-emerald-500 bg-emerald-50/50" : "border-transparent"
-                    )}>
-                      <div 
-                        className="flex items-center cursor-pointer mb-0 group p-1"
-                        onClick={() => toggleTocSection(section.documentId)}
-                      >
-                        <button className="p-0.5 text-stone-400 group-hover:text-stone-600 transition-colors mr-1">
-                          {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                        </button>
-                        {statusColor && <div className={cn("w-2 h-2 rounded-full mr-2", statusColor.dot)} />}
-                        <h4 className={cn(
-                          "text-xs font-bold uppercase tracking-wider group-hover:text-stone-600 transition-colors",
-                          isActive ? "text-emerald-800" : "text-stone-400"
-                        )}>{section.title}</h4>
-                      </div>
-                      {!isCollapsed && (
-                        <div className="space-y-0.5">
-                          {section.entries.map(entry => (
-                            <div key={entry.id} className={cn(
-                              "p-2 bg-white rounded-lg border shadow-sm transition-colors",
-                              entry.completed ? "border-emerald-200" : "border-stone-200"
-                            )}>
-                              <div className="flex justify-between items-start">
-                                <textarea
-                                  value={entry.description || ''}
-                                  onChange={(e) => updateBlock({ id: entry.id, description: e.target.value })}
-                                  className={cn(
-                                    "w-full bg-transparent border-none outline-none text-sm font-medium focus:ring-0 p-0 resize-none",
-                                    entry.completed ? "text-emerald-700" : "text-stone-900",
-                                    !entry.description ? "text-stone-400 italic" : ""
-                                  )}
-                                  placeholder="Untitled block"
-                                  rows={2}
-                                />
-                                <button
-                                  onClick={() => navigateToBlock(entry.id)}
-                                  className="p-1 hover:bg-black/5 rounded transition-colors ml-2 shrink-0"
-                                  title="Jump to Text"
-                                >
-                                  <ArrowLeft size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )})
-                )}
-              </div>
-            )}
-            {rightSidebarMode === 'meso' && activeDocId && (
-              <LensesPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} onNavigateToBlock={navigateToBlock} />
-            )}
-            {rightSidebarMode === 'macro' && activeDocId && isScene && (
-              <EventPoolPanel documentId={activeDocId} onClose={() => setRightSidebarMode('closed')} />
-            )}
-            {rightSidebarMode === 'info' && activeDocId && isScene && (
-              <div className="p-4 space-y-6">
-                {/* Chapter & Status */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Parent Chapter</label>
-                    <select
-                      value={(activeDocument as any).chapterId || ''}
-                      onChange={(e) => {
-                        moveScene(activeDocId, e.target.value, 0);
-                      }}
-                      className="text-xs bg-white border border-stone-200 rounded px-2 h-9 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
-                    >
-                      {chapters.map(chap => (
-                        <option key={chap.id} value={chap.id}>{chap.title}</option>
-                      ))}
-                    </select>
-                  </div>
+      <DisguiseSettingsModal
+        showDisguiseSettings={showDisguiseSettings}
+        setShowDisguiseSettings={setShowDisguiseSettings}
+        disguiseBackgroundText={disguiseBackgroundText}
+        setDisguiseBackgroundText={setDisguiseBackgroundText}
+      />
 
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Status</label>
-                    <div className="grid grid-cols-2 gap-1">
-                      <button
-                        onClick={() => updateScene({ id: activeDocId, statusColor: undefined })}
-                        className={cn(
-                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
-                          SCENE_STATUS_COLORS.none.bg, SCENE_STATUS_COLORS.none.border, SCENE_STATUS_COLORS.none.text,
-                          !(activeDocument as any).statusColor ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                        )}
-                      >
-                        <Circle size={10} className="text-stone-400" />
-                        {SCENE_STATUS_COLORS.none.label}
-                      </button>
-                      <button
-                        onClick={() => updateScene({ id: activeDocId, statusColor: 'yellow' })}
-                        className={cn(
-                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
-                          SCENE_STATUS_COLORS.yellow.bg, SCENE_STATUS_COLORS.yellow.border, SCENE_STATUS_COLORS.yellow.text,
-                          (activeDocument as any).statusColor === 'yellow' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                        )}
-                      >
-                        <FileText size={10} className="text-amber-500" />
-                        {SCENE_STATUS_COLORS.yellow.label}
-                      </button>
-                      <button
-                        onClick={() => updateScene({ id: activeDocId, statusColor: 'blue' })}
-                        className={cn(
-                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
-                          SCENE_STATUS_COLORS.blue.bg, SCENE_STATUS_COLORS.blue.border, SCENE_STATUS_COLORS.blue.text,
-                          (activeDocument as any).statusColor === 'blue' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                        )}
-                      >
-                        <RotateCcw size={10} className="text-blue-500" />
-                        {SCENE_STATUS_COLORS.blue.label}
-                      </button>
-                      <button
-                        onClick={() => updateScene({ id: activeDocId, statusColor: 'red' })}
-                        className={cn(
-                          "px-2 py-1.5 rounded text-[10px] font-medium border transition-all flex items-center gap-1.5 justify-center whitespace-nowrap",
-                          SCENE_STATUS_COLORS.red.bg, SCENE_STATUS_COLORS.red.border, SCENE_STATUS_COLORS.red.text,
-                          (activeDocument as any).statusColor === 'red' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                        )}
-                      >
-                        <X size={10} className="text-red-500" />
-                        {SCENE_STATUS_COLORS.red.label}
-                      </button>
-                      <button
-                        onClick={() => updateScene({ id: activeDocId, statusColor: 'green' })}
-                        className={cn(
-                          "px-2 py-1.5 rounded text-[10px] font-bold border transition-all flex items-center justify-center gap-1.5 col-span-2",
-                          SCENE_STATUS_COLORS.green.bg, SCENE_STATUS_COLORS.green.border, SCENE_STATUS_COLORS.green.text,
-                          (activeDocument as any).statusColor === 'green' ? "ring-2 ring-emerald-500/50 border-emerald-500" : "opacity-70 hover:opacity-100"
-                        )}
-                      >
-                        <Check size={14} className="text-emerald-500" />
-                        {SCENE_STATUS_COLORS.green.label}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+      <FloatingBackToTop
+        showBackToTop={showBackToTop}
+        disguiseMode={disguiseMode}
+        rightSidebarMode={rightSidebarMode}
+        isFullscreenMode={isFullscreenMode}
+        scrollToTop={scrollToTop}
+      />
 
-                {/* Progress & Deadline */}
-                <div className="space-y-4 pt-4 border-t border-stone-200">
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Progress</label>
-                    <div className="relative h-9 overflow-hidden bg-white border border-stone-200 rounded focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
-                      <div className="flex items-center gap-2 px-2 h-full">
-                        <div className="text-xs font-bold text-stone-900 shrink-0">{totalWords}</div>
-                        <div className="text-stone-300 font-light text-xs">/</div>
-                        <input 
-                          type="number"
-                          value={(activeDocument as any).goalWordCount || 0}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            if (isScene) {
-                              updateScene({ id: activeDocId, goalWordCount: val });
-                            }
-                          }}
-                          className="w-full bg-transparent outline-none text-xs text-stone-600 font-medium h-full"
-                          placeholder="Goal"
-                        />
-                      </div>
-                      {((activeDocument as any).goalWordCount || 0) > 0 && (
-                        <div className="absolute bottom-0 left-0 h-0.5 w-full bg-stone-100">
-                          <div 
-                            className="h-full bg-emerald-500 transition-all duration-500"
-                            style={{ 
-                              width: `${Math.min(100, (totalWords / ((activeDocument as any).goalWordCount || 1)) * 100)}%` 
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1.5 block">Deadline</label>
-                    <input 
-                      type="date" 
-                      value={(activeDocument as any).deadline || ''} 
-                      onChange={(e) => {
-                        if (isScene) {
-                          updateScene({ id: activeDocId, deadline: e.target.value });
-                        }
-                      }}
-                      className="w-full h-9 bg-white border border-stone-200 rounded px-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-stone-700"
-                    />
-                  </div>
-                </div>
-
-                {/* Characters */}
-                <div className="pt-4 border-t border-stone-200">
-                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2 block">Characters</label>
-                  <div className="flex flex-wrap gap-1">
-                    {characters.map(char => {
-                      const isIncluded = (activeDocument as any).characterIds?.includes(char.id);
-                      return (
-                        <button
-                          key={char.id}
-                          onClick={() => {
-                            const currentIds = (activeDocument as any).characterIds || [];
-                            const newIds = isIncluded 
-                              ? currentIds.filter((id: string) => id !== char.id)
-                              : [...currentIds, char.id];
-                            updateScene({ id: activeDocId, characterIds: newIds });
-                          }}
-                          className={cn(
-                            "px-2 py-1 rounded text-xs font-medium border transition-all",
-                            isIncluded ? "bg-stone-900 border-stone-900 text-white" : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
-                          )}
-                        >
-                          {char.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Disguise Settings Modal */}
-      {showDisguiseSettings && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-stone-200 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-stone-50/50">
-              <div className="flex items-center gap-2">
-                <Settings2 size={18} className="text-stone-500" />
-                <h3 className="font-semibold text-stone-900">Edit Disguise Background Text</h3>
-              </div>
-              <button 
-                onClick={() => setShowDisguiseSettings(false)}
-                className="p-1 hover:bg-stone-200 rounded-full transition-colors"
-              >
-                <X size={20} className="text-stone-500" />
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-stone-500 mb-4">
-                This text will be displayed behind your actual content when Disguise Mode is active. 
-                Use it to make your screen look like a legitimate document or report.
-              </p>
-              <textarea
-                value={tempDisguiseText}
-                onChange={(e) => setTempDisguiseText(e.target.value)}
-                className="w-full h-96 p-4 rounded-lg border border-stone-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none font-mono text-sm resize-none bg-stone-50"
-                placeholder="Paste your disguise text here..."
-              />
-            </div>
-            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-stone-50/50 border-t border-stone-100">
-              <button
-                onClick={() => setShowDisguiseSettings(false)}
-                className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setDisguiseBackgroundText(tempDisguiseText);
-                  setShowDisguiseSettings(false);
-                  toast.success('Disguise text updated');
-                }}
-                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg active:scale-95"
-              >
-                <Check size={16} />
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Back to Top Button */}
-      {showBackToTop && !disguiseMode && (
-        <div className={cn(
-          "fixed bottom-32 z-50 transition-all duration-300",
-          rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
-          isFullscreenMode ? "opacity-0 hover:opacity-100" : "opacity-100"
-        )}>
-          <button
-            onClick={scrollToTop}
-            className="p-3 bg-white border border-stone-200 text-stone-500 hover:text-emerald-600 hover:border-emerald-200 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center group"
-            title="Back to Top"
-          >
-            <ArrowUpToLine size={24} className="group-hover:-translate-y-0.5 transition-transform" />
-          </button>
-        </div>
-      )}
-
-      {/* Floating View Settings Button */}
-      {!disguiseMode && (
-        <div className={cn(
-          "fixed bottom-16 z-50 transition-opacity duration-300 flex items-end justify-end",
-          rightSidebarMode !== 'closed' ? "right-[340px]" : "right-6",
-          isFullscreenMode ? "opacity-0 hover:opacity-100 w-32 h-32" : "opacity-100",
-          "md:bottom-16 bottom-24"
-        )}>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-3 bg-stone-900 text-white hover:bg-stone-800 rounded-full shadow-lg transition-all hover:scale-105 flex items-center justify-center"
-            title="View Settings"
-          >
-            <Settings2 size={24} />
-          </button>
-          
-          {showSettings && (
-          <div className="absolute bottom-full right-0 mb-4 w-72 bg-white rounded-lg shadow-xl border border-stone-200 p-4 z-50 origin-bottom-right animate-in fade-in slide-in-from-bottom-2">
-            
-            {/* App Mode */}
-            <div className="mb-4">
-              <div className="flex bg-stone-100 rounded-lg p-1">
-                <button
-                  onClick={() => setAppMode('design')}
-                  className={cn(
-                    "flex-1 py-1 text-xs font-medium rounded-md transition-all",
-                    appMode === 'design' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
-                  )}
-                >
-                  Design
-                </button>
-                <button
-                  onClick={() => setAppMode('review')}
-                  className={cn(
-                    "flex-1 py-1 text-xs font-medium rounded-md transition-all",
-                    appMode === 'review' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
-                  )}
-                >
-                  Review
-                </button>
-                <button
-                  onClick={() => setAppMode('management')}
-                  className={cn(
-                    "flex-1 py-1 text-xs font-medium rounded-md transition-all",
-                    appMode === 'management' ? "bg-white text-emerald-700 shadow-sm" : "text-stone-500 hover:text-stone-700"
-                  )}
-                >
-                  Manage
-                </button>
-              </div>
-            </div>
-
-            {/* Toggles */}
-            <div className="grid grid-cols-2 gap-3 mb-4 pb-4 border-b border-stone-100">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
-                  <ArrowUpToLine size={14} className="text-stone-500" /> Scroll
-                </label>
-                <button
-                  onClick={() => toggleScrollMode()}
-                  className={cn(
-                    "w-8 h-4 rounded-full transition-colors relative",
-                    scrollMode ? "bg-emerald-500" : "bg-stone-200"
-                  )}
-                >
-                  <div className={cn(
-                    "absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform",
-                    scrollMode ? "translate-x-4" : "translate-x-0"
-                  )} />
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
-                  <Eye size={14} className="text-stone-500" /> Disguise
-                </label>
-                <button
-                  onClick={() => toggleDisguiseMode()}
-                  className={cn(
-                    "w-8 h-4 rounded-full transition-colors relative",
-                    disguiseMode ? "bg-emerald-500" : "bg-stone-200"
-                  )}
-                >
-                  <div className={cn(
-                    "absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform",
-                    disguiseMode ? "translate-x-4" : "translate-x-0"
-                  )} />
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-stone-700 flex items-center gap-1.5">
-                  <Highlighter size={14} className="text-stone-500" /> Focus Mode
-                </label>
-                <button
-                  onClick={() => toggleWritingFocusMode()}
-                  className={cn(
-                    "w-8 h-4 rounded-full transition-colors relative",
-                    writingFocusMode ? "bg-emerald-500" : "bg-stone-200"
-                  )}
-                >
-                  <div className={cn(
-                    "absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform",
-                    writingFocusMode ? "translate-x-4" : "translate-x-0"
-                  )} />
-                </button>
-              </div>
-            </div>
-
-            {/* Sliders */}
-            <div className="space-y-3 mb-4 pb-4 border-b border-stone-100">
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-medium text-stone-700">Letter Spacing</label>
-                  <span className="text-[10px] text-stone-500">{letterSpacing}</span>
-                </div>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="10" 
-                  value={letterSpacing || 0}
-                  onChange={(e) => setLetterSpacing(parseInt(e.target.value))}
-                  className="w-full h-1.5 accent-emerald-600 bg-stone-200 rounded-lg appearance-none"
-                />
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-medium text-stone-700">Editor Margin</label>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setEditorMargin(0)}
-                      className="text-[9px] px-1.5 py-0.5 bg-stone-100 hover:bg-stone-200 text-stone-500 rounded transition-colors"
-                    >
-                      Reset
-                    </button>
-                    <span className="text-[10px] text-stone-500 w-3 text-right">{editorMargin}</span>
-                  </div>
-                </div>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="10" 
-                  value={editorMargin || 0}
-                  onChange={(e) => setEditorMargin(parseInt(e.target.value))}
-                  className="w-full h-1.5 accent-emerald-600 bg-stone-200 rounded-lg appearance-none"
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-1">
-              <button
-                onClick={() => {
-                  setShowTabSettings(true);
-                  setShowSettings(false);
-                }}
-                className="w-full flex items-center px-2 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 rounded transition-colors"
-              >
-                <LayoutGrid size={14} className="text-stone-500 mr-2" />
-                Customize Tabs
-              </button>
-              
-              {isScene && (
-                <>
-                  <button
-                    onClick={() => {
-                      window.dispatchEvent(new Event('toggle-shortcut-modal'));
-                      setShowSettings(false);
-                    }}
-                    className="w-full flex items-center px-2 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 rounded transition-colors"
-                  >
-                    <Keyboard size={14} className="text-stone-500 mr-2" />
-                    Keyboard Shortcuts
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-          )}
-        </div>
-      )}
+      <ViewSettingsMenu
+        disguiseMode={disguiseMode}
+        rightSidebarMode={rightSidebarMode}
+        isFullscreenMode={isFullscreenMode}
+        showSettings={showSettings}
+        setShowSettings={setShowSettings}
+        scrollMode={scrollMode}
+        toggleScrollMode={toggleScrollMode}
+        toggleDisguiseMode={toggleDisguiseMode}
+        writingFocusMode={writingFocusMode}
+        toggleWritingFocusMode={toggleWritingFocusMode}
+        letterSpacing={letterSpacing}
+        setLetterSpacing={setLetterSpacing}
+        editorMargin={editorMargin}
+        setEditorMargin={setEditorMargin}
+        isScene={isScene}
+      />
       
       {comparingBlockId && (
         <BlockCompareModal

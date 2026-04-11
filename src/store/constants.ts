@@ -1,5 +1,52 @@
 import { v4 as uuidv4 } from 'uuid';
-import { State } from './types';
+import { State, SidebarGroupConfig } from './types';
+import { Edit3, Clock, Users, Network, MessageSquare, Layout, AlignLeft, LayoutGrid, Inbox, FileOutput, Send, Archive, Calendar } from 'lucide-react';
+
+export const SIDEBAR_ITEMS_REGISTRY: Record<string, { label: string, icon: any }> = {
+  'design': { label: 'Writing', icon: Edit3 },
+  'timelineEvents': { label: 'Timeline', icon: Clock },
+  'world': { label: 'World', icon: Users },
+  'script': { label: 'Script', icon: MessageSquare },
+  'blockDescriptions': { label: 'Block Descriptions', icon: AlignLeft },
+  'lenses': { label: 'Lenses', icon: LayoutGrid },
+  'inbox': { label: 'Notes', icon: Inbox },
+  'deadline': { label: 'Deadline', icon: Calendar },
+  'compile': { label: 'Compile', icon: FileOutput },
+  'publish': { label: 'Publishing', icon: Send },
+  'dataManagement': { label: 'Data', icon: Archive },
+};
+
+export const DEFAULT_SIDEBAR_CONFIG: SidebarGroupConfig[] = [
+  {
+    id: 'group-creation',
+    title: 'Creation',
+    items: [
+      { id: 'design', visible: true },
+      { id: 'timelineEvents', visible: true },
+      { id: 'world', visible: true },
+      { id: 'script', visible: true },
+    ]
+  },
+  {
+    id: 'group-review',
+    title: 'Review',
+    items: [
+      { id: 'blockDescriptions', visible: true },
+      { id: 'lenses', visible: true },
+      { id: 'inbox', visible: true },
+    ]
+  },
+  {
+    id: 'group-management',
+    title: 'Management',
+    items: [
+      { id: 'deadline', visible: true },
+      { id: 'compile', visible: true },
+      { id: 'publish', visible: true },
+      { id: 'dataManagement', visible: true },
+    ]
+  }
+];
 
 export const SCENE_STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
   none: { bg: 'bg-white', border: 'border-stone-200', text: 'text-stone-900', dot: 'bg-stone-200', label: 'Draft' },
@@ -55,58 +102,13 @@ export const initialState: State = {
   activeWorkId: initialWorkId,
   activeDocumentId: initialSceneId,
   activeTab: 'design',
-  appMode: 'design',
-  tabConfig: {
-    design: [
-      { id: 'design', label: 'Writing', visible: true },
-      { id: 'timelineEvents', label: 'Timeline Events', visible: true },
-      { id: 'metro', label: 'Metro', visible: true },
-      { id: 'world', label: 'World', visible: true },
-      { id: 'montage', label: 'Montage', visible: true },
-      { id: 'script', label: 'Script', visible: true },
-      { id: 'inbox', label: 'Notes', visible: false },
-      { id: 'blockDescriptions', label: 'Block Descriptions', visible: false },
-      { id: 'lenses', label: 'Lenses', visible: false },
-      { id: 'deadline', label: 'Deadline', visible: false },
-      { id: 'compile', label: 'Compile', visible: false },
-      { id: 'dataManagement', label: 'Data Management', visible: false },
-      { id: 'publish', label: 'Publishing', visible: false },
-    ],
-    review: [
-      { id: 'design', label: 'Writing', visible: true },
-      { id: 'inbox', label: 'Notes', visible: true },
-      { id: 'blockDescriptions', label: 'Block Descriptions', visible: true },
-      { id: 'lenses', label: 'Lenses', visible: true },
-      { id: 'deadline', label: 'Deadline', visible: true },
-      { id: 'timelineEvents', label: 'Timeline Events', visible: false },
-      { id: 'montage', label: 'Montage', visible: false },
-      { id: 'metro', label: 'Metro', visible: false },
-      { id: 'world', label: 'World', visible: false },
-      { id: 'script', label: 'Script', visible: false },
-      { id: 'compile', label: 'Compile', visible: false },
-      { id: 'dataManagement', label: 'Data Management', visible: false },
-      { id: 'publish', label: 'Publishing', visible: false },
-    ],
-    management: [
-      { id: 'design', label: 'Writing', visible: true },
-      { id: 'compile', label: 'Compile', visible: true },
-      { id: 'dataManagement', label: 'Data Management', visible: true },
-      { id: 'publish', label: 'Publishing', visible: true },
-      { id: 'inbox', label: 'Notes', visible: false },
-      { id: 'deadline', label: 'Deadline', visible: false },
-      { id: 'blockDescriptions', label: 'Block Descriptions', visible: false },
-      { id: 'lenses', label: 'Lenses', visible: false },
-      { id: 'timelineEvents', label: 'Timeline Events', visible: false },
-      { id: 'montage', label: 'Montage', visible: false },
-      { id: 'metro', label: 'Metro', visible: false },
-      { id: 'world', label: 'World', visible: false },
-      { id: 'script', label: 'Script', visible: false },
-    ]
-  },
-  timelineViewMode: 'list',
+  timelineViewMode: 'table',
+  timelineSearchQuery: '',
+  worldViewMode: 'characters',
   deadlineViewMode: 'local',
   activeLensId: null,
   selectedEventId: null,
+  sidebarPinned: false,
   fullscreenMode: false,
   scrollMode: false,
   writingFocusMode: false,
@@ -119,6 +121,7 @@ export const initialState: State = {
   editorMargin: 0,
   timelineTableColumns: [],
   supabaseSyncEnabled: false,
+  sidebarConfig: DEFAULT_SIDEBAR_CONFIG,
   syncStatus: 'idle',
   syncError: null,
   lastModified: Date.now(),

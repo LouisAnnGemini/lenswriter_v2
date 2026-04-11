@@ -2,14 +2,12 @@ import React from 'react';
 import { useStore } from './store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
 import { TabConfigItem } from './store/types';
-import { Sidebar } from './components/Sidebar';
-import { TopNav } from './components/TopNav';
-import { OutlinePanel } from './components/OutlinePanel';
+import { PrimarySidebar } from './components/PrimarySidebar';
+import { SecondarySidebar } from './components/SecondarySidebar';
+import { Header } from './components/Header';
 import { EditorPanel } from './components/EditorPanel';
 import { LensesTab } from './components/LensesTab';
 import { TimelineTab } from './components/TimelineTab';
-import { MetroTab } from './components/MetroTab';
-import { MontageTab } from './components/MontageTab';
 import { BlockManagementTab } from './components/BlockManagementTab';
 import { WorldTab } from './components/WorldTab';
 import { DeadlineTab } from './components/DeadlineTab';
@@ -21,6 +19,7 @@ import { PublishManager } from './components/PublishManager';
 import { QuickCapture } from './components/QuickCapture';
 import { BackupProvider } from './context/BackupContext';
 import { SyncManager } from './components/SyncManager';
+import { PrimarySidebarSettingsModal } from './components/PrimarySidebarSettingsModal';
 import { ShortcutModal } from './components/ShortcutModal';
 import { Toaster, toast } from 'sonner';
 
@@ -39,9 +38,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
     toggleFullscreenMode,
     setRightSidebarMode,
     supabaseSyncEnabled,
-    saveHistoryVersion,
-    tabConfig,
-    updateTabConfig
+    saveHistoryVersion
   } = useStore(useShallow(state => ({
     disguiseMode: state.disguiseMode,
     fullscreenMode: state.fullscreenMode,
@@ -56,62 +53,8 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
     toggleFullscreenMode: state.toggleFullscreenMode,
     setRightSidebarMode: state.setRightSidebarMode,
     supabaseSyncEnabled: state.supabaseSyncEnabled,
-    saveHistoryVersion: state.saveHistoryVersion,
-    tabConfig: state.tabConfig,
-    updateTabConfig: state.updateTabConfig
+    saveHistoryVersion: state.saveHistoryVersion
   })));
-
-  // Migration for existing users to add 'dataManagement' tab if missing or rename 'archive'
-  React.useEffect(() => {
-    if (tabConfig) {
-      (['design', 'review', 'management'] as const).forEach(mode => {
-        if (tabConfig[mode]) {
-          const hasArchive = tabConfig[mode].some(t => t.id === 'archive' as any);
-          const hasDataManagement = tabConfig[mode].some(t => t.id === 'dataManagement');
-          
-          if (hasArchive || !hasDataManagement) {
-            const newModeConfig: TabConfigItem[] = tabConfig[mode].map(t => {
-              if (t.id === 'archive' as any) {
-                return { ...t, id: 'dataManagement', label: 'Data Management' } as TabConfigItem;
-              }
-              return t;
-            });
-            
-            if (!newModeConfig.some(t => t.id === 'dataManagement')) {
-              newModeConfig.push({ id: 'dataManagement', label: 'Data Management', visible: mode === 'management' });
-            }
-
-            if (!newModeConfig.some(t => t.id === 'publish')) {
-              newModeConfig.push({ id: 'publish', label: 'Publishing', visible: mode === 'management' });
-            }
-            
-            if (!newModeConfig.some(t => t.id === 'script')) {
-              newModeConfig.push({ id: 'script', label: 'Script', visible: mode === 'design' });
-            }
-            
-            updateTabConfig(mode, newModeConfig);
-          } else {
-            let needsUpdate = false;
-            const newModeConfig = [...tabConfig[mode]];
-            
-            if (!newModeConfig.some(t => t.id === 'publish')) {
-               newModeConfig.push({ id: 'publish' as any, label: 'Publishing', visible: mode === 'management' });
-               needsUpdate = true;
-            }
-            
-            if (!newModeConfig.some(t => t.id === 'script')) {
-               newModeConfig.push({ id: 'script' as any, label: 'Script', visible: mode === 'design' });
-               needsUpdate = true;
-            }
-            
-            if (needsUpdate) {
-               updateTabConfig(mode, newModeConfig);
-            }
-          }
-        }
-      });
-    }
-  }, [tabConfig, updateTabConfig]);
 
   const [showShortcutModal, setShowShortcutModal] = React.useState(false);
 
@@ -127,7 +70,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
         }
       }
 
-      // Ctrl+S is now handled in TopNav.tsx
+      // Ctrl+S is now handled in Header.tsx
 
       // Ctrl+I toggle Inspector
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
@@ -164,19 +107,18 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
   return (
     <div className="flex-1 flex flex-col h-[100dvh] overflow-hidden bg-white relative">
       {showShortcutModal && <ShortcutModal onClose={() => setShowShortcutModal(false)} />}
-      {!disguiseMode && <TopNav setMobileOpen={setMobileOpen} />}
+      {!disguiseMode && <Header setMobileOpen={setMobileOpen} />}
       <div className="flex-1 flex overflow-hidden relative">
+        {!disguiseMode && !fullscreenMode && ['design', 'timelineEvents', 'world'].includes(activeTab) && (
+          <SecondarySidebar setMobileOpen={setMobileOpen} />
+        )}
+        
         {activeTab === 'design' && (
-          <>
-            {!disguiseMode && !fullscreenMode && <OutlinePanel setMobileOpen={setMobileOpen} />}
-            <EditorPanel fullscreenMode={fullscreenMode} />
-          </>
+          <EditorPanel fullscreenMode={fullscreenMode} />
         )}
         {activeTab === 'blockDescriptions' && <BlockManagementTab />}
         {activeTab === 'lenses' && <LensesTab />}
         {activeTab === 'timelineEvents' && <TimelineTab />}
-        {activeTab === 'montage' && <MontageTab />}
-        {activeTab === 'metro' && <MetroTab />}
         {activeTab === 'world' && <WorldTab />}
         {activeTab === 'deadline' && (
           <DeadlineTab workId={deadlineViewMode === 'local' ? (activeWorkId || undefined) : undefined} />
@@ -188,7 +130,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
         {activeTab === 'publish' && <PublishManager isTab />}
       </div>
 
-      {/* Focus mode exit button removed as TopNav now handles focus mode exit */}
+      {/* Focus mode exit button removed as Header now handles focus mode exit */}
     </div>
   );
 }
@@ -196,14 +138,22 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
 function Layout() {
   const disguiseMode = useStore(state => state.disguiseMode);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [showSidebarSettings, setShowSidebarSettings] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleToggleSidebarSettings = () => setShowSidebarSettings(true);
+    window.addEventListener('toggle-sidebar-settings', handleToggleSidebarSettings);
+    return () => window.removeEventListener('toggle-sidebar-settings', handleToggleSidebarSettings);
+  }, []);
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden font-sans text-stone-900 bg-stone-900 selection:bg-emerald-200 selection:text-emerald-900">
       <Toaster position="top-right" richColors />
-      {!disguiseMode && <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
+      {!disguiseMode && <PrimarySidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />}
       <MainContent setMobileOpen={setMobileOpen} />
       <QuickCapture />
       <SyncManager />
+      {showSidebarSettings && <PrimarySidebarSettingsModal onClose={() => setShowSidebarSettings(false)} />}
     </div>
   );
 }

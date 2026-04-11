@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search, Pin } from 'lucide-react';
+import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search, Pin, Archive, ArrowLeftToLine, ChevronDown, ChevronRight } from 'lucide-react';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
-import { cn } from '../lib/utils';
+import { cn, stripHtml } from '../lib/utils';
 
 const LENS_COLORS = {
   red: 'bg-red-50/80 border-red-200 text-red-900 hover:bg-red-50',
@@ -24,6 +24,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
     scenes, 
     blocks,
     updateBlock,
+    addBlock,
     setActiveTab,
     setActiveDocument,
     updateWork,
@@ -37,6 +38,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
     scenes: state.scenes,
     blocks: state.blocks,
     updateBlock: state.updateBlock,
+    addBlock: state.addBlock,
     setActiveTab: state.setActiveTab,
     setActiveDocument: state.setActiveDocument,
     updateWork: state.updateWork,
@@ -48,6 +50,10 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   const [filterColors, setFilterColors] = useState<string[]>([]);
   const [filterChapterIds, setFilterChapterIds] = useState<string[]>([]);
   const [privateSearchTerm, setPrivateSearchTerm] = useState('');
+  const [filterStashed, setFilterStashed] = useState<'all' | 'active' | 'stashed'>('all');
+  const [newLensContent, setNewLensContent] = useState('');
+  const [selectedAddColor, setSelectedAddColor] = useState<string>('red');
+  const [insertingLens, setInsertingLens] = useState<any | null>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -69,12 +75,22 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
     }
   }, [activeWork?.lensesDescription]);
 
+  useEffect(() => {
+    // Repair logic: If a lens is NOT stashed but its documentId is the workId, 
+    // it means it was promoted without a target. Stash it back.
+    if (!activeWorkId) return;
+    const orphanedLenses = blocks.filter(b => b.isLens && !b.isStashed && b.documentId === activeWorkId);
+    orphanedLenses.forEach(l => {
+      updateBlock({ id: l.id, isStashed: true });
+    });
+  }, [blocks, activeWorkId, updateBlock]);
+
   if (!activeWorkId) return <div className="flex-1 flex items-center justify-center text-stone-400">Select a work</div>;
 
   // Get all lenses for the active work
   const workChapters = chapters.filter(c => c.workId === activeWorkId);
   const workScenes = scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
-  const documentIds = [...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
+  const documentIds = [activeWorkId || '', ...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
   
   let allLenses = blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
   
@@ -98,13 +114,20 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
 
   if (privateSearchTerm) {
     const term = privateSearchTerm.toLowerCase();
-    allLenses = allLenses.filter(l => l.notes && l.notes.toLowerCase().includes(term));
+    allLenses = allLenses.filter(l => (l.notes && l.notes.toLowerCase().includes(term)) || (l.content && l.content.toLowerCase().includes(term)));
+  }
+
+  if (filterStashed === 'active') {
+    allLenses = allLenses.filter(l => !l.isStashed);
+  } else if (filterStashed === 'stashed') {
+    allLenses = allLenses.filter(l => l.isStashed);
   }
 
   const pinnedLenses = allLenses.filter(l => l.pinned);
   const unpinnedLenses = allLenses.filter(l => !l.pinned);
 
   const getLensLocation = (docId: string) => {
+    if (docId === activeWorkId) return 'Stashed Pool';
     const scene = scenes.find(s => s.id === docId);
     if (scene) {
       const chapter = chapters.find(c => c.id === scene.chapterId);
@@ -116,6 +139,75 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
 
   const handleUpdateLens = (id: string, updates: any) => {
     updateBlock({ id, ...updates });
+  };
+
+  const handleToggleLink = (lensId: string, targetIds: string[]) => {
+    const lens = blocks.find(b => b.id === lensId);
+    if (!lens) return;
+
+    const currentLinks = lens.linkedLensIds || [];
+    const added = targetIds.filter(id => !currentLinks.includes(id));
+    const removed = currentLinks.filter(id => !targetIds.includes(id));
+
+    // Update the source lens
+    updateBlock({ id: lensId, linkedLensIds: targetIds });
+
+    // Update added lenses (add backlink)
+    added.forEach(id => {
+      const target = blocks.find(b => b.id === id);
+      if (target) {
+        const targetLinks = target.linkedLensIds || [];
+        if (!targetLinks.includes(lensId)) {
+          updateBlock({ id, linkedLensIds: [...targetLinks, lensId] });
+        }
+      }
+    });
+
+    // Update removed lenses (remove backlink)
+    removed.forEach(id => {
+      const target = blocks.find(b => b.id === id);
+      if (target) {
+        const targetLinks = target.linkedLensIds || [];
+        if (targetLinks.includes(lensId)) {
+          updateBlock({ id, linkedLensIds: targetLinks.filter(tid => tid !== lensId) });
+        }
+      }
+    });
+  };
+
+  const handleAddStashedLens = () => {
+    if (!newLensContent.trim()) return;
+    const id = crypto.randomUUID();
+    addBlock({
+      id,
+      documentId: activeWorkId || '',
+      type: 'text',
+      isLens: true,
+      lensColor: selectedAddColor,
+      isStashed: true
+    });
+    updateBlock({ id, content: newLensContent.trim() });
+    setNewLensContent('');
+  };
+
+  const handlePromote = (lens: any, targetDocId?: string) => {
+    if (!targetDocId) {
+      setInsertingLens(lens);
+      return;
+    }
+    updateBlock({
+      id: lens.id,
+      isStashed: false,
+      documentId: targetDocId
+    });
+    setInsertingLens(null);
+  };
+
+  const handleStash = (lens: any) => {
+    updateBlock({
+      id: lens.id,
+      isStashed: true
+    });
   };
 
   const scrollToLens = (lensId: string) => {
@@ -167,6 +259,47 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
               />
             </div>
 
+            {/* Add Lens Section */}
+            <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm">
+              <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">Add Stashed Lens</h3>
+              <div className="flex flex-col md:flex-row gap-4">
+                <textarea
+                  value={newLensContent}
+                  onChange={(e) => setNewLensContent(e.target.value)}
+                  placeholder="Record a foreshadowing, plot hole, or idea..."
+                  className="flex-1 p-3 text-sm border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none h-20 bg-stone-50"
+                />
+                <div className="flex flex-col justify-between items-end gap-3">
+                  <div className="flex flex-wrap gap-1.5 justify-end">
+                    {Object.keys(LENS_COLORS).map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedAddColor(color)}
+                        className={cn(
+                          "w-6 h-6 rounded-full border border-black/10 transition-all shadow-sm",
+                          color === 'red' && "bg-red-400",
+                          color === 'blue' && "bg-blue-400",
+                          color === 'green' && "bg-emerald-400",
+                          color === 'yellow' && "bg-amber-400",
+                          color === 'purple' && "bg-purple-400",
+                          color === 'brown' && "bg-orange-400",
+                          color === 'black' && "bg-stone-900",
+                          selectedAddColor === color ? "ring-2 ring-emerald-500 ring-offset-2 scale-110" : "hover:scale-110"
+                        )}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleAddStashedLens}
+                    disabled={!newLensContent.trim()}
+                    className="px-6 py-2 bg-stone-900 text-white text-sm font-bold rounded-lg hover:bg-stone-800 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
+                  >
+                    <Plus size={16} /> Stash to Pool
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-4">
               {/* Search Line */}
               <div className="flex items-center space-x-2 bg-white border border-stone-200 rounded-lg px-4 py-2.5 shadow-sm w-full focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all">
@@ -187,6 +320,27 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
 
               {/* Filters Line */}
               <div className="flex flex-col space-y-4 bg-stone-100/50 p-4 rounded-xl border border-stone-200/60">
+                {/* Chapter Multi-select */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2 flex items-center">
+                    <Archive size={10} className="mr-1" /> Status
+                  </span>
+                  {(['all', 'active', 'stashed'] as const).map(status => (
+                    <button
+                      key={status}
+                      onClick={() => setFilterStashed(status)}
+                      className={cn(
+                        "px-3 py-1 text-xs rounded-full border transition-all capitalize",
+                        filterStashed === status 
+                          ? "bg-stone-900 border-stone-900 text-white font-bold shadow-sm" 
+                          : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
+                      )}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Chapter Multi-select */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2 flex items-center">
@@ -302,29 +456,54 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
                         <div className="flex items-center text-xs font-medium opacity-60">
                           <MapPin size={12} className="mr-1.5 shrink-0" />
-                          <span className="truncate">{getLensLocation(lens.documentId)}</span>
+                          <span className="truncate">{lens.isStashed ? 'Stashed Pool' : getLensLocation(lens.documentId)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleLensPin(lens.id);
-                            }}
-                            className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
-                            title={lens.pinned ? "Unpin lens" : "Pin lens"}
-                          >
-                            <Pin size={14} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleNavigateToLens(lens.id, lens.documentId);
-                            }}
-                            className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
-                            title="Go to location in text"
-                          >
-                            <ExternalLink size={14} />
-                          </button>
+                          {lens.isStashed ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePromote(lens);
+                              }}
+                              className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                              title="Insert into Text"
+                            >
+                              <ArrowLeftToLine size={14} />
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStash(lens);
+                                }}
+                                className="p-1 text-stone-400 hover:text-stone-600 hover:bg-black/5 rounded transition-colors"
+                                title="Stash to Pool"
+                              >
+                                <Archive size={14} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleLensPin(lens.id);
+                                }}
+                                className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                                title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                              >
+                                <Pin size={14} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNavigateToLens(lens.id, lens.documentId);
+                                }}
+                                className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                                title="Go to location in text"
+                              >
+                                <ExternalLink size={14} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                       
@@ -332,7 +511,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                         {lens.lensColor === 'black' ? (
                           <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
                         ) : (
-                          lens.content || <span className="italic opacity-50">Empty lens...</span>
+                          stripHtml(lens.content) || <span className="italic opacity-50">Empty lens...</span>
                         )}
                       </div>
 
@@ -362,7 +541,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                               >
                                 <LinkIcon size={10} className="mr-1 shrink-0" />
                                 <span className="truncate max-w-[150px]">
-                                  {linkedLens.lensColor === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                                  {linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens')}
                                 </span>
                               </button>
                             );
@@ -409,29 +588,54 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
                       <div className="flex items-center text-xs font-medium opacity-60">
                         <MapPin size={12} className="mr-1.5 shrink-0" />
-                        <span className="truncate">{getLensLocation(lens.documentId)}</span>
+                        <span className="truncate">{lens.isStashed ? 'Stashed Pool' : getLensLocation(lens.documentId)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleLensPin(lens.id);
-                          }}
-                          className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
-                          title={lens.pinned ? "Unpin lens" : "Pin lens"}
-                        >
-                          <Pin size={14} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleNavigateToLens(lens.id, lens.documentId);
-                          }}
-                          className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
-                          title="Go to location in text"
-                        >
-                          <ExternalLink size={14} />
-                        </button>
+                        {lens.isStashed ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePromote(lens);
+                            }}
+                            className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                            title="Insert into Text"
+                          >
+                            <ArrowLeftToLine size={14} />
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStash(lens);
+                              }}
+                              className="p-1 text-stone-400 hover:text-stone-600 hover:bg-black/5 rounded transition-colors"
+                              title="Stash to Pool"
+                            >
+                              <Archive size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLensPin(lens.id);
+                              }}
+                              className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                              title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                            >
+                              <Pin size={14} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleNavigateToLens(lens.id, lens.documentId);
+                              }}
+                              className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                              title="Go to location in text"
+                            >
+                              <ExternalLink size={14} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                     
@@ -439,7 +643,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       {lens.lensColor === 'black' ? (
                         <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
                       ) : (
-                        lens.content || <span className="italic opacity-50">Empty lens...</span>
+                        stripHtml(lens.content) || <span className="italic opacity-50">Empty lens...</span>
                       )}
                     </div>
 
@@ -469,7 +673,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                             >
                               <LinkIcon size={10} className="mr-1 shrink-0" />
                               <span className="truncate max-w-[150px]">
-                                {linkedLens.lensColor === 'black' ? 'Hidden Content' : (linkedLens.content || 'Empty lens')}
+                                {linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens')}
                               </span>
                             </button>
                           );
@@ -500,6 +704,70 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
           </div>
         </div>
       </div>
+
+      {/* Scene Selection Modal */}
+      {insertingLens && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-stone-200 animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+              <h3 className="font-bold text-stone-900 flex items-center">
+                <ArrowLeftToLine size={18} className="mr-2 text-emerald-500" />
+                Insert Lens into Text
+              </h3>
+              <button 
+                onClick={() => setInsertingLens(null)}
+                className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded-md transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4 max-h-[60vh] overflow-y-auto space-y-4">
+              <p className="text-xs text-stone-500 font-medium px-1">Select a scene to insert this lens into:</p>
+              
+              {workChapters.sort((a, b) => a.order - b.order).map(chapter => {
+                const chapterScenes = scenes.filter(s => s.chapterId === chapter.id).sort((a, b) => a.order - b.order);
+                if (chapterScenes.length === 0) return null;
+                
+                return (
+                  <div key={chapter.id} className="space-y-1">
+                    <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-2 py-1">
+                      {chapter.title}
+                    </div>
+                    <div className="grid grid-cols-1 gap-1">
+                      {chapterScenes.map(scene => (
+                        <button
+                          key={scene.id}
+                          onClick={() => handlePromote(insertingLens, scene.id)}
+                          className="flex items-center justify-between w-full p-3 text-left text-sm font-medium text-stone-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl border border-transparent hover:border-emerald-200 transition-all group"
+                        >
+                          <span>{scene.title}</span>
+                          <Plus size={14} className="opacity-0 group-hover:opacity-100 text-emerald-500 transition-opacity" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {workScenes.length === 0 && (
+                <div className="text-center py-8 text-stone-400 text-sm italic">
+                  No scenes found in this work.
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 bg-stone-50 border-t border-stone-100 flex justify-end">
+              <button
+                onClick={() => setInsertingLens(null)}
+                className="px-4 py-2 text-sm font-bold text-stone-500 hover:text-stone-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detail Sidebar */}
       {selectedLensId && (
@@ -582,9 +850,9 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                   <div>
                     <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Linked Lenses</label>
                     <MultiSelectDropdown
-                      options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: l.content.substring(0, 40) + '...' }))}
+                      options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: stripHtml(l.content).substring(0, 40) + '...' }))}
                       selectedIds={lens.linkedLensIds || []}
-                      onChange={(ids) => handleUpdateLens(lens.id, { linkedLensIds: ids })}
+                      onChange={(ids) => handleToggleLink(lens.id, ids)}
                       placeholder="+ Link another lens..."
                     />
                   </div>

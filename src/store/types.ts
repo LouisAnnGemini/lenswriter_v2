@@ -2,7 +2,7 @@ export type Work = { id: string; title: string; createdAt: number; order: number
 export type Character = { id: string; workId: string; name: string; description: string; order: number; customFields?: Record<string, any> };
 export type Chapter = { id: string; workId: string; title: string; order: number; goalWordCount?: number; deadline?: string; completed?: boolean; archived?: boolean };
 export type Scene = { id: string; chapterId: string; title: string; order: number; characterIds: string[]; characterPresence?: Record<string, { note?: string }>; statusColor?: string; linkedEventIds?: string[]; goalWordCount?: number; deadline?: string };
-export type Block = { id: string; documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; content: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean; draftContent?: string; isComparing?: boolean };
+export type Block = { id: string; documentId: string; type: 'text'; isLens?: boolean; lensColor?: string; content: string; order: number; notes?: string; linkedLensIds?: string[]; description?: string; completed?: boolean; pinned?: boolean; draftContent?: string; isComparing?: boolean; isStashed?: boolean };
 
 export type ScriptDraft = {
   id: string;
@@ -138,7 +138,7 @@ export type PlatformTracking = {
 };
 
 export type TabConfigItem = {
-  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish' | 'script';
+  id: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'dataManagement' | 'publish' | 'script';
   label: string;
   visible: boolean;
 };
@@ -155,6 +155,17 @@ export type DailyStats = {
   sceneCounts: Record<string, number>;
   isManual?: boolean;
 };
+
+export interface SidebarItemConfig {
+  id: string;
+  visible: boolean;
+}
+
+export interface SidebarGroupConfig {
+  id: string;
+  title: string;
+  items: SidebarItemConfig[];
+}
 
 export type State = {
   works: Work[];
@@ -176,13 +187,14 @@ export type State = {
   lastSceneCounts: Record<string, number>; // SceneId -> last total word count
   activeWorkId: string | null;
   activeDocumentId: string | null;
-  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish' | 'script';
-  appMode: 'design' | 'review' | 'management';
-  tabConfig: TabConfig;
-  timelineViewMode: 'list' | 'table' | 'chronology' | 'tags';
+  activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'dataManagement' | 'publish' | 'script';
+  timelineViewMode: 'list' | 'table' | 'chronology' | 'tags' | 'metro' | 'montage';
+  timelineSearchQuery: string;
+  worldViewMode: 'characters' | 'locations';
   deadlineViewMode: 'global' | 'local';
   activeLensId: string | null;
   selectedEventId: string | null;
+  sidebarPinned: boolean;
   fullscreenMode: boolean;
   scrollMode: boolean;
   writingFocusMode: boolean;
@@ -195,6 +207,7 @@ export type State = {
   editorMargin: number;
   timelineTableColumns?: any[];
   supabaseSyncEnabled?: boolean;
+  sidebarConfig?: SidebarGroupConfig[];
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
   lastModified: number;
@@ -245,14 +258,13 @@ export interface MetroSlice {
 
 export interface UISlice {
   setActiveDocument: (documentId: string | null) => void;
-  setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'metro' | 'montage' | 'dataManagement' | 'publish') => void;
-  setAppMode: (mode: 'design' | 'review' | 'management') => void;
-  updateTabConfig: (mode: 'design' | 'review' | 'management', config: TabConfigItem[]) => void;
-  setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'tags') => void;
-  toggleAppMode: () => void;
+  setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'dataManagement' | 'publish') => void;
+  setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'tags' | 'metro' | 'montage') => void;
+  setWorldViewMode: (mode: 'characters' | 'locations') => void;
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
   setActiveLens: (lensId: string | null) => void;
   setSelectedEventId: (eventId: string | null) => void;
+  toggleSidebarPinned: () => void;
   toggleFullscreenMode: () => void;
   toggleScrollMode: () => void;
   toggleWritingFocusMode: () => void;
@@ -264,6 +276,7 @@ export interface UISlice {
   setEditorMargin: (margin: number) => void;
   setTimelineTableColumns: (columns: any[]) => void;
   toggleSupabaseSync: () => void;
+  updateSidebarConfig: (config: SidebarGroupConfig[]) => void;
   saveHistoryVersion: (name: string) => Promise<boolean>;
   pushToCloud: () => Promise<boolean>;
   pullFromCloud: () => Promise<boolean>;
@@ -274,7 +287,7 @@ export interface UISlice {
 }
 
 export interface BlockSlice {
-  addBlock: (params: { id?: string, documentId: string, type: 'text', isLens?: boolean, lensColor?: string, afterBlockId?: string, notes?: string }) => void;
+  addBlock: (params: { id?: string, documentId: string, type: 'text', isLens?: boolean, lensColor?: string, afterBlockId?: string, notes?: string, isStashed?: boolean }) => void;
   updateBlock: (block: Partial<Block> & { id: string }) => void;
   deleteBlock: (blockId: string) => void;
   removeLens: (blockId: string) => void;
@@ -351,6 +364,7 @@ export interface TimelineSlice {
   toggleTimelineEventVertical: (eventId: string, targetEventId: string) => void;
   deleteTimelineEvent: (eventId: string) => void;
   reorderTimelineEvents: (workId: string, sourceId: string, destinationIndex: number, isSourcePool: boolean, isDestPool: boolean) => void;
+  setTimelineSearchQuery: (query: string) => void;
 }
 
 export interface WorkSlice {

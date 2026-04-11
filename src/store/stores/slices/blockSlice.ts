@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { countWords } from '../../../lib/utils';
 
 export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (set, get) => ({
-  addBlock: ({ id, documentId, type, isLens, lensColor, afterBlockId, notes }) => set((state) => {
+  addBlock: ({ id, documentId, type, isLens, lensColor, afterBlockId, notes, isStashed }) => set((state) => {
     const newBlock: Block = { 
       id: id || uuidv4(), 
       documentId, 
@@ -13,7 +13,8 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
       lensColor, 
       content: '', 
       order: state.blocks.length,
-      notes
+      notes,
+      isStashed
     };
     
     let newBlocks;
@@ -56,7 +57,7 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     const state = get();
     const updatedBlock = state.blocks.find(b => b.id === block.id);
     if (updatedBlock) {
-      const docBlocks = state.blocks.filter(b => b.documentId === updatedBlock.documentId);
+      const docBlocks = state.blocks.filter(b => b.documentId === updatedBlock.documentId && !b.isStashed);
       const docContent = docBlocks.map(b => b.content).join('\n');
       const wordCount = countWords(docContent);
       state.updateDailyWordCount(updatedBlock.documentId, wordCount);
@@ -139,7 +140,7 @@ export const createBlockSlice: StateCreator<StoreState, [], [], BlockSlice> = (s
     // Let's just update all affected scenes.
     const affectedScenes = new Set(updates.map(u => state.blocks.find(b => b.id === u.id)?.documentId).filter(Boolean) as string[]);
     affectedScenes.forEach(sceneId => {
-      const docBlocks = state.blocks.filter(b => b.documentId === sceneId);
+      const docBlocks = state.blocks.filter(b => b.documentId === sceneId && !b.isStashed);
       const docContent = docBlocks.map(b => b.content).join('\n');
       const wordCount = countWords(docContent);
       state.updateDailyWordCount(sceneId, wordCount);

@@ -5,9 +5,11 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setActiveDocument: (documentId) => set({ activeDocumentId: documentId }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setTimelineViewMode: (mode) => set({ timelineViewMode: mode }),
+  setWorldViewMode: (mode) => set({ worldViewMode: mode }),
   setDeadlineViewMode: (mode) => set({ deadlineViewMode: mode }),
   setActiveLens: (lensId) => set({ activeLensId: lensId }),
   setSelectedEventId: (eventId) => set({ selectedEventId: eventId }),
+  toggleSidebarPinned: () => set((state) => ({ sidebarPinned: !state.sidebarPinned })),
   toggleFullscreenMode: () => set((state) => ({ fullscreenMode: !state.fullscreenMode })),
   toggleScrollMode: () => set((state) => ({ scrollMode: !state.scrollMode })),
   toggleWritingFocusMode: () => set((state) => ({ writingFocusMode: !state.writingFocusMode })),
@@ -19,31 +21,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setEditorMargin: (margin) => set({ editorMargin: margin }),
   setTimelineTableColumns: (columns) => set({ timelineTableColumns: columns }),
   toggleSupabaseSync: () => set((state) => ({ supabaseSyncEnabled: !state.supabaseSyncEnabled })),
-  setAppMode: (mode) => set({ appMode: mode }),
-  updateTabConfig: (mode, config) => set((state) => ({
-    tabConfig: {
-      ...state.tabConfig,
-      [mode]: config
-    }
-  })),
-  toggleAppMode: () => set((state) => {
-    const newMode = state.appMode === 'design' ? 'review' : state.appMode === 'review' ? 'management' : 'design';
-    let newTab = state.activeTab;
-    let newTimelineViewMode = state.timelineViewMode;
-
-    const newModeConfig = state.tabConfig[newMode];
-    const isTabVisible = newModeConfig.find(t => t.id === state.activeTab)?.visible;
-    
-    if (!isTabVisible) {
-      newTab = 'design';
-    }
-
-    if (newMode === 'management' || newMode === 'review') {
-      newTimelineViewMode = 'list';
-    }
-
-    return { appMode: newMode, activeTab: newTab, timelineViewMode: newTimelineViewMode };
-  }),
+  updateSidebarConfig: (config) => set({ sidebarConfig: config }),
   saveHistoryVersion: async (name) => {
     // saveHistoryVersion called with name: name
     const state = get();

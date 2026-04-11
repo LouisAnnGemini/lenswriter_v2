@@ -99,32 +99,4 @@ describe('uiSlice', () => {
     toggleSupabaseSync();
     expect(useTestStore.getState().supabaseSyncEnabled).toBe(true);
   });
-
-  it('should set app mode', () => {
-    const { setAppMode } = useTestStore.getState();
-    setAppMode('management');
-    expect(useTestStore.getState().appMode).toBe('management');
-  });
-
-  it('should toggle app mode and adjust active tab', () => {
-    const { toggleAppMode } = useTestStore.getState();
-    
-    // If switching to review and tab is world, it should switch to design
-    useTestStore.setState({ appMode: 'design', activeTab: 'world' });
-    toggleAppMode();
-    expect(useTestStore.getState().appMode).toBe('review');
-    expect(useTestStore.getState().activeTab).toBe('design');
-
-    // If switching to management and tab is world, it should switch to design
-    useTestStore.setState({ appMode: 'review', activeTab: 'world' });
-    toggleAppMode();
-    expect(useTestStore.getState().appMode).toBe('management');
-    expect(useTestStore.getState().activeTab).toBe('design');
-
-    // If switching to design and tab is deadline, it should switch to design
-    useTestStore.setState({ appMode: 'management', activeTab: 'deadline' });
-    toggleAppMode();
-    expect(useTestStore.getState().appMode).toBe('design');
-    expect(useTestStore.getState().activeTab).toBe('design');
-  });
 });

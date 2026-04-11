@@ -69,8 +69,7 @@ export function SyncManager() {
         k !== 'rightSidebarMode' && // Inspector toggle
         k !== 'activeTab'           // Tab switching
       );
-      const dataChanged = dataKeys.some(key => (state as any)[key] !== (prevState as any)[key]) || 
-                          state.appMode !== prevState.appMode;
+      const dataChanged = dataKeys.some(key => (state as any)[key] !== (prevState as any)[key]);
 
       if (dataChanged) {
         useStore.setState({ lastModified: Date.now() });

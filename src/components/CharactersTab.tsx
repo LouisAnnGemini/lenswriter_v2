@@ -205,7 +205,6 @@ export function CharactersTab() {
                       const timelineAppearanceCount = getTimelineAppearances(char.id).length;
                       
                       return (
-                        // @ts-expect-error React 19 key prop issue
                         <Draggable key={char.id} draggableId={char.id} index={index}>
                           {(provided, snapshot) => (
                             <div
@@ -599,7 +598,6 @@ export function CharactersTab() {
                   {(provided) => (
                     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
                       {activeWork?.characterFields?.map((field, index) => (
-                        // @ts-expect-error React 19 key prop issue
                         <Draggable key={field.id} draggableId={field.id} index={index}>
                           {(provided, snapshot) => (
                             <div 
