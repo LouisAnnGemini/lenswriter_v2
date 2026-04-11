@@ -43,7 +43,7 @@ export function PrimarySidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boo
         "fixed md:relative", // Fixed on mobile, relative on desktop
         mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0" // Slide in on mobile
       )}>
-        <div className="pt-safe-top flex items-center justify-between border-b border-stone-800 relative">
+        <div className="pt-safe-top border-b border-stone-800 relative">
           <WorkspaceSwitcher isExpanded={isExpanded} onCloseMobile={() => setMobileOpen?.(false)} />
           <button 
             onClick={() => setCollapsed(!collapsed)}

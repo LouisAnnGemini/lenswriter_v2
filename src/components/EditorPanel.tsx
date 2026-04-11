@@ -17,7 +17,7 @@ import { ChapterScenesList } from './ChapterScenesList';
 import { SCENE_STATUS_COLORS } from '../store/constants';
 import { CharacterAppearanceMatrix } from './CharacterAppearanceMatrix';
 import { SnapshotTab } from './SnapshotTab';
-import { NotesTab } from './NotesTab';
+import { StashTab } from './StashTab';
 import { BlockCompareModal } from './BlockCompareModal';
 import { WordRibbon, WordStatusBar } from './WordDisguise';
 import { InspectorSidebar } from './InspectorSidebar';
@@ -35,6 +35,7 @@ const LENS_COLORS = {
   purple: 'bg-purple-50 border-purple-200 text-purple-900',
   brown: 'bg-orange-200 border-orange-200 text-orange-900',
   black: 'bg-stone-900 border-stone-700 text-stone-100',
+  white: 'bg-transparent border-transparent text-stone-900',
 };
 
 export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fullscreenMode?: boolean }) {
@@ -695,7 +696,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                           onClose={() => setShowSlashMenu(null)}
                           onSelect={(action) => {
                             if (action === 'convert') toggleBlockLens(block.id);
-                            if (action === 'stash') handleBlockChange(block.id, { isStashed: true });
+                            if (action === 'stash') handleBlockChange(block.id, { isStashed: true, isLens: true, lensColor: 'white' });
                             if (action === 'merge') handleMergeUp(block.id);
                             if (action === 'split') handleSplitScene(block.id);
                             if (action === 'compare') setComparingBlockId(block.id);
@@ -715,13 +716,13 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                           <div className={cn(
                             "w-full rounded-lg transition-colors relative",
                             block.isComparing && "ring-2 ring-blue-500 shadow-sm",
-                            block.isLens && !disguiseMode
+                            block.isLens && !disguiseMode && block.lensColor !== 'white'
                               ? cn("p-4 border-2", LENS_COLORS[block.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red) 
                               : "px-4 border-2 border-transparent",
                             disguiseMode && "rounded-none p-0 border-0 bg-transparent"
                           )}>
                             {block.isComparing && !disguiseMode && (
-                              <div className="absolute -top-8 bottom-0 right-4 w-0 z-10 pointer-events-none">
+                              <div className="absolute -top-8 bottom-0 right-0 w-0 z-50 pointer-events-none">
                                 <div 
                                   className="sticky top-2 float-right bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md cursor-pointer hover:bg-blue-600 transition-colors flex items-center gap-1 pointer-events-auto whitespace-nowrap"
                                   onClick={() => setComparingBlockId(block.id)}
@@ -734,7 +735,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                             {block.isLens && !disguiseMode && (
                               <div className="flex justify-between items-center mb-2">
                                 <div className="flex space-x-1">
-                                  {Object.keys(LENS_COLORS).map(color => (
+                                  {Object.keys(LENS_COLORS).filter(c => c !== 'white').map(color => (
                                     <button
                                       key={color}
                                       onClick={() => handleLensColorChange(block.id, color)}
@@ -747,6 +748,7 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                                         color === 'purple' && "bg-purple-400",
                                         color === 'brown' && "bg-orange-400",
                                         color === 'black' && "bg-stone-900",
+                                        color === 'white' && "bg-white border-stone-300",
                                         block.lensColor === color && "ring-2 ring-offset-1 ring-stone-400"
                                       )}
                                       title={color.charAt(0).toUpperCase() + color.slice(1)}
@@ -763,6 +765,13 @@ export function EditorPanel({ compact, fullscreenMode }: { compact?: boolean, fu
                                 >
                                   <ArrowRight size={14} />
                                 </button>
+                              </div>
+                            )}
+                            
+                            {block.isLens && block.lensColor === 'white' && block.notes && !disguiseMode && (
+                              <div className="mb-2 p-3 bg-stone-50 border border-stone-200 rounded-md text-sm text-stone-600 italic relative group/note">
+                                <span className="font-bold not-italic text-stone-700 mr-2">💡 Inspiration:</span>
+                                {block.notes}
                               </div>
                             )}
                             

@@ -189,6 +189,7 @@ export type State = {
   activeDocumentId: string | null;
   activeTab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'dataManagement' | 'publish' | 'script';
   timelineViewMode: 'list' | 'table' | 'chronology' | 'tags' | 'metro' | 'montage';
+  lensesViewMode: 'color' | 'stash';
   timelineSearchQuery: string;
   worldViewMode: 'characters' | 'locations';
   deadlineViewMode: 'global' | 'local';
@@ -260,6 +261,7 @@ export interface UISlice {
   setActiveDocument: (documentId: string | null) => void;
   setActiveTab: (tab: 'design' | 'world' | 'deadline' | 'compile' | 'inbox' | 'blockDescriptions' | 'lenses' | 'timelineEvents' | 'dataManagement' | 'publish') => void;
   setTimelineViewMode: (mode: 'list' | 'table' | 'chronology' | 'tags' | 'metro' | 'montage') => void;
+  setLensesViewMode: (mode: 'color' | 'stash') => void;
   setWorldViewMode: (mode: 'characters' | 'locations') => void;
   setDeadlineViewMode: (mode: 'global' | 'local') => void;
   setActiveLens: (lensId: string | null) => void;
@@ -321,7 +323,7 @@ export interface SceneSlice {
   updateSceneCharacterNote: (sceneId: string, characterId: string, note: string) => void;
   toggleSceneEvent: (sceneId: string, eventId: string) => void;
   reorderSceneEvents: (sceneId: string, startIndex: number, endIndex: number) => void;
-  toggleLensPin: (sceneId: string) => void;
+  toggleLensPin: (lensId: string) => void;
   splitSceneAtBlock: (sceneId: string, blockId: string) => void;
 }
 

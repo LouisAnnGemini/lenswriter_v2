@@ -5,6 +5,7 @@ export const createUISlice: StateCreator<StoreState, [], [], UISlice> = (set, ge
   setActiveDocument: (documentId) => set({ activeDocumentId: documentId }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setTimelineViewMode: (mode) => set({ timelineViewMode: mode }),
+  setLensesViewMode: (mode) => set({ lensesViewMode: mode }),
   setWorldViewMode: (mode) => set({ worldViewMode: mode }),
   setDeadlineViewMode: (mode) => set({ deadlineViewMode: mode }),
   setActiveLens: (lensId) => set({ activeLensId: lensId }),

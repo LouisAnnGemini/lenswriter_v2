@@ -63,16 +63,6 @@ export function BlockHoverMenu({
               >
                 <Highlighter size={14} />
               </button>
-              <button 
-                onClick={() => {
-                  handleBlockChange(blockId, { isStashed: true });
-                  setOpenMenuBlockId(null);
-                }}
-                className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
-                title="Stash Block"
-              >
-                <Archive size={14} />
-              </button>
               {canMergeUp && (
                 <button 
                   onClick={() => {
@@ -106,6 +96,16 @@ export function BlockHoverMenu({
                 title="Compare & Edit"
               >
                 <GitCompare size={14} />
+              </button>
+              <button 
+                onClick={() => {
+                  handleBlockChange(blockId, { isStashed: true, isLens: true, lensColor: 'white' });
+                  setOpenMenuBlockId(null);
+                }}
+                className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                title="Stash Block"
+              >
+                <Archive size={14} />
               </button>
               <button 
                 onClick={() => {

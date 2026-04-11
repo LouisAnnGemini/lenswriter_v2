@@ -93,18 +93,18 @@ export function WorkspaceSwitcher({ isExpanded, onCloseMobile }: WorkspaceSwitch
   if (!activeWork) return null;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center p-3 transition-colors hover:bg-stone-800",
+          "w-full flex items-center px-5 py-4 transition-colors hover:bg-stone-800",
           isExpanded ? "justify-between" : "justify-center"
         )}
       >
         <div className="flex items-center min-w-0">
           <div className="shrink-0">
-            <WorkIcon icon={activeWork.icon} size={20} />
+            <WorkIcon icon={activeWork.icon} size={18} />
           </div>
           {isExpanded && (
             <span className="ml-3 font-semibold text-stone-100 truncate">

@@ -99,11 +99,10 @@ export const createSceneSlice: StateCreator<StoreState, [], [], SceneSlice> = (s
     }),
     lastModified: Date.now()
   })),
-  toggleLensPin: (sceneId) => set((state) => {
-    // Placeholder logic for lens pinning
-    // Toggling lens pin for scene: sceneId
-    return state;
-  }),
+  toggleLensPin: (lensId) => set((state) => ({
+    blocks: state.blocks.map(b => b.id === lensId ? { ...b, pinned: !b.pinned } : b),
+    lastModified: Date.now()
+  })),
   splitSceneAtBlock: (sceneId, blockId) => set((state) => {
     const scene = state.scenes.find(s => s.id === sceneId);
     if (!scene) return state;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../lib/utils';
-import { Info, List, LayoutGrid, Clock, Camera, FileText, PanelRightClose, ArrowLeft, X, ChevronRight, ChevronDown, Check, Circle, RotateCcw } from 'lucide-react';
-import { NotesTab } from './NotesTab';
+import { Info, List, LayoutGrid, Clock, Camera, Archive, PanelRightClose, ArrowLeft, X, ChevronRight, ChevronDown, Check, Circle, RotateCcw, FileText } from 'lucide-react';
+import { StashTab } from './StashTab';
 import { SnapshotTab } from './SnapshotTab';
 import { LensesPanel } from './LensesPanel';
 import { EventPoolPanel } from './EventPoolPanel';
@@ -90,6 +90,13 @@ export function InspectorSidebar({
         >
           <LayoutGrid size={18} />
         </button>
+        <button
+          onClick={() => setRightSidebarMode('notes')}
+          className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'notes' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
+          title="Stash"
+        >
+          <Archive size={18} />
+        </button>
         {isScene && (
           <button
             onClick={() => setRightSidebarMode('macro')}
@@ -108,13 +115,6 @@ export function InspectorSidebar({
             <Camera size={18} />
           </button>
         )}
-        <button
-          onClick={() => setRightSidebarMode('notes')}
-          className={cn("p-2 rounded-xl transition-all", rightSidebarMode === 'notes' ? "bg-white text-emerald-600 shadow-sm ring-1 ring-stone-200" : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50")}
-          title="Notes"
-        >
-          <FileText size={18} />
-        </button>
         <div className="flex-1" />
         <button
           onClick={() => setRightSidebarMode('closed')}
@@ -135,7 +135,7 @@ export function InspectorSidebar({
               {rightSidebarMode === 'meso' && 'Lenses'}
               {rightSidebarMode === 'macro' && 'Events'}
               {rightSidebarMode === 'snapshots' && 'Snapshots'}
-              {rightSidebarMode === 'notes' && 'Notes'}
+              {rightSidebarMode === 'notes' && 'Stash'}
             </h3>
             {rightSidebarMode === 'micro' && isScene && (activeDocument as any)?.chapterId && (
               <button
@@ -157,7 +157,7 @@ export function InspectorSidebar({
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar">
         {rightSidebarMode === 'notes' && (
-          <NotesTab workId={activeWorkId} sceneId={isScene ? activeDocId : null} />
+          <StashTab workId={activeWorkId} sceneId={isScene ? activeDocId : null} />
         )}
         {rightSidebarMode === 'snapshots' && activeDocId && isScene && (
           <SnapshotTab sceneId={activeDocId} />

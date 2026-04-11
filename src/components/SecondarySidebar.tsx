@@ -515,6 +515,79 @@ function TimelineContent() {
   );
 }
 
+function LensesContent() {
+  const lensesViewMode = useStore(state => state.lensesViewMode);
+  const setLensesViewMode = useStore(state => state.setLensesViewMode);
+  const activeWorkId = useStore(state => state.activeWorkId);
+  const chapters = useStore(state => state.chapters);
+  const scenes = useStore(state => state.scenes);
+  const blocks = useStore(state => state.blocks);
+  
+  const workChapters = chapters.filter(c => c.workId === activeWorkId);
+  const workScenes = scenes.filter(s => workChapters.some(c => c.id === s.chapterId));
+  const documentIds = [activeWorkId || '', ...workChapters.map(c => c.id), ...workScenes.map(s => s.id)];
+  
+  const allLenses = blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
+  
+  const colorLensesCount = allLenses.filter(l => !l.isStashed).length;
+  const stashedLensesCount = allLenses.filter(l => l.isStashed).length;
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-stone-200 bg-white/95 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="font-serif text-sm font-bold text-stone-700 uppercase tracking-wider">Lenses</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+        <button
+          onClick={() => setLensesViewMode('color')}
+          className={cn(
+            "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left",
+            lensesViewMode === 'color' 
+              ? "bg-white border-stone-200 shadow-sm ring-1 ring-stone-200" 
+              : "bg-transparent border-transparent hover:bg-stone-100/50 text-stone-500"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+              <Layout size={16} className="text-red-500" />
+            </div>
+            <div>
+              <div className={cn("text-sm font-bold", lensesViewMode === 'color' ? "text-stone-900" : "text-stone-600")}>Color Lenses</div>
+              <div className="text-[10px] text-stone-400">Active highlights</div>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">{colorLensesCount}</span>
+        </button>
+
+        <button
+          onClick={() => setLensesViewMode('stash')}
+          className={cn(
+            "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left",
+            lensesViewMode === 'stash' 
+              ? "bg-white border-stone-200 shadow-sm ring-1 ring-stone-200" 
+              : "bg-transparent border-transparent hover:bg-stone-100/50 text-stone-500"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center shadow-sm">
+              <Layout size={16} className="text-stone-300" />
+            </div>
+            <div>
+              <div className={cn("text-sm font-bold", lensesViewMode === 'stash' ? "text-stone-900" : "text-stone-600")}>Stash</div>
+              <div className="text-[10px] text-stone-400">White lenses</div>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">{stashedLensesCount}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function SecondarySidebar({ setMobileOpen }: { setMobileOpen?: (open: boolean) => void }) {
   const fullscreenMode = useStore(state => state.fullscreenMode);
   const activeWorkId = useStore(state => state.activeWorkId);
@@ -528,7 +601,7 @@ export function SecondarySidebar({ setMobileOpen }: { setMobileOpen?: (open: boo
   if (fullscreenMode) return null;
   if (!activeWorkId) return <div className="w-full md:w-64 border-r border-stone-200 bg-stone-50 p-4 text-stone-500 text-sm">Select a work</div>;
 
-  const isSolidMode = activeTab === 'timelineEvents' || activeTab === 'world';
+  const isSolidMode = activeTab === 'timelineEvents' || activeTab === 'world' || activeTab === 'lenses';
   const isExpanded = isSolidMode || isHovered || !activeDocumentId || sidebarPinned;
 
   const renderContent = () => {
@@ -539,6 +612,8 @@ export function SecondarySidebar({ setMobileOpen }: { setMobileOpen?: (open: boo
         return <WorldContent />;
       case 'timelineEvents':
         return <TimelineContent />;
+      case 'lenses':
+        return <LensesContent />;
       default:
         return (
           <div className="flex-1 flex items-center justify-center p-6 text-center">

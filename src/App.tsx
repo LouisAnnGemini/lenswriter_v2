@@ -109,7 +109,7 @@ function MainContent({ setMobileOpen }: { setMobileOpen: (open: boolean) => void
       {showShortcutModal && <ShortcutModal onClose={() => setShowShortcutModal(false)} />}
       {!disguiseMode && <Header setMobileOpen={setMobileOpen} />}
       <div className="flex-1 flex overflow-hidden relative">
-        {!disguiseMode && !fullscreenMode && ['design', 'timelineEvents', 'world'].includes(activeTab) && (
+        {!disguiseMode && !fullscreenMode && ['design', 'timelineEvents', 'world', 'lenses'].includes(activeTab) && (
           <SecondarySidebar setMobileOpen={setMobileOpen} />
         )}
         

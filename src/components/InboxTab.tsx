@@ -35,23 +35,18 @@ export function InboxTab() {
   })));
   
   const [activeSubTab, setActiveSubTab] = useState<'inbox' | 'manageTags'>('inbox');
-  const [noteScope, setNoteScope] = useState<'global' | 'work'>('global');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newTagIds, setNewTagIds] = useState<string[]>([]);
-  const [newSceneId, setNewSceneId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [tagSearch, setTagSearch] = useState('');
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editTagName, setEditTagName] = useState('');
 
-  const activeWork = works.find(w => w.id === activeWorkId);
-  const workScenes = scenes.filter(s => chapters.some(c => c.id === s.chapterId && c.workId === activeWorkId)).sort((a, b) => a.order - b.order);
-
-  // Filter notes based on scope
+  // Filter notes to only show global notes
   const inboxItems = [...(notes || [])]
-    .filter(note => noteScope === 'global' ? note.workId === null : note.workId === activeWorkId)
+    .filter(note => note.workId === null)
     .sort((a, b) => b.createdAt - a.createdAt);
   
   // Get 5 most recently used tags
@@ -99,33 +94,16 @@ export function InboxTab() {
 
   const handleAdd = () => {
     if (newContent.trim()) {
-      let finalWorkId = noteScope === 'work' ? activeWorkId : null;
-      let finalSceneId = noteScope === 'work' ? newSceneId : null;
-
-      if (newSceneId) {
-        const scene = scenes.find(s => s.id === newSceneId);
-        if (scene) {
-          const chapter = chapters.find(c => c.id === scene.chapterId);
-          if (chapter) {
-            finalWorkId = chapter.workId;
-            finalSceneId = newSceneId;
-          }
-        }
-      }
-
       addNote({ 
         content: newContent.trim(), 
         tagIds: newTagIds, 
-        workId: finalWorkId, 
-        sceneId: finalSceneId 
+        workId: null, 
+        sceneId: null 
       });
       setNewContent('');
       setNewTagIds([]);
-      setNewSceneId(null);
     }
   };
-
-  const sceneOptions = workScenes.map(s => ({ id: s.id, title: s.title }));
 
   return (
     <div className="flex-1 overflow-y-auto bg-stone-50 p-4 md:p-8">
@@ -166,53 +144,13 @@ export function InboxTab() {
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap gap-2 mb-6">
-              <button 
-                onClick={() => setNoteScope('global')}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-colors",
-                  noteScope === 'global' ? "bg-stone-800 text-white" : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-100"
-                )}
-              >
-                <Inbox size={16} /> 全局笔记
-              </button>
-              {activeWorkId && (
-                <button 
-                  onClick={() => setNoteScope('work')}
-                  className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-colors",
-                    noteScope === 'work' ? "bg-emerald-600 text-white" : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-100"
-                  )}
-                >
-                  <Book size={16} /> {activeWork?.title || '当前作品'} 笔记
-                </button>
-              )}
-            </div>
-
             <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm mb-8">
               <textarea
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
-                placeholder={noteScope === 'global' ? "在这里输入全局灵感..." : `为 ${activeWork?.title || '当前作品'} 记录笔记...`}
+                placeholder="在这里输入全局灵感..."
                 className="w-full text-base bg-transparent border-none outline-none resize-y min-h-[100px] text-stone-800 placeholder:text-stone-400"
               />
-              
-              {noteScope === 'work' && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2 pt-2 border-t border-stone-100">
-                  <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-stone-400" />
-                    <span className="text-xs text-stone-500">Link to Scene (Optional):</span>
-                  </div>
-                  <div className="w-full sm:w-64">
-                    <SearchableSelect
-                      options={sceneOptions}
-                      value={newSceneId}
-                      onChange={setNewSceneId}
-                      placeholder="Search scenes..."
-                    />
-                  </div>
-                </div>
-              )}
 
               <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-stone-100">
                 {newTagIds.map(tagId => {
@@ -332,48 +270,6 @@ export function InboxTab() {
                       </div>
 
                       <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity self-end sm:self-auto">
-                        <div className="relative group/scope">
-                          <button className="p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded" title="Change Scope">
-                            <Settings size={14} />
-                          </button>
-                          <div className="absolute bottom-full right-0 mb-1 bg-white border rounded shadow-lg z-10 w-48 hidden group-hover/scope:block p-2">
-                            <div className="text-xs font-medium text-stone-700 mb-2">Move Note To:</div>
-                            <button 
-                              onClick={() => updateNote({ id: item.id, workId: null, sceneId: null })}
-                              className="w-full text-left px-2 py-1.5 text-xs hover:bg-stone-100 rounded flex items-center gap-2"
-                            >
-                              <Inbox size={12} /> Global Notes
-                            </button>
-                            {activeWorkId && (
-                              <>
-                                <button 
-                                  onClick={() => updateNote({ id: item.id, workId: activeWorkId, sceneId: null })}
-                                  className="w-full text-left px-2 py-1.5 text-xs hover:bg-stone-100 rounded flex items-center gap-2 mt-1"
-                                >
-                                  <Book size={12} /> Current Work
-                                </button>
-                                <div className="mt-2 pt-2 border-t border-stone-100">
-                                  <div className="text-[10px] text-stone-500 mb-1 px-2">Link to Scene:</div>
-                                  <div className="max-h-32 overflow-y-auto">
-                                    {workScenes.map(scene => (
-                                      <button 
-                                        key={scene.id}
-                                        onClick={() => updateNote({ id: item.id, workId: activeWorkId, sceneId: scene.id })}
-                                        className={cn(
-                                          "w-full text-left px-2 py-1 text-xs hover:bg-stone-100 rounded truncate",
-                                          item.sceneId === scene.id && "bg-emerald-50 text-emerald-700"
-                                        )}
-                                      >
-                                        {scene.title}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
                         <button 
                           onClick={() => handleEdit(item.id, item.content)}
                           className="p-1.5 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 rounded"

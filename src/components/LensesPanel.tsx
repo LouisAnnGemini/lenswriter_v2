@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Highlighter, Plus, X, Search, ArrowLeft, Link as LinkIcon, ExternalLink, ArrowLeftToLine, Archive, ChevronDown, ChevronRight } from 'lucide-react';
+import { Highlighter, Plus, X, Search, ArrowLeft, Link as LinkIcon, ExternalLink, ArrowLeftToLine, ChevronDown, ChevronRight } from 'lucide-react';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { cn, stripHtml } from '../lib/utils';
 
@@ -69,7 +69,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
     if (!activeWorkId) return;
     const orphanedLenses = blocks.filter(b => b.isLens && !b.isStashed && b.documentId === activeWorkId);
     orphanedLenses.forEach(l => {
-      updateBlock({ id: l.id, isStashed: true });
+      updateBlock({ id: l.id, isStashed: true, isLens: true, lensColor: 'white' });
     });
   }, [blocks, activeWorkId, updateBlock]);
 
@@ -80,7 +80,6 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
   const allLenses = blocks.filter(b => b.isLens && documentIds.includes(b.documentId));
   
   const activeLenses = allLenses.filter(l => !l.isStashed);
-  const stashedLenses = allLenses.filter(l => l.isStashed);
 
   const filterFn = (l: any) => {
     if (!searchTerm) return true;
@@ -90,37 +89,6 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
   };
 
   const filteredActive = activeLenses.filter(filterFn);
-  const filteredStashed = stashedLenses.filter(filterFn);
-
-  const handleAddStashedLens = () => {
-    if (!newLensContent.trim()) return;
-    const id = crypto.randomUUID();
-    addBlock({
-      id,
-      documentId: activeWorkId || '',
-      type: 'text',
-      isLens: true,
-      lensColor: selectedColor,
-      isStashed: true
-    });
-    updateBlock({ id, content: newLensContent.trim() });
-    setNewLensContent('');
-  };
-
-  const handlePromote = (lens: any) => {
-    updateBlock({
-      id: lens.id,
-      isStashed: false,
-      documentId: documentId || lens.documentId
-    });
-  };
-
-  const handleStash = (lens: any) => {
-    updateBlock({
-      id: lens.id,
-      isStashed: true
-    });
-  };
 
   const handleToggleLink = (lensId: string, targetIds: string[]) => {
     const lens = blocks.find(b => b.id === lensId);
@@ -159,46 +127,11 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
   return (
     <div className="flex flex-col h-full bg-stone-50">
       <div className="p-4 border-b border-stone-200 bg-white">
-        <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Add Stashed Lens</h4>
-        <div className="space-y-3">
-          <textarea
-            value={newLensContent}
-            onChange={(e) => setNewLensContent(e.target.value)}
-            placeholder="Record a foreshadowing, plot hole, or idea..."
-            className="w-full p-2 text-sm border border-stone-200 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none h-20 bg-stone-50"
-          />
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1.5">
-              {Object.entries(LENS_COLORS).map(([color, classes]) => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedColor(color as keyof typeof LENS_COLORS)}
-                  className={cn(
-                    "w-5 h-5 rounded-full transition-all border shadow-sm",
-                    classes.split(' ')[0],
-                    classes.split(' ')[1],
-                    selectedColor === color ? "ring-2 ring-emerald-500 ring-offset-1 scale-110" : "hover:scale-110"
-                  )}
-                />
-              ))}
-            </div>
-            <button
-              onClick={handleAddStashedLens}
-              disabled={!newLensContent.trim()}
-              className="px-3 py-1 bg-stone-900 text-white text-xs font-medium rounded hover:bg-stone-800 disabled:opacity-50 transition-colors flex items-center gap-1"
-            >
-              <Plus size={14} /> Stash
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4 border-b border-stone-200 bg-white">
         <div className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
           <input
             type="text"
-            placeholder="Search all lenses..."
+            placeholder="Search active lenses..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 bg-stone-50 border border-stone-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
@@ -206,53 +139,17 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar">
-        {/* Active Lenses Section */}
-        <div>
-          <button 
-            onClick={() => setActiveExpanded(!activeExpanded)}
-            className="flex items-center gap-2 w-full px-1 mb-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest hover:text-stone-600 transition-colors"
-          >
-            {activeExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            Active Lenses ({filteredActive.length})
-          </button>
-          
-          {activeExpanded && (
-            <div className="space-y-3">
-              {filteredActive.length === 0 ? (
-                <div className="text-center text-[10px] text-stone-400 py-4 italic">No active lenses in text.</div>
-              ) : (
-                filteredActive.map(lens => renderLensItem(lens, false))
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Stashed Lenses Section */}
-        <div>
-          <button 
-            onClick={() => setStashedExpanded(!stashedExpanded)}
-            className="flex items-center gap-2 w-full px-1 mb-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest hover:text-stone-600 transition-colors"
-          >
-            {stashedExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            Stashed Pool ({filteredStashed.length})
-          </button>
-          
-          {stashedExpanded && (
-            <div className="space-y-3">
-              {filteredStashed.length === 0 ? (
-                <div className="text-center text-[10px] text-stone-400 py-4 italic">No stashed lenses.</div>
-              ) : (
-                filteredStashed.map(lens => renderLensItem(lens, true))
-              )}
-            </div>
-          )}
-        </div>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+        {filteredActive.length === 0 ? (
+          <div className="text-center text-[10px] text-stone-400 py-4 italic">No active lenses in text.</div>
+        ) : (
+          filteredActive.map(lens => renderLensItem(lens))
+        )}
       </div>
     </div>
   );
 
-  function renderLensItem(lens: any, isStashed: boolean) {
+  function renderLensItem(lens: any) {
     return (
       <div 
         key={lens.id} 
@@ -275,32 +172,13 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
               </div>
             )}
             
-            {isStashed ? (
-              <button
-                onClick={() => handlePromote(lens)}
-                className="p-1 hover:bg-black/5 rounded transition-colors text-emerald-700"
-                title="Insert into Text"
-              >
-                <ArrowLeftToLine size={14} />
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleStash(lens)}
-                  className="p-1 hover:bg-black/5 rounded transition-colors text-stone-500"
-                  title="Stash to Pool"
-                >
-                  <Archive size={14} />
-                </button>
-                <button
-                  onClick={() => onNavigateToBlock(lens.id)}
-                  className="p-1 hover:bg-black/5 rounded transition-colors"
-                  title="Jump to Text"
-                >
-                  <ArrowLeft size={14} />
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => onNavigateToBlock(lens.id)}
+              className="p-1 hover:bg-black/5 rounded transition-colors"
+              title="Jump to Text"
+            >
+              <ArrowLeft size={14} />
+            </button>
           </div>
         </div>
         
@@ -336,7 +214,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
                       >
                         <ExternalLink size={10} className="mr-1 shrink-0" />
                         <span className="truncate max-w-[150px]">
-                          {linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens')}
+                          {linkedLens.isStashed ? (linkedLens.notes || 'Empty notes') : (linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens'))}
                         </span>
                       </button>
                     );
@@ -345,7 +223,7 @@ export function LensesPanel({ documentId, onClose, onNavigateToBlock }: { docume
               )}
 
               <MultiSelectDropdown
-                options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: stripHtml(l.content).substring(0, 40) + '...' }))}
+                options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: (l.isStashed ? (l.notes || 'Empty notes') : stripHtml(l.content)).substring(0, 40) + '...' }))}
                 selectedIds={lens.linkedLensIds || []}
                 onChange={(ids) => handleToggleLink(lens.id, ids)}
                 placeholder="+ Link another lens..."

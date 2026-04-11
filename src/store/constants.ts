@@ -103,6 +103,7 @@ export const initialState: State = {
   activeDocumentId: initialSceneId,
   activeTab: 'design',
   timelineViewMode: 'table',
+  lensesViewMode: 'color',
   timelineSearchQuery: '',
   worldViewMode: 'characters',
   deadlineViewMode: 'local',

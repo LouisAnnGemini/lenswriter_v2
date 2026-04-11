@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/stores/useStore';
 import { useShallow } from 'zustand/react/shallow';
-import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search, Pin, Archive, ArrowLeftToLine, ChevronDown, ChevronRight } from 'lucide-react';
+import { Layers, MapPin, Edit2, Link as LinkIcon, X, Plus, Lock, Filter, ExternalLink, Search, Pin, Archive, ArrowLeftToLine, ChevronDown, ChevronRight, RotateCcw, FileText } from 'lucide-react';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { cn, stripHtml } from '../lib/utils';
 
@@ -13,6 +13,7 @@ const LENS_COLORS = {
   purple: 'bg-purple-50/80 border-purple-200 text-purple-900 hover:bg-purple-50',
   brown: 'bg-orange-200 border-orange-200 text-orange-900 hover:bg-orange-200',
   black: 'bg-stone-900 border-stone-700 text-stone-100 hover:bg-stone-800',
+  white: 'bg-white border-stone-200 text-stone-900 hover:bg-stone-50',
 };
 
 export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
@@ -50,7 +51,6 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   const [filterColors, setFilterColors] = useState<string[]>([]);
   const [filterChapterIds, setFilterChapterIds] = useState<string[]>([]);
   const [privateSearchTerm, setPrivateSearchTerm] = useState('');
-  const [filterStashed, setFilterStashed] = useState<'all' | 'active' | 'stashed'>('all');
   const [newLensContent, setNewLensContent] = useState('');
   const [selectedAddColor, setSelectedAddColor] = useState<string>('red');
   const [insertingLens, setInsertingLens] = useState<any | null>(null);
@@ -81,7 +81,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
     if (!activeWorkId) return;
     const orphanedLenses = blocks.filter(b => b.isLens && !b.isStashed && b.documentId === activeWorkId);
     orphanedLenses.forEach(l => {
-      updateBlock({ id: l.id, isStashed: true });
+      updateBlock({ id: l.id, isStashed: true, isLens: true, lensColor: 'white' });
     });
   }, [blocks, activeWorkId, updateBlock]);
 
@@ -117,14 +117,13 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
     allLenses = allLenses.filter(l => (l.notes && l.notes.toLowerCase().includes(term)) || (l.content && l.content.toLowerCase().includes(term)));
   }
 
-  if (filterStashed === 'active') {
-    allLenses = allLenses.filter(l => !l.isStashed);
-  } else if (filterStashed === 'stashed') {
-    allLenses = allLenses.filter(l => l.isStashed);
-  }
+  const lensesViewMode = useStore(state => state.lensesViewMode);
 
-  const pinnedLenses = allLenses.filter(l => l.pinned);
-  const unpinnedLenses = allLenses.filter(l => !l.pinned);
+  // Filter based on lensesViewMode
+  const displayLenses = allLenses.filter(l => lensesViewMode === 'stash' ? l.isStashed : !l.isStashed);
+
+  const pinnedLenses = displayLenses.filter(l => l.pinned);
+  const unpinnedLenses = displayLenses.filter(l => !l.pinned);
 
   const getLensLocation = (docId: string) => {
     if (docId === activeWorkId) return 'Stashed Pool';
@@ -183,10 +182,10 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
       documentId: activeWorkId || '',
       type: 'text',
       isLens: true,
-      lensColor: selectedAddColor,
+      lensColor: 'white',
       isStashed: true
     });
-    updateBlock({ id, content: newLensContent.trim() });
+    updateBlock({ id, notes: newLensContent.trim() });
     setNewLensContent('');
   };
 
@@ -198,6 +197,8 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
     updateBlock({
       id: lens.id,
       isStashed: false,
+      isLens: true,
+      lensColor: 'red',
       documentId: targetDocId
     });
     setInsertingLens(null);
@@ -206,7 +207,9 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
   const handleStash = (lens: any) => {
     updateBlock({
       id: lens.id,
-      isStashed: true
+      isStashed: true,
+      isLens: true,
+      lensColor: 'white'
     });
   };
 
@@ -239,7 +242,9 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col mb-8 space-y-6">
             <div className="max-w-2xl">
-              <h2 className="text-2xl font-serif font-semibold text-stone-900">Color Lenses</h2>
+              <h2 className="text-2xl font-serif font-semibold text-stone-900">
+                {lensesViewMode === 'stash' ? 'Stash' : 'Color Lenses'}
+              </h2>
               <textarea
                 ref={descriptionRef}
                 value={activeWork?.lensesDescription ?? "Global summary of all highlighted information."}
@@ -260,45 +265,28 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
             </div>
 
             {/* Add Lens Section */}
-            <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm">
-              <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">Add Stashed Lens</h3>
-              <div className="flex flex-col md:flex-row gap-4">
-                <textarea
-                  value={newLensContent}
-                  onChange={(e) => setNewLensContent(e.target.value)}
-                  placeholder="Record a foreshadowing, plot hole, or idea..."
-                  className="flex-1 p-3 text-sm border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none h-20 bg-stone-50"
-                />
-                <div className="flex flex-col justify-between items-end gap-3">
-                  <div className="flex flex-wrap gap-1.5 justify-end">
-                    {Object.keys(LENS_COLORS).map(color => (
-                      <button
-                        key={color}
-                        onClick={() => setSelectedAddColor(color)}
-                        className={cn(
-                          "w-6 h-6 rounded-full border border-black/10 transition-all shadow-sm",
-                          color === 'red' && "bg-red-400",
-                          color === 'blue' && "bg-blue-400",
-                          color === 'green' && "bg-emerald-400",
-                          color === 'yellow' && "bg-amber-400",
-                          color === 'purple' && "bg-purple-400",
-                          color === 'brown' && "bg-orange-400",
-                          color === 'black' && "bg-stone-900",
-                          selectedAddColor === color ? "ring-2 ring-emerald-500 ring-offset-2 scale-110" : "hover:scale-110"
-                        )}
-                      />
-                    ))}
+            {lensesViewMode === 'stash' && (
+              <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm">
+                <h3 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">Add Stashed Lens</h3>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <textarea
+                    value={newLensContent}
+                    onChange={(e) => setNewLensContent(e.target.value)}
+                    placeholder="Record a foreshadowing, plot hole, or idea..."
+                    className="flex-1 p-3 text-sm border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none h-20 bg-stone-50"
+                  />
+                  <div className="flex flex-col justify-between items-end gap-3">
+                    <button
+                      onClick={handleAddStashedLens}
+                      disabled={!newLensContent.trim()}
+                      className="px-6 py-2 bg-stone-900 text-white text-sm font-bold rounded-lg hover:bg-stone-800 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
+                    >
+                      <Plus size={16} /> Add Stashed Lens
+                    </button>
                   </div>
-                  <button
-                    onClick={handleAddStashedLens}
-                    disabled={!newLensContent.trim()}
-                    className="px-6 py-2 bg-stone-900 text-white text-sm font-bold rounded-lg hover:bg-stone-800 disabled:opacity-50 transition-all shadow-sm flex items-center gap-2"
-                  >
-                    <Plus size={16} /> Stash to Pool
-                  </button>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-4">
               {/* Search Line */}
@@ -320,27 +308,6 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
 
               {/* Filters Line */}
               <div className="flex flex-col space-y-4 bg-stone-100/50 p-4 rounded-xl border border-stone-200/60">
-                {/* Chapter Multi-select */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2 flex items-center">
-                    <Archive size={10} className="mr-1" /> Status
-                  </span>
-                  {(['all', 'active', 'stashed'] as const).map(status => (
-                    <button
-                      key={status}
-                      onClick={() => setFilterStashed(status)}
-                      className={cn(
-                        "px-3 py-1 text-xs rounded-full border transition-all capitalize",
-                        filterStashed === status 
-                          ? "bg-stone-900 border-stone-900 text-white font-bold shadow-sm" 
-                          : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
-                      )}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-
                 {/* Chapter Multi-select */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2 flex items-center">
@@ -381,55 +348,57 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                 </div>
 
                 {/* Color Multi-select */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2 flex items-center">
-                    <Layers size={10} className="mr-1" /> Colors
-                  </span>
-                  <button 
-                    onClick={() => setFilterColors([])}
-                    className={cn(
-                      "px-3 py-1 text-xs rounded-full border transition-all",
-                      filterColors.length === 0 
-                        ? "bg-stone-900 border-stone-900 text-white font-bold shadow-sm" 
-                        : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
-                    )}
-                  >
-                    All
-                  </button>
-                  {Object.keys(LENS_COLORS).map(color => {
-                    const isSelected = filterColors.includes(color);
-                    return (
-                      <button
-                        key={color}
-                        onClick={() => {
-                          setFilterColors(prev => 
-                            prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]
-                          );
-                        }}
-                        className={cn(
-                          "group flex items-center space-x-2 px-3 py-1 text-xs rounded-full border transition-all",
-                          isSelected 
-                            ? "bg-white border-emerald-500 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-500/20" 
-                            : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
-                        )}
-                      >
-                        <div 
+                {lensesViewMode === 'color' && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mr-2 flex items-center">
+                      <Layers size={10} className="mr-1" /> Colors
+                    </span>
+                    <button 
+                      onClick={() => setFilterColors([])}
+                      className={cn(
+                        "px-3 py-1 text-xs rounded-full border transition-all",
+                        filterColors.length === 0 
+                          ? "bg-stone-900 border-stone-900 text-white font-bold shadow-sm" 
+                          : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
+                      )}
+                    >
+                      All
+                    </button>
+                    {Object.keys(LENS_COLORS).filter(c => c !== 'white').map(color => {
+                      const isSelected = filterColors.includes(color);
+                      return (
+                        <button
+                          key={color}
+                          onClick={() => {
+                            setFilterColors(prev => 
+                              prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]
+                            );
+                          }}
                           className={cn(
-                            "w-2.5 h-2.5 rounded-full border border-black/10",
-                            color === 'red' && "bg-red-400",
-                            color === 'blue' && "bg-blue-400",
-                            color === 'green' && "bg-emerald-400",
-                            color === 'yellow' && "bg-amber-400",
-                            color === 'purple' && "bg-purple-400",
-                            color === 'brown' && "bg-orange-400",
-                            color === 'black' && "bg-stone-900"
-                          )} 
-                        />
-                        <span>{color.charAt(0).toUpperCase() + color.slice(1)}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                            "group flex items-center space-x-2 px-3 py-1 text-xs rounded-full border transition-all",
+                            isSelected 
+                              ? "bg-white border-emerald-500 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-500/20" 
+                              : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
+                          )}
+                        >
+                          <div 
+                            className={cn(
+                              "w-2.5 h-2.5 rounded-full border border-black/10",
+                              color === 'red' && "bg-red-400",
+                              color === 'blue' && "bg-blue-400",
+                              color === 'green' && "bg-emerald-400",
+                              color === 'yellow' && "bg-amber-400",
+                              color === 'purple' && "bg-purple-400",
+                              color === 'brown' && "bg-orange-400",
+                              color === 'black' && "bg-stone-900"
+                            )} 
+                          />
+                          <span>{color.charAt(0).toUpperCase() + color.slice(1)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -448,7 +417,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       id={`lens-card-${lens.id}`}
                       className={cn(
                         "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
-                        LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                        lens.isStashed ? LENS_COLORS.white : (LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red),
                         selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
                       )}
                       onClick={() => setActiveLens(lens.id)}
@@ -456,70 +425,70 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                       <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
                         <div className="flex items-center text-xs font-medium opacity-60">
                           <MapPin size={12} className="mr-1.5 shrink-0" />
-                          <span className="truncate">{lens.isStashed ? 'Stashed Pool' : getLensLocation(lens.documentId)}</span>
+                          <span className="truncate">{getLensLocation(lens.documentId)}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          {lens.isStashed ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePromote(lens);
-                              }}
-                              className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                              title="Insert into Text"
-                            >
-                              <ArrowLeftToLine size={14} />
-                            </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStash(lens);
-                                }}
-                                className="p-1 text-stone-400 hover:text-stone-600 hover:bg-black/5 rounded transition-colors"
-                                title="Stash to Pool"
-                              >
-                                <Archive size={14} />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleLensPin(lens.id);
-                                }}
-                                className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
-                                title={lens.pinned ? "Unpin lens" : "Pin lens"}
-                              >
-                                <Pin size={14} />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleNavigateToLens(lens.id, lens.documentId);
-                                }}
-                                className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
-                                title="Go to location in text"
-                              >
-                                <ExternalLink size={14} />
-                              </button>
-                            </>
-                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleLensPin(lens.id);
+                            }}
+                            className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                            title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                          >
+                            <Pin size={14} fill={lens.pinned ? "currentColor" : "none"} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNavigateToLens(lens.id, lens.documentId);
+                            }}
+                            className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                            title="Go to location in text"
+                          >
+                            <ExternalLink size={14} />
+                          </button>
                         </div>
                       </div>
                       
-                      <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
-                        {lens.lensColor === 'black' ? (
-                          <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
-                        ) : (
-                          stripHtml(lens.content) || <span className="italic opacity-50">Empty lens...</span>
-                        )}
-                      </div>
-
-                      {lens.notes && (
-                        <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-stone-700 whitespace-pre-wrap border border-black/5">
-                          <span className="font-bold block mb-1 opacity-70">Private Notes:</span>
-                          {lens.notes}
+                      {lens.isStashed ? (
+                        <div className="space-y-4">
+                          {/* Stashed Card Content */}
+                          <div>
+                            <div className="flex items-center gap-1 mb-1 text-[10px] font-bold text-amber-600 uppercase tracking-wider">
+                              💡 Inspiration / Notes
+                            </div>
+                            <div className="text-sm text-stone-700 whitespace-pre-wrap line-clamp-6">
+                              {lens.notes || <span className="italic opacity-50">No inspiration...</span>}
+                            </div>
+                          </div>
+                          <div className="pt-3 border-t border-stone-100">
+                            <div className="flex items-center gap-1 mb-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                              <FileText size={10} /> Draft Content
+                            </div>
+                            <div className="text-xs text-stone-500 line-clamp-4">
+                              {stripHtml(lens.content) || <span className="italic opacity-50">No draft...</span>}
+                            </div>
+                          </div>
                         </div>
+                      ) : (
+                        <>
+                          {/* Normal Card Content */}
+                          <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
+                            {lens.lensColor === 'black' ? (
+                              <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
+                            ) : (
+                              stripHtml(lens.content) || <span className="italic opacity-50">Empty lens...</span>
+                            )}
+                          </div>
+
+                          {lens.notes && (
+                            <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-stone-700 whitespace-pre-wrap border border-black/5">
+                              <span className="font-bold block mb-1 opacity-70">Private Notes:</span>
+                              {lens.notes}
+                            </div>
+                          )}
+                        </>
                       )}
 
                       {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
@@ -541,7 +510,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                               >
                                 <LinkIcon size={10} className="mr-1 shrink-0" />
                                 <span className="truncate max-w-[150px]">
-                                  {linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens')}
+                                  {linkedLens.isStashed ? (linkedLens.notes || 'Empty notes') : (linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens'))}
                                 </span>
                               </button>
                             );
@@ -572,7 +541,9 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
             )}
 
             <div className="space-y-4">
-              <h3 className="text-lg font-serif font-semibold text-stone-900">All Lenses</h3>
+              <h3 className="text-lg font-serif font-semibold text-stone-900">
+                {pinnedLenses.length > 0 ? "Other Lenses" : (lensesViewMode === 'stash' ? "Stashed Lenses" : "All Lenses")}
+              </h3>
               <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
                 {unpinnedLenses.map(lens => (
                   <div 
@@ -580,7 +551,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     id={`lens-card-${lens.id}`}
                     className={cn(
                       "break-inside-avoid rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md cursor-pointer group relative backdrop-blur-sm",
-                      LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                      lens.isStashed ? LENS_COLORS.white : (LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red),
                       selectedLensId === lens.id && "ring-2 ring-emerald-500 ring-offset-2 shadow-md"
                     )}
                     onClick={() => setActiveLens(lens.id)}
@@ -588,70 +559,70 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                     <div className="flex justify-between items-start mb-3 pb-2 border-b border-black/10">
                       <div className="flex items-center text-xs font-medium opacity-60">
                         <MapPin size={12} className="mr-1.5 shrink-0" />
-                        <span className="truncate">{lens.isStashed ? 'Stashed Pool' : getLensLocation(lens.documentId)}</span>
+                        <span className="truncate">{getLensLocation(lens.documentId)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {lens.isStashed ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePromote(lens);
-                            }}
-                            className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                            title="Insert into Text"
-                          >
-                            <ArrowLeftToLine size={14} />
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStash(lens);
-                              }}
-                              className="p-1 text-stone-400 hover:text-stone-600 hover:bg-black/5 rounded transition-colors"
-                              title="Stash to Pool"
-                            >
-                              <Archive size={14} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleLensPin(lens.id);
-                              }}
-                              className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
-                              title={lens.pinned ? "Unpin lens" : "Pin lens"}
-                            >
-                              <Pin size={14} />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleNavigateToLens(lens.id, lens.documentId);
-                              }}
-                              className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
-                              title="Go to location in text"
-                            >
-                              <ExternalLink size={14} />
-                            </button>
-                          </>
-                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLensPin(lens.id);
+                          }}
+                          className={cn("p-1 rounded transition-colors", lens.pinned ? "text-emerald-600 bg-emerald-100" : "text-stone-400 hover:text-emerald-600 hover:bg-black/5")}
+                          title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                        >
+                          <Pin size={14} fill={lens.pinned ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNavigateToLens(lens.id, lens.documentId);
+                          }}
+                          className="text-stone-500 hover:text-emerald-700 p-1 hover:bg-black/5 rounded transition-colors"
+                          title="Go to location in text"
+                        >
+                          <ExternalLink size={14} />
+                        </button>
                       </div>
                     </div>
                     
-                    <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
-                      {lens.lensColor === 'black' ? (
-                        <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
-                      ) : (
-                        stripHtml(lens.content) || <span className="italic opacity-50">Empty lens...</span>
-                      )}
-                    </div>
-
-                    {lens.notes && (
-                      <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-stone-700 whitespace-pre-wrap border border-black/5">
-                        <span className="font-bold block mb-1 opacity-70">Private Notes:</span>
-                        {lens.notes}
+                    {lens.isStashed ? (
+                      <div className="space-y-4">
+                        {/* Stashed Card Content */}
+                        <div>
+                          <div className="flex items-center gap-1 mb-1 text-[10px] font-bold text-amber-600 uppercase tracking-wider">
+                            💡 Inspiration / Notes
+                          </div>
+                          <div className="text-sm text-stone-700 whitespace-pre-wrap line-clamp-6">
+                            {lens.notes || <span className="italic opacity-50">No inspiration...</span>}
+                          </div>
+                        </div>
+                        <div className="pt-3 border-t border-stone-100">
+                          <div className="flex items-center gap-1 mb-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                            <FileText size={10} /> Draft Content
+                          </div>
+                          <div className="text-xs text-stone-500 line-clamp-4">
+                            {stripHtml(lens.content) || <span className="italic opacity-50">No draft...</span>}
+                          </div>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        {/* Normal Card Content */}
+                        <div className="text-sm leading-relaxed font-medium line-clamp-6 mb-4">
+                          {lens.lensColor === 'black' ? (
+                            <span className="text-stone-500 italic flex items-center"><Lock size={14} className="mr-1"/> Hidden Content</span>
+                          ) : (
+                            stripHtml(lens.content) || <span className="italic opacity-50">Empty lens...</span>
+                          )}
+                        </div>
+
+                        {lens.notes && (
+                          <div className="mb-4 p-3 bg-white/50 rounded-lg text-xs text-stone-700 whitespace-pre-wrap border border-black/5">
+                            <span className="font-bold block mb-1 opacity-70">Private Notes:</span>
+                            {lens.notes}
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {lens.linkedLensIds && lens.linkedLensIds.length > 0 && (
@@ -673,7 +644,7 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
                             >
                               <LinkIcon size={10} className="mr-1 shrink-0" />
                               <span className="truncate max-w-[150px]">
-                                {linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens')}
+                                {linkedLens.isStashed ? (linkedLens.notes || 'Empty notes') : (linkedLens.lensColor === 'black' ? 'Hidden Content' : (stripHtml(linkedLens.content) || 'Empty lens'))}
                               </span>
                             </button>
                           );
@@ -779,10 +750,24 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
             return (
               <>
                 <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/50 pt-safe-top">
-                  <h3 className="font-semibold text-stone-900 flex items-center">
-                    <Layers size={16} className="mr-2 text-stone-400" />
-                    Lens Details
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-stone-900 flex items-center">
+                      <Layers size={16} className="mr-2 text-stone-400" />
+                      Lens Details
+                    </h3>
+                    <button
+                      onClick={() => toggleLensPin(lens.id)}
+                      className={cn(
+                        "p-1 rounded-md transition-all",
+                        lens.pinned 
+                          ? "text-emerald-600 bg-emerald-50 ring-1 ring-emerald-200" 
+                          : "text-stone-400 hover:text-emerald-600 hover:bg-stone-100"
+                      )}
+                      title={lens.pinned ? "Unpin lens" : "Pin lens"}
+                    >
+                      <Pin size={14} fill={lens.pinned ? "currentColor" : "none"} />
+                    </button>
+                  </div>
                   <button 
                     onClick={() => setActiveLens(null)}
                     className="p-2 md:p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded-md transition-colors"
@@ -793,64 +778,98 @@ export function LensesTab({ isSubTab }: { isSubTab?: boolean }) {
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 md:space-y-8 pb-24 md:pb-6">
                   {/* Color Selection */}
-                  <div>
-                    <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Color</label>
-                    <div className="flex space-x-2">
-                      {Object.keys(LENS_COLORS).map(color => (
-                        <button
-                          key={color}
-                          onClick={() => handleUpdateLens(lens.id, { lensColor: color })}
-                          className={cn(
-                            "w-6 h-6 rounded-full border border-black/10 transition-transform hover:scale-110",
-                            color === 'red' && "bg-red-400",
-                            color === 'blue' && "bg-blue-400",
-                            color === 'green' && "bg-emerald-400",
-                            color === 'yellow' && "bg-amber-400",
-                            color === 'purple' && "bg-purple-400",
-                            color === 'brown' && "bg-orange-400",
-                            color === 'black' && "bg-stone-900",
-                            lens.lensColor === color && "ring-2 ring-offset-2 ring-stone-400"
-                          )}
-                          title={color.charAt(0).toUpperCase() + color.slice(1)}
-                        />
-                      ))}
+                  {!lens.isStashed && (
+                    <div>
+                      <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Color</label>
+                      <div className="flex space-x-2">
+                        {Object.keys(LENS_COLORS).filter(c => c !== 'white').map(color => (
+                          <button
+                            key={color}
+                            onClick={() => handleUpdateLens(lens.id, { lensColor: color })}
+                            className={cn(
+                              "w-6 h-6 rounded-full border border-black/10 transition-transform hover:scale-110",
+                              color === 'red' && "bg-red-400",
+                              color === 'blue' && "bg-blue-400",
+                              color === 'green' && "bg-emerald-400",
+                              color === 'yellow' && "bg-amber-400",
+                              color === 'purple' && "bg-purple-400",
+                              color === 'brown' && "bg-orange-400",
+                              color === 'black' && "bg-stone-900",
+                              lens.lensColor === color && "ring-2 ring-offset-2 ring-stone-400"
+                            )}
+                            title={color.charAt(0).toUpperCase() + color.slice(1)}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Content Edit */}
-                  <div>
-                    <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Content</label>
-                    <textarea
-                      value={lens.content || ''}
-                      onChange={(e) => handleUpdateLens(lens.id, { content: e.target.value })}
-                      placeholder={lens.lensColor === 'black' ? "Hidden content..." : "Enter lens content..."}
-                      className={cn(
-                        "w-full h-48 p-4 rounded-lg border resize-none outline-none text-base md:text-sm font-medium leading-relaxed shadow-inner transition-colors",
-                        LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
-                        lens.lensColor === 'black' ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : "focus:ring-2 focus:ring-emerald-500/20"
-                      )}
-                    />
-                  </div>
+                  {/* Dynamic Content/Notes Order based on isStashed */}
+                  {lens.isStashed ? (
+                    <>
+                      {/* Private Notes (Primary for Stashed) */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                          <span className="text-amber-600">💡 Inspiration / Notes</span>
+                          <span className="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">Primary</span>
+                        </label>
+                        <textarea
+                          value={lens.notes || ''}
+                          onChange={(e) => handleUpdateLens(lens.id, { notes: e.target.value })}
+                          placeholder="Add inspiration, lore, or ideas here..."
+                          className="w-full h-48 p-4 rounded-lg border border-amber-200 bg-amber-50 resize-none outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-base md:text-sm text-stone-700 shadow-inner transition-colors"
+                        />
+                      </div>
 
-                  {/* Private Notes */}
-                  <div>
-                    <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                      <span>Private Notes</span>
-                      <span className="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">Not in editor</span>
-                    </label>
-                    <textarea
-                      value={lens.notes || ''}
-                      onChange={(e) => handleUpdateLens(lens.id, { notes: e.target.value })}
-                      placeholder="Add private notes, lore, or ideas here..."
-                      className="w-full h-32 p-3 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-base md:text-sm text-stone-700"
-                    />
-                  </div>
+                      {/* Content Edit (Secondary for Stashed) */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Draft Content</label>
+                        <textarea
+                          value={lens.content || ''}
+                          onChange={(e) => handleUpdateLens(lens.id, { content: e.target.value })}
+                          placeholder="Write draft here..."
+                          className="w-full h-32 p-3 rounded-lg border border-stone-200 bg-white resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 text-base md:text-sm font-medium leading-relaxed transition-colors"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Content Edit (Primary for Normal Lenses) */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Content</label>
+                        <textarea
+                          value={lens.content || ''}
+                          onChange={(e) => handleUpdateLens(lens.id, { content: e.target.value })}
+                          placeholder={lens.lensColor === 'black' ? "Hidden content..." : "Enter lens content..."}
+                          className={cn(
+                            "w-full h-48 p-4 rounded-lg border resize-none outline-none text-base md:text-sm font-medium leading-relaxed shadow-inner transition-colors",
+                            LENS_COLORS[lens.lensColor as keyof typeof LENS_COLORS] || LENS_COLORS.red,
+                            lens.lensColor === 'black' ? "text-transparent focus:text-stone-100 placeholder:text-stone-700 focus:placeholder:text-stone-500 selection:bg-stone-700 selection:text-stone-100" : "focus:ring-2 focus:ring-emerald-500/20"
+                          )}
+                        />
+                      </div>
+
+                      {/* Private Notes (Secondary for Normal Lenses) */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+                          <span>Private Notes</span>
+                          <span className="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">Not in editor</span>
+                        </label>
+                        <textarea
+                          value={lens.notes || ''}
+                          onChange={(e) => handleUpdateLens(lens.id, { notes: e.target.value })}
+                          placeholder="Add private notes, lore, or ideas here..."
+                          className="w-full h-32 p-3 rounded-lg border border-stone-200 bg-stone-50 resize-none outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-base md:text-sm text-stone-700"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Linking */}
                   <div>
                     <label className="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">Linked Lenses</label>
                     <MultiSelectDropdown
-                      options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: stripHtml(l.content).substring(0, 40) + '...' }))}
+                      options={allLenses.filter(l => l.id !== lens.id).map(l => ({ id: l.id, title: (l.isStashed ? (l.notes || 'Empty notes') : stripHtml(l.content)).substring(0, 40) + '...' }))}
                       selectedIds={lens.linkedLensIds || []}
                       onChange={(ids) => handleToggleLink(lens.id, ids)}
                       placeholder="+ Link another lens..."
